@@ -118,7 +118,7 @@ lisp-system"))
 				   #+(and mcl (not openmcl)) "acl-socket-mcl"
 				   #+mcl "mcl-timers"))
 	       (:unportable-cl-source-file "acl-excl"
-		      :depends-on ("packages" #+nil "gray-stream-package" "nregex"))
+		      :depends-on ("packages" "gray-stream-package" "nregex"))
                ;; Debian cmucl has gray stream support for
                ;; read-/write-sequence, cons.org cmucl has it
                ;; commented out in src/stream.lisp, so we leave the
@@ -139,10 +139,10 @@ lisp-system"))
 	       #+openmcl (:file "ansi-loop")
 	       (:file "uri"
 		      :depends-on ("meta" #+openmcl "ansi-loop"))
-               ;;(:file "gray-stream-package"
-               ;; :depends-on ("vendor-gray-streams"))
+               (:file "gray-stream-package"
+                :depends-on ("vendor-gray-streams"))
 	       (:legacy-cl-source-file "chunked-stream-mixin"
-		      :depends-on ("packages" "acl-excl" #+nil "gray-stream-package"))
+		      :depends-on ("packages" "acl-excl" "gray-stream-package"))
                #+nil
                (:legacy-cl-source-file "md5")
                #+nil
