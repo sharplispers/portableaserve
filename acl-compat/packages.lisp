@@ -19,7 +19,7 @@
         #+clisp #:ext
         #+sbcl #:sb-ext #+sbcl #:sb-gray
         )
-  (:nicknames #:excl)                   ; to be nuked later
+  (:nicknames #-allegro #:excl)                   ; to be nuked later
   #+lispworks (:import-from :common-lisp #:fixnump)
   #+sbcl (:import-from :sb-int #:fixnump)
   (:export
@@ -122,7 +122,7 @@
    #+cl-ssl #:make-ssl-server-stream
    #+lispworks #:socket-os-fd
    )
-  (:nicknames #-clisp socket acl-socket))
+  (:nicknames #-(or clisp allegro) socket #-allegro acl-socket))
 
 
 (defpackage acl-compat.system

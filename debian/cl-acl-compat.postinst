@@ -26,7 +26,7 @@ PKG=acl-compat
 
 case "$1" in
     configure)
-	clc-autobuild-only $PKG lispworks cmucl
+	clc-autobuild-only $PKG lispworks cmucl allegro
 	/usr/sbin/register-common-lisp-source $PKG
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)
