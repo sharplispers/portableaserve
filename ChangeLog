@@ -1,0 +1,21 @@
+Changes in AServe for LW 1.2.3a (06.08.2001)
+- Rudolf Schlatte's changes for supporting CMUCL
+  merged.
+- Several critical bugs fixed (like the lockup of worker-threads
+  that occured on higher load).
+  (Thanks go to Vebjorn Ljosa for finding and fixing this and other
+   critical bugs)
+- Updated Portable AllegroServe to the changes in Franz AllegroServe 1.2.3
+
+Changes in AServe for LW 1.1.41b (02.06.2001)
+- Fixed reloading of pages
+  Wade Humeniuk kindly contributed a DATE-TO-UNIVERSAL-TIME
+  function that doesn't use MATCH-REGEXP.
+
+Changes in ACL-COMPAT (02.06.2001)
+- MATCH-REGEXP got a Keyword argument :return
+- Much improved MP:WITH-TIMEOUT using LispWorks timers and not 
+  a new process for each timer.	
+- Fixed a bug in scan-macros.lisp where complementing of charsets
+  did not really work.
+

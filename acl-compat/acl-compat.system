@@ -1,0 +1,20 @@
+;;; -*- mode: lisp -*-
+
+(in-package :CL-USER)
+
+(mk:defsystem "ACL-COMPAT"
+    :source-pathname "acl-compat:"
+;    :source-extension "lisp"
+;    :binary-pathname nil
+;    :binary-extension nil
+    :components ((:file "nregex")
+                 (:file "acl-mp-cmu")
+                 (:file "acl-socket-cmu")
+                 (:file "acl-excl-cmu"
+                        :depends-on ("nregex"))
+                 (:file "acl-sys-cmu")
+                 (:file "meta")
+                 (:file "uri"
+                        :depends-on ("meta"))))
+
+    

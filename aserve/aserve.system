@@ -1,0 +1,30 @@
+;;; -*- mode: lisp -*-
+
+(in-package "CL-USER")
+
+(mk:defsystem "ASERVE"
+  :source-pathname "aserve:"
+  :components (#|
+               (:module "htmlgen"
+                        :components ((:file "htmlgen")))
+               |#
+               (:file "htmlgen")
+               (:file "macs")
+               (:file "main"
+                      :depends-on ("macs"))
+               (:file "headers"
+                      :depends-on ("main"))
+               (:file "parse"
+                      :depends-on ("main"))
+               (:file "decode"
+                      :depends-on ("main"))
+               (:file "publish"
+                      :depends-on ("htmlgen"))
+               (:file "authorize"
+                      :depends-on ("main"))
+               (:file "log"
+                      :depends-on ("main"))
+               (:file "client"
+                      :depends-on ("main"))
+               (:file "proxy"
+                      :depends-on ("main"))))
