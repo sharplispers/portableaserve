@@ -164,18 +164,24 @@
 (defun process-add-run-reason (process object)
   (setf (mp:process-run-reasons process) (pushnew object (mp:process-run-reasons process))))
 
+;revised version from alain picard
 (defun invoke-with-timeout (timeout bodyfn timeoutfn)
   (block timeout
     (let* ((process mp:*current-process*)
-           (timer (mp:make-timer 
-                   #'(lambda () 
+           (unsheduled? nil)
+           (timer (mp:make-timer
+                   #'(lambda ()
                        (mp:process-interrupt process
                                              #'(lambda ()
-                                                 (return-from timeout
-                                                   (funcall timeoutfn))))))))
+                                                 (unless unsheduled?
+                                                   (return-from timeout
+                                                     (funcall timeoutfn)))))))))
       (mp:schedule-timer-relative timer timeout)
       (unwind-protect (funcall bodyfn)
-        (mp:unschedule-timer timer)))))
+        (without-interrupts
+         (mp:unschedule-timer timer)
+         (setf unsheduled? t))))))
+
 
 (defmacro with-timeout ((seconds &body timeout-forms) &body body)
   "Execute BODY; if execution takes more than SECONDS seconds, terminate
