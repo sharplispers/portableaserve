@@ -131,7 +131,8 @@ process-add-run-reason, process-revoke-run-reason.")
       (progv
 	  (mapcar #'car bindings)
 	  (mapcar #'(lambda (binding)
-		      (eval (cdr binding))))
+		      (eval (cdr binding)))
+                  bindings)
 	(apply function args))
       (apply function args)))
 

@@ -1,3 +1,15 @@
+2004-01-18  Rudi Schlatte  <rudi@62-99-252-74.C-GMITTE.Xdsl-line.inode.at>
+
+	* acl-excl-corman.lisp (intern*), sbcl/acl-excl.lisp (intern*),
+	mcl/acl-excl.lisp (intern*), lispworks/acl-excl.lisp (intern*),
+	cmucl/acl-excl.lisp (intern*), clisp/acl-excl.lisp (intern*),
+	scl/acl-excl.lisp (intern*): Don't upcase symbol before interning
+	(thanks to Marco Baringer, whose code was broken by this).  Now
+	I'm motivated to factor out common code from all the backends ...
+
+	* cmucl/acl-mp.lisp (apply-with-bindings): Fix "How did this ever
+	work" typo; thanks to Marco Baringer.
+
 2004-01-11  Rudi Schlatte  <rudi@constantly.at>
 
 	* sbcl/acl-socket.lisp (make-socket): Handle :local-port nil,

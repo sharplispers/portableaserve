@@ -7,10 +7,7 @@
 (in-package :acl-socket)
 
 (defclass server-socket ()
-  ((element-type :type (member signed-byte unsigned-byte base-char)
-		 :initarg :element-type
-		 :reader element-type)
-   (port :type fixnum
+  ((port :type fixnum
 	 :initarg :port
 	 :reader port)
    (stream-type :type (member :text :binary :bivalent)
@@ -24,6 +21,11 @@
   (print-unreadable-object (server-socket stream :type t :identity nil)
     (format stream "@port ~d" (port server-socket))))
 
+(defun %get-element-type (format)  
+  (ecase format
+    (:text 'character)
+    (:binary '(unsigned-byte 8))
+    (:bivalent '(unsigned-byte 8))) )
 
 (defgeneric accept-connection (server-socket &key wait))
 (defmethod accept-connection ((server-socket server-socket)
@@ -35,11 +37,9 @@ client wanted to initiate a connection and wait is nil."
               (wait (socket-wait (clisp-socket-server server-socket)))
               (t (socket-wait (clisp-socket-server server-socket) 0)))
     (let ((stream (socket-accept (clisp-socket-server server-socket)
-                                 :element-type
-                                 (ecase (element-type server-socket)
-                                   (signed-byte '(signed-byte 8))
-                                   (unsigned-byte '(unsigned-byte 8))
-                                   (base-char 'character)))))
+                                 :element-type (%get-element-type 
+                                                 (stream-type server-socket))
+                                 )))
       (if (eq (stream-type server-socket) :bivalent)
           (make-bivalent-stream stream)
           stream))))
@@ -55,28 +55,20 @@ client wanted to initiate a connection and wait is nil."
 something listening on local-port that can be fed to accept-connection
 if connect is :passive."
   (check-type remote-host string)
-  (let ((element-type (ecase format
-			(:text 'base-char)
-			(:binary 'signed-byte)
-                        (:bivalent 'unsigned-byte))))
-    (ecase connect 
-      (:passive
-         (make-instance 'server-socket
-		        :port local-port
-                        :element-type element-type
-                        :clisp-socket-server (socket-server local-port)
-                        :stream-type format))
-      (:active
-       (let ((stream (socket-connect
+  (ecase connect 
+    (:passive
+      (make-instance 'server-socket
+                     :port local-port
+                     :clisp-socket-server (socket-server local-port)
+                     :stream-type format))
+    (:active
+      (let ((stream (socket-connect
                       remote-port remote-host
-                      :element-type (ecase format
-                                      (:text 'character)
-                                      (:binary '(signed-byte 8))
-                                      (:bivalent '(unsigned-byte 8))))))
-         (if (eq format :bivalent)
-             (make-bivalent-stream stream)
-             stream))))))
-
+                      :element-type (%get-element-type format)
+                      )))
+        (if (eq format :bivalent)
+          (make-bivalent-stream stream)
+          stream)))))
 
 (defmethod close ((server-socket server-socket) &key abort)
   "Kill a passive (listening) socket.  (Active sockets are actually

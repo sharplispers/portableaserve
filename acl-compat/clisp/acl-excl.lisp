@@ -134,7 +134,7 @@
 (defvar *current-case-mode* :case-insensitive-upper)
 
 (defun intern* (s len package)
-  (intern (string-upcase (subseq s 0 len)) package))
+  (intern (subseq s 0 len) package))
 
 (defun filesys-type (file-or-directory-name)
   ;; Taken from clocc's port library, with thanks to Sam Steingold
