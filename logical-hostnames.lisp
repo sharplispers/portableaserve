@@ -32,13 +32,15 @@
 
 (setf (logical-pathname-translations "ASERVE")
       `(("**;*.lisp.*" ;,(logical-pathname "**;*.cl.*")
-         ,(make-pathname :host (pathname-host *load-truename*)
+	 ,(merge-pathnames 
+	   (make-pathname :host (pathname-host *load-truename*)
                          :directory '(:relative "aserve" 
                                                  :wild-inferiors)
                          :name :wild
                          :type "cl"
                          :version :wild)
-         )
+	   *load-truename*
+         ))
         ("**;*.*.*" 
          ;; e.g., "/home/jsc/lisp/src/aserve/aserve-lw/**/"
          ,(merge-pathnames 
