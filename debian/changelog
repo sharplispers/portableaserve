@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2003.04.26) unstable; urgency=low
+
+  * New upstream
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat, 26 Apr 2003 11:45:28 -0600
+
 cl-portable-aserve (1.2.12c+cvs2003.04.15) unstable; urgency=low
 
   * New upstream
