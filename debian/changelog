@@ -1,3 +1,10 @@
+cl-portable-aserve (1.2.12c+cvs2003.01.11) unstable; urgency=low
+
+  * Add information to README.Debian about the need to install
+  the Debian package cmucl-graystream (closes: 175898)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat, 11 Jan 2003 14:41:48 -0700
+
 cl-portable-aserve (1.2.12c+cvs2002.12.27) unstable; urgency=low
 
   * Add ACL compatibility
