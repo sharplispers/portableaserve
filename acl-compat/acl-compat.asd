@@ -32,11 +32,6 @@
                    :name nil :type nil :version nil
                    :defaults (truename "library:subsystems/gray-streams-library.x86f"))
       :components ((:precompiled-file "gray-streams-library.x86f")))))
-
-;; KLUDGE: cmucl-graystream apparently isn't loaded before acl-compat
-;; starts compiling, leading to an error in lw-buffering.  Investigate
-;; that sometime, load unconditionally for now.
-(asdf:operate 'asdf:load-op :cmucl-graystream)
 )
 
 ;;;; ignore warnings
@@ -106,54 +101,67 @@ lisp-system"))
 #+(and mcl (not openmcl)) (require :ansi-make-load-form)
 
 (defsystem acl-compat
-  :components
-  (
-   ;; packages
-   (:file "packages")
-   ;; Our stream class; support for buffering, chunking and (in the
-   ;; future) unified stream exceptions
-   #-(or lispworks (and mcl (not openmcl)))
-   (:file "lw-buffering" :depends-on ("packages"))
-   #-(or allegro (and mcl (not openmcl)))
-   (:legacy-cl-source-file "chunked-stream-mixin"
-                           :depends-on ("packages" "acl-excl"
-                                                   #-lispworks "lw-buffering"))
-   ;; Multiprocessing
-   #+mcl (:unportable-cl-source-file "mcl-timers")
-   (:unportable-cl-source-file "acl-mp"
-                               :depends-on ("packages" #+mcl "mcl-timers"))
-   ;; Sockets, networking; TODO: de-frob this a bit
-   #-mcl
-   (:unportable-cl-source-file
-    "acl-socket" :depends-on ("packages" "acl-excl"
-                                         #-mcl "chunked-stream-mixin"))
-   #+(and mcl (not openmcl))
-   (:unportable-cl-source-file "acl-socket-mcl" :depends-on ("packages"))
-   #+(and mcl (not openmcl) (not carbon-compat)) 
-   (:unportable-cl-source-file
-    "mcl-stream-fix" :depends-on ("acl-socket-mcl"))
-   #+(and mcl openmcl)
-   (:unportable-cl-source-file
-    "acl-socket-openmcl" :depends-on ("packages" "chunked-stream-mixin"))
-   ;; Diverse macros, utility functions
-   #-allegro (:file "acl-excl-common" :depends-on ("packages"))
-   (:unportable-cl-source-file "acl-excl" :depends-on
-                               #-allegro ("acl-excl-common")
-                               #+allegro ("packages"))
-   (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
-   ;; SSL
-   #+(and ssl-available (not (or allegro mcl clisp)))
-   (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
-   #+(and ssl-available (not (or allegro mcl clisp)))
-   (:file "acl-ssl-streams" :depends-on ("packages")))
-  ;; Dependencies
-  :depends-on (:puri :cl-ppcre)
-  ;; Implementation-specific dependencies
-  #+sbcl :depends-on #+sbcl (:sb-bsd-sockets :sb-posix)
-  #+cmu :depends-on #+cmu (:cmucl-graystream)
-  #+(and (or cmu lispworks) ssl-available) :depends-on
-  #+(and (or cmu lispworks) ssl-available) (:cl-ssl)
-  
-  :perform (load-op :after (op acl-compat)
-		    (pushnew :acl-compat cl:*features*))
-  )
+    :name "acl-compat"
+    :author "The acl-compat team"
+    :version "0.1.1"
+    :description
+    "A reimplementation of parts of the ACL API, mainly to get
+    AllegroServe running on various machines, but might be useful
+    in other projects as well."
+    :properties
+    ((("system" "author" "email") . "portableaserve-discuss@lists.sourceforge.net")
+     (("albert" "presentation" "output-dir") . "docs/")
+     (("albert" "presentation" "formats") . "docbook")
+     (("albert" "docbook" "dtd") . "/Users/Shared/DocBook/lib/docbook/docbook-dtd-412/docbookx.dtd")
+     (("albert" "docbook" "template") . "book"))
+    :components
+    (
+     ;; packages
+     (:file "packages")
+     ;; Our stream class; support for buffering, chunking and (in the
+     ;; future) unified stream exceptions
+     #-(or lispworks (and mcl (not openmcl)))
+     (:file "lw-buffering" :depends-on ("packages"))
+     #-(or allegro (and mcl (not openmcl)))
+     (:legacy-cl-source-file "chunked-stream-mixin"
+                             :depends-on ("packages" "acl-excl"
+                                                     #-lispworks "lw-buffering"))
+     ;; Multiprocessing
+     #+mcl (:unportable-cl-source-file "mcl-timers")
+     (:unportable-cl-source-file "acl-mp"
+                                 :depends-on ("packages" #+mcl "mcl-timers"))
+     ;; Sockets, networking; TODO: de-frob this a bit
+     #-mcl
+     (:unportable-cl-source-file
+      "acl-socket" :depends-on ("packages" "acl-excl"
+                                           #-mcl "chunked-stream-mixin"))
+     #+(and mcl (not openmcl))
+     (:unportable-cl-source-file "acl-socket-mcl" :depends-on ("packages"))
+     #+(and mcl (not openmcl) (not carbon-compat)) 
+     (:unportable-cl-source-file
+      "mcl-stream-fix" :depends-on ("acl-socket-mcl"))
+     #+(and mcl openmcl)
+     (:unportable-cl-source-file
+      "acl-socket-openmcl" :depends-on ("packages" "chunked-stream-mixin"))
+     ;; Diverse macros, utility functions
+     #-allegro (:file "acl-excl-common" :depends-on ("packages"))
+     (:unportable-cl-source-file "acl-excl" :depends-on
+                                 #-allegro ("acl-excl-common")
+                                 #+allegro ("packages"))
+     (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
+     ;; SSL
+     #+(and ssl-available (not (or allegro mcl clisp)))
+     (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
+     #+(and ssl-available (not (or allegro mcl clisp)))
+     (:file "acl-ssl-streams" :depends-on ("packages")))
+    ;; Dependencies
+    :depends-on (:puri
+                 :cl-ppcre
+                 #+sbcl :sb-bsd-sockets
+                 #+sbcl :sb-posix
+                 #+cmu :cmucl-graystream
+                 #+(and (or cmu lispworks) ssl-available) :cl-ssl
+                 )
+    :perform (load-op :after (op acl-compat)
+                      (pushnew :acl-compat cl:*features*))
+    )

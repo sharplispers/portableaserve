@@ -1,3 +1,10 @@
+2004-02-16  Rudi Schlatte  <rudi@62-99-252-74.C-GMITTE.Xdsl-line.inode.at>
+
+	* acl-compat.asd: 
+	- Add some meta-information to system definition
+	- Fix bug: all but the first :depends-on arguments are silently
+	ignored.  :/
+
 2004-02-16  Rudi Schlatte  <rudi@constantly.at>
 
 	* packages.lisp: Remove references to nregex package.
