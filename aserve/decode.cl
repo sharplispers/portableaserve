@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: decode.cl,v 1.1 2001/08/06 03:42:24 neonsquare Exp $
+;; $Id: decode.cl,v 1.2 2001/08/09 08:30:45 neonsquare Exp $
 
 ;; Description:
 ;;   decode/encode code
@@ -174,6 +174,7 @@
   ;; encode the given string using uri encoding.
   ;; It may return the same string if no encoding need be done
   ;;
+  (declare (ignore external-format))
   (let ((len (length str))
 	(count 0))
     (let ((byte-string (loop :with result = (make-array len :element-type '(unsigned-byte 8))
