@@ -119,7 +119,7 @@
            (read-bytes
             #+cmu (progn
                     (mp:process-wait-until-fd-usable
-                     (common-lisp::fd-stream-fd the-stream) :input)
+                     (sys:fd-stream-fd the-stream) :input)
                     ;; At this point, there's either data to be read
                     ;; or an end-of-file.  Either way, read-n-bytes
                     ;; has a return value valid for our purpose (only
