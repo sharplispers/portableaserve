@@ -6,7 +6,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require "comm"))
 
-#+nil
+#| already defined in packages.lisp
 (defpackage acl-socket
   (:use common-lisp #+de.dataheaven.chunked de.dataheaven.chunked-stream-mixin excl)
   (:nicknames socket)
@@ -15,13 +15,14 @@
   (:export socket make-socket accept-connection
    ipaddr-to-dotted dotted-to-ipaddr ipaddr-to-hostname lookup-hostname
    remote-host remote-port local-host local-port socket-control socket-os-fd))
+|#
 
 #+cl-ssl
 (eval-when (:compile-toplevel :load-toplevel :execute)
 (ssl-internal::initialize-ssl-library)
 )
 
-(in-package acl-socket)
+(in-package acl-compat.socket)
 
 (define-condition stream-error (error)
   ((excl::stream :initarg :stream
@@ -84,14 +85,14 @@
     (otherwise :unknown)))
 
 (defun socket-error (stream error-code action format-string &rest format-args)
+  (declare (ignore format-string format-args)) ;no valid initargs for this with socket-error
   (let ((code (if (numberp error-code) error-code #+unix(lw:errno-value))))
     (error 'socket-error :stream stream :code code
            :identifier (if (keywordp error-code)
                            error-code
                          (%socket-error-identifier error-code))
-           :action action
-           :format-control "~A occured while doing socket IO (~?)"
-           :format-arguments (list 'socket-error format-string format-args))))
+           :action action)))
+
 
 (defclass socket ()
   ((passive-socket :type fixnum
@@ -204,17 +205,19 @@
   (declare (ignore abort))
   (comm::close-socket (socket-os-fd passive-socket)))
 
-(declaim (ftype (function ((unsigned-byte 32)) (values simple-string))
-		ipaddr-to-dotted))
+;(declaim (ftype (function ((unsigned-byte 32)) (values simple-string))
+;		ipaddr-to-dotted))
 (defun ipaddr-to-dotted (ipaddr &key values)
-  (declare (type (unsigned-byte 32) ipaddr))
-  (let ((a (logand #xff (ash ipaddr -24)))
-	(b (logand #xff (ash ipaddr -16)))
-	(c (logand #xff (ash ipaddr -8)))
-	(d (logand #xff ipaddr)))
-    (if values
+  ;(declare (type (unsigned-byte 32) ipaddr))
+  (if ipaddr ;sometimes ipaddr is nil in the log call if client has broken the connection
+    (let ((a (logand #xff (ash ipaddr -24)))
+          (b (logand #xff (ash ipaddr -16)))
+          (c (logand #xff (ash ipaddr -8)))
+          (d (logand #xff ipaddr)))
+      (if values
 	(values a b c d)
-      (format nil "~d.~d.~d.~d" a b c d))))
+        (format nil "~d.~d.~d.~d" a b c d)))
+    (if values (values 0 0 0 0) "0.0.0.0")))
 
 (defun string-tokens (string)
   (labels ((get-token (str pos1 acc)
