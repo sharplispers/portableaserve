@@ -185,7 +185,7 @@
   (unix:unix-kill pid signal))
 
 (defmacro fast (&body forms)
-  `(locally (declare (speed 3) (safety 0) (debug 0))
+  `(locally (declare (optimize (speed 3) (safety 0) (debug 0)))
 	    ,@forms))
 
 (provide 'acl-excl)
