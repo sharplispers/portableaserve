@@ -18,8 +18,9 @@
         #+cmu #:ext
         #+clisp #:ext
         #+sbcl #:sb-ext #+sbcl #:sb-gray
+        #+cormanlisp :excl
         )
-  (:nicknames #-allegro #:excl)                   ; to be nuked later
+  #-cormanlisp (:nicknames #-allegro #:excl)                   ; to be nuked later
   #+lispworks (:import-from :common-lisp #:fixnump)
   #+sbcl (:import-from :sb-int #:fixnump)
   (:export
@@ -50,8 +51,8 @@
 
 ;; general
 (defpackage :acl-compat.mp
-  (:use :common-lisp)
-  (:nicknames :acl-mp :acl-compat-mp)
+  (:use :common-lisp #+cormanlisp :acl-compat-mp)
+  (:nicknames :acl-mp #-cormanlisp :acl-compat-mp)
   (:export 
    #:*current-process*         ;*
    #:process-kill              ;*
@@ -102,6 +103,7 @@
         #+clisp #:socket
         #+sbcl #:sockets
         #+(or lispworks cmu) #:de.dataheaven.chunked-stream-mixin
+        #+cormanlisp #:socket
         )
   #+cl-ssl (:import-from :ssl #:MAKE-SSL-CLIENT-STREAM #:MAKE-SSL-SERVER-STREAM)
   #+lispworks (:shadow socket-stream stream-error)
@@ -122,7 +124,7 @@
    #+cl-ssl #:make-ssl-server-stream
    #+lispworks #:socket-os-fd
    )
-  (:nicknames #-(or clisp allegro) socket #-allegro acl-socket))
+  #-cormanlisp (:nicknames #-(or clisp allegro) socket #-allegro acl-socket))
 
 
 (defpackage acl-compat.system
@@ -134,10 +136,10 @@
    #:reap-os-subprocess
    ))
 
-
+#-cormanlisp
 (defpackage :gray-stream
   (:use #:common-lisp)
-  (:import-from #+lispworks :stream #+cmu :lisp #+clisp :gray
+  (:import-from #+lispworks :stream #+cmu :lisp #+clisp :gray #+cormanlisp :gray-streams
                 #+(or mcl openmcl) :ccl #+allegro :excl #+sbcl :sb-gray
                 #:fundamental-binary-input-stream
                 #:fundamental-binary-output-stream
@@ -156,10 +158,10 @@
                 #:stream-clear-input
                 #:stream-clear-output
                 #:stream-line-column
-                #-clisp #:stream-read-sequence
+                #-(or clisp cormanlisp) #:stream-read-sequence
                 #:stream-unread-char
                 #:stream-read-line
-                #-clisp #:stream-write-sequence
+                #-(or clisp cormanlisp) #:stream-write-sequence
                 #:stream-write-string
                 #+lispworks #:stream-write-buffer
                 #+lispworks #:stream-read-buffer
@@ -184,10 +186,42 @@
    #:stream-clear-input
    #:stream-clear-output
    #:stream-line-column
-   #-clisp #:stream-read-sequence
+   #-(or clisp cormanlisp) #:stream-read-sequence
    #:stream-unread-char
    #:stream-read-line
-   #-clisp #:stream-write-sequence
+   #-(or clisp cormanlisp) #:stream-write-sequence
+   #:stream-write-string
+   #:stream-write-buffer
+   #:stream-read-buffer
+   #:stream-fill-buffer
+   #:stream-flush-buffer
+   #:with-stream-input-buffer
+   #:with-stream-output-buffer))
+
+#+cormanlisp
+(defpackage :gray-stream
+  (:use #:common-lisp :gray-streams)
+  (:export 
+   #:fundamental-binary-input-stream
+   #:fundamental-binary-output-stream
+   #:fundamental-character-input-stream
+   #:fundamental-character-output-stream
+   #:stream-element-type
+   #:stream-listen
+   #:stream-read-byte
+   #:stream-read-char
+   #:stream-write-byte
+   #:stream-write-char
+   #:stream-read-char-no-hang
+   #:stream-force-output
+   #:stream-finish-output
+   #:stream-clear-input
+   #:stream-clear-output
+   #:stream-line-column
+   #-(or clisp cormanlisp) #:stream-read-sequence
+   #:stream-unread-char
+   #:stream-read-line
+   #-(or clisp cormanlisp) #:stream-write-sequence
    #:stream-write-string
    #:stream-write-buffer
    #:stream-read-buffer

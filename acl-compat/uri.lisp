@@ -161,7 +161,15 @@
                                        {[#\? !(query) !(setf query last-result)] []}
                                        {[#\# !(fragment) !(setf fragment last-result)] []}
                                        {[#\? !(query) !(setf query last-result)] []}])
-                           (values scheme authority path query fragment))))
+                           #-cormanlisp (values scheme authority path query fragment)
+                            #+cormanlisp
+                            (values 
+                                (if scheme (coerce scheme 'string))
+                                (if authority (coerce authority 'string))
+                                (if path (coerce path 'string))
+                                (if query (coerce query 'string))
+                                (if fragment (coerce fragment 'string)))
+                            )))
        (uri)))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
