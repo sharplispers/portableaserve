@@ -10,9 +10,14 @@
 
 ;;;; load gray stream support
 
+;; Awaiting cmucl-graystreams to move to ASDF
+
+#+common-lisp-controller (pushnew :cmucl-not-yet-asdf cl:*features*)
+
 (defclass gray-streams (component) ())
 
 (defmethod perform ((operation compile-op) (component gray-streams))
+#+(and cmu (not graystreams) cmucl-not-yet-asdf) (require :cmucl-graystream)
   ;; vanilla cmucl
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
@@ -21,6 +26,7 @@
   #+lispworks (lw:do-nothing))
 
 (defmethod perform ((operation load-op) (component gray-streams))
+#+(and cmu (not graystreams) cmucl-not-yet-asdf) (require :cmucl-graystream)
   ;; vanilla cmucl
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
@@ -30,6 +36,7 @@
 
 #+common-lisp-controller
 (defmethod perform ((operation load-compiled-op) (component gray-streams))
+#+(and cmu (not graystreams) cmucl-not-yet-asdf) (require :cmucl-graystream)
   ;; Nothing to do, uses ASDF :depends-on
 )	
 
@@ -137,9 +144,9 @@ lisp-system"))
                (:legacy-cl-source-file "md5")
                #+nil
 	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
-  #+(and cmu common-lisp-controller (not gray-streams))
+  #+(and cmu common-lisp-controller (not gray-streams) (not cmucl-not-yet-asdf))
   :depends-on
-  #+(and cmu common-lisp-controller (not gray-streams))
+  #+(and cmu common-lisp-controller (not gray-streams) (not cmucl-not-yet-asdf))
   (:cmucl-graystream)
 
   :perform (load-op :after (op acl-compat)
