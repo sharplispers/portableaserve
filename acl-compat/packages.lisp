@@ -83,6 +83,8 @@
    #:with-timeout              ;*
    #:make-process-lock         ;*
    #:with-process-lock         ;*
+   #:process-lock
+   #:process-unlock
 
    #:current-process
    #:process-name-to-process

@@ -47,7 +47,11 @@
                            arrest-reasons (priority 0) quantum resume-hook
                            suspend-hook initial-bindings run-immediately)) ; *x
   (def process-kill (process))          ; *x
-  (def make-process-lock (&key name)))  ; *x
+  (def make-process-lock (&key name))   ; *x
+
+  (def process-lock (lock &optional lock-value whostate timeout))
+  (def process-unlock (lock &optional lock-value))) 
+
 
 (defmacro with-process-lock ((lock &key norecursive timeout whostate) &body forms)
   (declare (ignore lock norecursive timeout whostate))
@@ -256,6 +260,15 @@
 
 (defun make-process-lock (&key name)
   (sb-thread:make-mutex :name name))
+
+(defun process-lock (lock &optional lock-value whostate timeout)
+  (declare (ignore whostate timeout))
+  (sb-thread:get-mutex lock lock-value))
+
+(defun process-unlock (lock &optional lock-value)
+  (declare (ignore lock-value))
+  (sb-thread:release-mutex lock))
+
 
 (defun process-active-p (thread-id)
   "If a native thread exists, it is always active"

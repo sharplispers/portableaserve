@@ -155,6 +155,13 @@ process-add-run-reason, process-revoke-run-reason.")
 (defun make-process-lock (&key name)
   (mp:make-lock name))
 
+(defun process-lock (lock)
+  (mp::lock-wait lock (mp:process-whostate mp:*current-process*)))
+
+(defun process-unlock (lock)
+  (setf (mp::lock-process lock) nil))
+
+
 (defmacro with-process-lock ((lock &key norecursive whostate timeout) &body forms)
   (declare (ignore norecursive))
   `(mp:with-lock-held (,lock
