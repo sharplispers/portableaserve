@@ -24,6 +24,10 @@
                          (make-pathname
                           :directory '(:relative "libs" "puri-1.3.1")
                           :name "puri" :type "asd" :case :local))
+    (find-or-load-system :cl-ppcre
+                         (make-pathname
+                          :directory '(:relative "libs" "cl-ppcre")
+                          :name "cl-ppcre" :type "asd" :case :local))
     (find-or-load-system :acl-compat
                          (make-pathname
                           :directory '(:relative "acl-compat")

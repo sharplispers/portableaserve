@@ -6,7 +6,7 @@
 ;;;; acl-excl-common.lisp)
 
 (defpackage :acl-compat.excl
-	(:use #:common-lisp #:nregex #:ext)
+	(:use #:common-lisp #:ext)
 	(:export
          #:if*
          #:*initial-terminal-io*

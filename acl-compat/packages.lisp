@@ -14,7 +14,7 @@
 
 ;;; general
 (defpackage :acl-compat.excl
-  (:use #:common-lisp #:nregex
+  (:use #:common-lisp
         #+cmu #:ext
         #+clisp #:ext
         #+sbcl #:sb-ext #+sbcl #:sb-gray

@@ -102,20 +102,59 @@
 (defun filesys-write-date (stream)
   (file-write-date stream))
 
-(defun match-regexp (pattern string &key (return :string))
-  (let ((res (cond ((stringp pattern)
-		    (regex pattern string))
-		   ((functionp pattern) (funcall pattern string))
-		   (t (error "Wrong type for pattern")))))
-    (case return
-      (:string
-       (values-list (cons (not (null res))
-                          res)))
-      (:index (error "REGEXP: INDEX Not implemented"))
-      (otherwise (not (null res))))))
+(defun frob-regexp (regexp)
+  "This converts from ACL regexps to Perl regexps.  The escape
+  status of (, ) and | is toggled."
+  (let ((escapees '(#\) #\( #\| )))
+    (with-input-from-string (in regexp)
+      (with-output-to-string (out)
+        (loop for c = (read-char in nil nil nil)
+             while c
+             do (cond ((and (char= c #\\)
+                            (member (peek-char nil in nil nil nil) escapees))
+                       (setf c (read-char in)))
+                      ((member c escapees)
+                       (princ #\\ out)))
+             (princ c out))))))
 
+;; TODO: a compiler macro for constant string regexps would be nice,
+;; so that the create-scanner call at runtime can be evaded.
+(defun match-regexp (string-or-regexp string-to-match
+                     &key newlines-special case-fold return
+                     (start 0) end shortest)
+  "Note: if a regexp compiled with compile-regexp is passed, the
+  options newlines-special and case-fold shouldn't be used, since
+  the underlying engine uses them when generating the scanner,
+  not when executing it."
+  (when shortest (error "match-regexp: shortest option not supported yet."))
+  (unless end (setf end (length string-to-match)))
+  (let ((scanner (cl-ppcre:create-scanner (frob-regexp string-or-regexp)
+                                          :case-insensitive-mode case-fold
+                                          :single-line-mode newlines-special)))
+      (ecase return
+        (:string                        ; return t, list of strings
+         (multiple-value-bind (match regs)
+             (cl-ppcre:scan-to-strings scanner string-to-match
+                                       :start start :end end)
+           (if match
+               (apply #'values t match (coerce regs 'list))
+               nil)))
+        (:index                         ; return (cons start end)
+         (multiple-value-bind (start end reg-starts reg-ends)
+             (cl-ppcre:scan scanner string-to-match :start start :end end)
+           (and start (values t (cons start end)
+                              (map 'list #'cons reg-starts reg-ends)))))
+        ((nil)                          ; return t
+         (not (not (cl-ppcre:scan scanner string-to-match
+                                  :start start :end end)))))))
+
+
+;; Caution Incompatible APIs!  cl-ppcre has options case-insensitive,
+;; single-line for create-scanner, ACL has it in match-regexp.
 (defun compile-regexp (regexp)
-  (compile nil (regex-compile regexp)))
+  "Note: Take care when using scanners compiled with this option
+  to not depend on options case-fold and newlines-special in match-regexp."
+  (cl-ppcre:create-scanner (frob-regexp regexp)))
 
 (defvar *current-case-mode* :case-insensitive-upper)
 

@@ -1,3 +1,12 @@
+2004-02-16  Rudi Schlatte  <rudi@constantly.at>
+
+	* packages.lisp: Remove references to nregex package.
+
+	* acl-excl-common.lisp (match-regexp, compile-regexp): Implement
+	using cl-ppcre.
+
+	* acl-compat.asd: Eliminate meta and nregex, use cl-ppcre instead.
+
 2004-02-14  Rudi Schlatte  <rudi@constantly.at>
 
 	* acl-compat.asd: Make Gray streams loading on cmucl a little bit

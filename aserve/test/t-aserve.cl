@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: t-aserve.cl,v 1.6 2004/02/12 21:31:53 rudi Exp $
+;; $Id: t-aserve.cl,v 1.7 2004/02/16 19:37:18 rudi Exp $
 
 ;; Description:
 ;;   test iserve
@@ -1215,7 +1215,9 @@
 	(step 0))
     
     (multiple-value-bind (ok whole dir)
-	(match-regexp "\\(.*[/\\]\\).*" (namestring *aserve-load-truename*))
+        ;; A slight, unfortunate incompatibility between cl-ppcre and
+        ;; ACL regexps ...
+	(match-regexp #+allegro "\\(.*[/\\]\\).*" #-allegro "\\(.*[/\\\\]\\).*" (namestring *aserve-load-truename*))
       (declare (ignore whole))
       (if* (not ok) 
 	 then (error "can't find the server.pem directory"))

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.34 2004/02/08 15:41:06 rudi Exp $
+;; $Id: main.cl,v 1.35 2004/02/16 19:37:18 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -2524,7 +2524,7 @@ in get-multipart-sequence"))
 	    (if* (integerp ans)
 	       then (values ans t)))))
 
-#+allegro
+
 (defun date-to-universal-time (date)
   ;; convert  a date string to lisp's universal time
   ;; we accept all 3 possible date formats
@@ -2624,77 +2624,7 @@ in get-multipart-sequence"))
       
     ))
 
-;;;
-;;; DATE-TO-UNIVERSAL-TIME
-;;; Rewritten using the META parser
-;;; It reimplements the original function without MATCH-REGEXP
-;;; which is not fully implemented in ACL-COMPAT
-;;;
-#-allegro
-(eval-when (:compile-toplevel :execute)
-  (meta:enable-meta-syntax)
-(deftype alpha-char () '(and character (satisfies alpha-char-p)))
-(deftype number-char () '(and character (satisfies digit-char-p)))
-)
-#-allegro
-(defun date-to-universal-time (date)
-  ;; convert  a date string to lisp's universal time
-  ;; we accept all 3 possible date formats
-  
-  ;; check preferred type first (rfc1123 (formerly refc822)):
-  ;;    Sun, 06 Nov 1994 08:49:37 GMT
-  ;; now second best format (but used by Netscape sadly):
-  ;;    Sunday, 06-Nov-94 08:49:37 GMT
-  ;; finally the third format, from unix's asctime
-  ;;    Sun Nov  6 08:49:37 1994
 
-  (let (last-result)
-    (meta:with-string-meta (buffer date)
-      (labels ((make-result ()
-                            (make-array 0 :element-type 'base-char :fill-pointer 0 :adjustable t))
-               (skip-day-of-week (&aux c)
-				 (declare (ignorable c))
-                                 (meta:match [$[@(alpha-char c)] !(skip-delimiters)]))
-               (skip-delimiters ()
-                                (meta:match $[{#\: #\, #\space #\-}]))
-               (word (&aux (old-index meta::index) c
-                           (result (make-result)))
-                     (or (meta:match [!(skip-delimiters) @(alpha-char c) !(vector-push-extend c result)
-                                      $[@(alpha-char c) !(vector-push-extend c result)]
-                                      !(setf last-result result)])
-                         (progn (setf meta::index old-index) nil)))
-               (integer (&aux (old-index meta::index) c
-                              (result (make-result)))
-                        (or (meta:match [!(skip-delimiters) @(number-char c) !(vector-push-extend c result)
-                                         $[@(number-char c) !(vector-push-extend c result)]
-                                         !(setf last-result (parse-integer result))])
-                            (progn (setf meta::index old-index) nil)))
-               (date (&aux day month year hours minutes seconds)
-                     (and (meta:match [!(skip-day-of-week)
-                                       {[!(word) !(setf month last-result)
-                                         !(integer) !(setf day last-result)]
-                                        [!(integer) !(setf day last-result)
-                                         !(word) !(setf month last-result)]} 
-                                       !(integer) !(setf year last-result) 
-                                       !(integer) !(setf hours last-result) 
-                                       !(integer) !(setf minutes last-result) 
-                                       !(integer) !(setf seconds last-result)])
-                         ; (values seconds minutes hours day month)
-                          (encode-universal-time seconds minutes hours day
-		                                 (net.aserve::compute-month (coerce month 'simple-string) 0)
-		                                 year
-		                                 0)
-                          )))
-              (date)))))
-
-#-allegro
-(eval-when (:compile-toplevel :load-toplevel :execute)
-(meta:disable-meta-syntax))
-    
-    
-    
-    
-	  
 (defun compute-month (str start)
   ;; return the month number given a 3char rep of the string
   

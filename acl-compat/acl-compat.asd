@@ -108,9 +108,8 @@ lisp-system"))
 (defsystem acl-compat
   :components
   (
-   ;; nregex and packages
-   (:file "nregex")
-   (:file "packages" :depends-on ("nregex"))
+   ;; packages
+   (:file "packages")
    ;; Our stream class; support for buffering, chunking and (in the
    ;; future) unified stream exceptions
    #-(or lispworks (and mcl (not openmcl)))
@@ -137,19 +136,18 @@ lisp-system"))
    (:unportable-cl-source-file
     "acl-socket-openmcl" :depends-on ("packages" "chunked-stream-mixin"))
    ;; Diverse macros, utility functions
-   #-allegro (:file "acl-excl-common" :depends-on ("packages" "nregex"))
+   #-allegro (:file "acl-excl-common" :depends-on ("packages"))
    (:unportable-cl-source-file "acl-excl" :depends-on
                                #-allegro ("acl-excl-common")
-                               #+allegro ("packages" "nregex"))
+                               #+allegro ("packages"))
    (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
-   (:file "meta")                       ; Still needed inside main.cl
    ;; SSL
    #+(and ssl-available (not (or allegro mcl clisp)))
    (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
    #+(and ssl-available (not (or allegro mcl clisp)))
    (:file "acl-ssl-streams" :depends-on ("packages")))
   ;; Dependencies
-  :depends-on (:puri)
+  :depends-on (:puri :cl-ppcre)
   ;; Implementation-specific dependencies
   #+sbcl :depends-on #+sbcl (:sb-bsd-sockets :sb-posix)
   #+cmu :depends-on #+cmu (:cmucl-graystream)

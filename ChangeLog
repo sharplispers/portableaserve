@@ -1,3 +1,15 @@
+2004-02-16  Rudi Schlatte  <rudi@constantly.at>
+
+	* libs/cl-ppcre/: Import Edi Weitz's cl-ppcre library.
+
+	* INSTALL.lisp: load it.
+	
+	* aserve/test/t-aserve.cl (test-publish-directory): Correct
+	directory regexp (put some more leaning toothpicks in)
+
+	* aserve/main.cl: Remove meta-based date-to-universal-time
+	function; the shiny new match-regexp can handle these expressions.
+
 2004-02-08  Rudi Schlatte  <rudi@constantly.at>
 
 	* aserve/webactions/webact.cl, aserve/webactions/clpage.cl,
