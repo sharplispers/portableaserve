@@ -51,32 +51,8 @@
 ;;;; Christopher Double, at: chris@double.co.nz
 
 (require 'nregex)
-#+nil
-(defpackage :excl
-	(:use :common-lisp :nregex)
-        (:import-from :common-lisp "FIXNUMP")
-	(:export 
-		"IF*"
-		"*INITIAL-TERMINAL-IO*"
-		"*CL-DEFAULT-SPECIAL-BINDINGS*"
-		"FILESYS-SIZE"
-		"FILESYS-WRITE-DATE"
-		"STREAM-INPUT-FN"
-		"MATCH-REGEXP"
-		"COMPILE-REGEXP"
-		"*CURRENT-CASE-MODE*"
-		"INTERN*"
-		"FILESYS-TYPE"
-		"ERRORSET"
-		"ATOMICALLY"
-		"FAST"
-                "WITHOUT-PACKAGE-LOCKS"
-		"SOCKET-ERROR"
-                "RUN-SHELL-COMMAND"
-                "FIXNUMP"
-		))
 
-(in-package :excl)
+(in-package :acl-compat.excl)
 
 (defvar if*-keyword-list '("then" "thenret" "else" "elseif"))
 
