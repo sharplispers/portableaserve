@@ -1,12 +1,27 @@
 ;;; -*- mode: lisp -*-
 
-(in-package "CL-USER")
+(in-package :cl-user)
+
+;; Stig: if clc is present, we're a debian-package
+#+common-lisp-controller
+(setf (logical-pathname-translations "aserve")
+      '(("**;*.*.*" "cl-library:;aserve;**;*.*.*")))
 
 (mk:defsystem "ASERVE"
-  :source-pathname (translate-logical-pathname "aserve:")
+  :source-pathname
+  #-common-lisp-controller
+  (translate-logical-pathname "aserve:")
+  ;; Stig: somehow things screw up if we translate here
+  #+common-lisp-controller
+  "aserve:"
   :source-extension "cl"
-  :components ((:module "htmlgen"
-                        :components ((:file "htmlgen")))
+  :components (#-common-lisp-controller
+	       (:module "htmlgen"
+			:components ((:file "htmlgen")))
+	       ;; Stig: we might use above.. will check again later
+	       #+common-lisp-controller
+	       (:file "htmlgen")
+	       
                (:file "macs")
                (:file "main"
                       :depends-on ("macs"))
@@ -25,4 +40,12 @@
                (:file "client"
                       :depends-on ("main"))
                (:file "proxy"
-                      :depends-on ("main"))))
+                      :depends-on ("main")))
+  
+  ;; Stig: if we're a debian-package we should automagically load acl-compat
+  #+(and common-lisp-controller)
+  :depends-on
+  #+(and common-lisp-controller) (acl-compat))
+
+
+
