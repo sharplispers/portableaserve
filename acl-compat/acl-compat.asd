@@ -10,32 +10,31 @@
 
 ;;;; load gray stream support
 
-(defclass gray-streams (component) ())
+(defclass library-component (component) ())
 
-(defmethod perform ((operation compile-op) (component gray-streams))
-  ;; vanilla cmucl
-  #+(and cmu (not common-lisp-controller) (not gray-streams))
-  (progn (load "library:subsystems/gray-streams-library")
-         (pushnew :gray-streams *features*))
-  ;; LispWorks (it's already there)
-  #+lispworks (lw:do-nothing))
+(defmethod asdf::input-files ((operation load-op) (component library-component))
+  nil)
+
+(defmethod asdf::output-files ((operation load-op) (component library-component))
+  nil)
+
+(defmethod asdf::operation-done-p ((operaton compile-op) (component library-component))
+  "Never need to compile a library component"
+  t)
+
+(defmethod asdf::operation-done-p ((operaton load-op) (component library-component))
+  "Always need to load a library component"
+  nil)
+
+
+(defclass gray-streams (library-component) ())
 
 (defmethod perform ((operation load-op) (component gray-streams))
   ;; vanilla cmucl
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
-         (pushnew :gray-streams *features*))
-  ;; LispWorks it's already there
-  #+lispworks (lw:do-nothing))
+         (pushnew :gray-streams *features*)))
 
-(defmethod asdf::input-files ((operation load-op) (component gray-streams))
-  nil)
-
-(defmethod asdf::output-files ((operation load-op) (component gray-streams))
-  nil)
-
-(defmethod asdf::operation-done-p ((operaton compile-op) (component gray-streams))
-  t)
 
 ;;;; ignore warnings
 ;;;;
@@ -89,7 +88,7 @@ are marked by a -system postfix but we could later change that to a directory pe
 lisp-system"))
 
 (defun lisp-system-shortname ()
-  #+acl :acl #+lispworks :lw #+cmu :cmu #+(and mcl (not openmcl)) :mcl 
+  #+allegro :allegro #+lispworks :lw #+cmu :cmu #+(and mcl (not openmcl)) :mcl 
   #+openmcl :openmcl #+clisp :clisp #+scl :scl)
 
 (defmethod component-pathname ((component unportable-cl-source-file))
@@ -104,7 +103,7 @@ lisp-system"))
 ;standard MCL make-load-form is not ansi compliant because of CLIM
 #+(and mcl (not openmcl)) (require :ansi-make-load-form)
 
-#+(or lispworks cmu scl mcl openmcl clisp)
+#+(or lispworks cmu scl mcl openmcl clisp allegro)
 (defsystem acl-compat
   :components ((:gray-streams "vendor-gray-streams")
 	       (:file "nregex")
@@ -112,9 +111,8 @@ lisp-system"))
 	       #+mcl (:file "mcl-timers")
 	       ;;(:file "acl-mp-package")
 	       (:unportable-cl-source-file "acl-mp"
- 		      :depends-on ("packages"
+ 		      :depends-on ("packages" "acl-socket"
                                    ;"acl-mp-package"
-				   "acl-socket"
 				   #+mcl "mcl-timers"))
 	       (:unportable-cl-source-file "acl-excl"
 		      :depends-on ("packages" "nregex"
@@ -128,7 +126,7 @@ lisp-system"))
                (:file "cmu-read-sequence")
 	       (:unportable-cl-source-file "acl-socket"
 		   :depends-on ("packages" "acl-excl"
-					   #-mcl "chunked-stream-mixin"
+					   #-(or mcl allegro) "chunked-stream-mixin"
                                    #+(and cmu (not common-lisp-controller))
                                    "cmu-read-sequence"))
 	       (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
@@ -136,13 +134,13 @@ lisp-system"))
 	       (:file "uri" :depends-on ("meta"))
           ;;     (:file "gray-stream-package"
           ;;      :depends-on ("vendor-gray-streams"))
-	       #-mcl
+	       #-(or allegro mcl)
 	       (:legacy-cl-source-file "chunked-stream-mixin"
 		      :depends-on ("packages" "acl-excl" #+nil "gray-stream-package"))
 
-	       #-mcl
+	       #-(or allegro mcl)
                (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
-	       #-mcl
+	       #-(or allegro mcl)
                (:file "acl-ssl-streams" :depends-on ("packages"))
 
                #+nil
