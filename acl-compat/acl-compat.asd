@@ -19,8 +19,8 @@
   nil)
 
 (defmethod asdf::operation-done-p ((operaton compile-op) (component library-component))
-  "Never need to compile a library component"
-  t)
+  "Always need to compile a library component"
+  nil)
 
 (defmethod asdf::operation-done-p ((operaton load-op) (component library-component))
   "Always need to load a library component"
@@ -28,6 +28,13 @@
 
 
 (defclass gray-streams (library-component) ())
+
+(defmethod perform ((operation compile-op) (component gray-streams))
+  ;; vanilla cmucl
+  #+common-lisp-controller (require 'cmucl-graystream)
+  #+(and cmu (not common-lisp-controller) (not gray-streams))
+  (progn (load "library:subsystems/gray-streams-library")
+         (pushnew :gray-streams *features*)))
 
 (defmethod perform ((operation load-op) (component gray-streams))
   ;; vanilla cmucl
