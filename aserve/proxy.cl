@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.5 2002/02/26 16:30:05 desoi Exp $
+;; $Id: proxy.cl,v 1.6 2002/03/02 22:02:40 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -2628,9 +2628,14 @@ cached connection = ~s~%" cond cached-connection))
 (defmethod make-load-form ((obj queueobj) &optional env)
   (make-load-form-saving-slots obj :environment env))
 
-;(without-package-locks
+#+lispworks
+(let ((lw:*handle-warn-on-redefinition* :warn))
+  (defmethod make-load-form ((obj #+allegro mp:process-lock #-allegro mp:lock) &optional env)
+    (make-load-form-saving-slots obj :environment env)))
+
+#-lispworks
 (defmethod make-load-form ((obj #+allegro mp:process-lock #-allegro mp:lock) &optional env)
-  (make-load-form-saving-slots obj :environment env))
+    (make-load-form-saving-slots obj :environment env))
 
 ; this is just temporary until we get a patch for this in uri.fasl
 (defmethod make-load-form ((self net.uri:uri) &optional env)
