@@ -8,39 +8,36 @@
   (:use #:cl #:asdf))
 (in-package #:acl-compat-system)
 
-;;;; load gray stream support
+;;;; gray stream support for cmucl: Debian/common-lisp-controller has
+;;;; a `cmucl-graystream' system; if this is not found, we assume a
+;;;; cmucl downloaded from cons.org, where Gray stream support resides
+;;;; in the subsystems/ directory.
 
-(defclass library-component (component) ())
+#+cmu
+(progn
 
-(defmethod asdf::input-files ((operation load-op) (component library-component))
+(defclass precompiled-file (static-file)
+  ())
+
+(defmethod perform ((operation load-op) (c precompiled-file))
+  (load (component-pathname c)))
+
+(defmethod operation-done-p ((operation load-op) (c precompiled-file))
   nil)
 
-(defmethod asdf::output-files ((operation load-op) (component library-component))
-  nil)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (unless (asdf:find-system :cmucl-graystream nil)
+    (asdf:defsystem cmucl-graystream
+        :pathname (make-pathname
+                   :name nil :type nil :version nil
+                   :defaults (truename "library:subsystems/gray-streams-library.x86f"))
+      :components ((:precompiled-file "gray-streams-library.x86f")))))
 
-(defmethod asdf::operation-done-p ((operaton compile-op) (component library-component))
-  "Always need to compile a library component"
-  nil)
-
-(defmethod asdf::operation-done-p ((operaton load-op) (component library-component))
-  "Always need to load a library component"
-  nil)
-
-
-(defclass gray-streams (library-component) ())
-
-(defmethod perform ((operation compile-op) (component gray-streams))
-  ;; vanilla cmucl
-  #+(and cmu (not common-lisp-controller) (not gray-streams))
-  (progn (load "library:subsystems/gray-streams-library")
-         (pushnew :gray-streams *features*)))
-
-(defmethod perform ((operation load-op) (component gray-streams))
-  ;; vanilla cmucl
-  #+(and cmu (not common-lisp-controller) (not gray-streams))
-  (progn (load "library:subsystems/gray-streams-library")
-         (pushnew :gray-streams *features*)))
-
+;; KLUDGE: cmucl-graystream apparently isn't loaded before acl-compat
+;; starts compiling, leading to an error in lw-buffering.  Investigate
+;; that sometime, load unconditionally for now.
+(asdf:operate 'asdf:load-op :cmucl-graystream)
+)
 
 ;;;; ignore warnings
 ;;;;
@@ -110,8 +107,7 @@ lisp-system"))
 
 (defsystem acl-compat
   :components
-  (;; Implementation-specific files
-   (:gray-streams "vendor-gray-streams")
+  (
    ;; nregex and packages
    (:file "nregex")
    (:file "packages" :depends-on ("nregex"))
@@ -155,10 +151,8 @@ lisp-system"))
   ;; Dependencies
   :depends-on (:puri)
   ;; Implementation-specific dependencies
-  #+sbcl :depends-on
-  #+sbcl (:sb-bsd-sockets :sb-posix)
-  #+(and cmu common-lisp-controller) :depends-on
-  #+(and cmu common-lisp-controller) (:cmucl-graystream)
+  #+sbcl :depends-on #+sbcl (:sb-bsd-sockets :sb-posix)
+  #+cmu :depends-on #+cmu (:cmucl-graystream)
   #+(and (or cmu lispworks) ssl-available) :depends-on
   #+(and (or cmu lispworks) ssl-available) (:cl-ssl)
   

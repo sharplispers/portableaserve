@@ -1,5 +1,8 @@
 2004-02-14  Rudi Schlatte  <rudi@constantly.at>
 
+	* acl-compat.asd: Make Gray streams loading on cmucl a little bit
+	saner (but only a little bit)
+
 	* chunked-stream-mixin.lisp: Don't add to *features*, remove
 	provide form.
 
