@@ -81,11 +81,5 @@
       (setf (aref mb-vector (1- number-of-octets)) 0))
     (values mb-vector number-of-octets)))
 
-(defpackage :excl
-  (:import-from #:acl-compat.excl
-   #:filesys-type
-   #:cl-internal-real-time
-   #:string-to-octets))
-
 
 (provide 'acl-excl)
