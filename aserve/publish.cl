@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.6 2002/07/16 20:13:00 rudi Exp $
+;; $Id: publish.cl,v 1.7 2002/07/19 08:03:39 rudi Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -1295,6 +1295,12 @@
 				(if* (<= got 0) then (return))
 				(write-sequence buffer (request-reply-stream req)
 						:end got)
+                                ;; No preemptive multitasking in
+                                ;; cmucl, so we yield manually
+                                ;; (otherwise the server blocks on one
+                                ;; long request)
+                                #+cmucl
+                                (mp:process-yield)
 				(decf size got)))))))
 		      
 		      
