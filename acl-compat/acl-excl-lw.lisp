@@ -67,7 +67,6 @@
 		"FILESYS-TYPE"
 		"ERRORSET"
         "ATOMICALLY"
-	"VERSION>="
 		))
 
 (in-package :excl)
@@ -173,8 +172,5 @@
 
 (defmacro atomically (&body forms)
   `(mp:without-preemption ,@forms))
-
-(defun version>= (major minor release build)
-  nil)
 
 (provide 'acl-excl)
