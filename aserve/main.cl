@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.17 2002/04/08 20:56:37 neonsquare Exp $
+;; $Id: main.cl,v 1.18 2002/04/11 02:19:03 desoi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -2178,7 +2178,7 @@ in get-multipart-sequence"))|#
        )
       ((array character (*))
        (setq text-mode t))
-      (string (setq text-mode t))
+      #+lispworks (string (setq text-mode t))
       (t 
        (error 
 	"This function only accepts (array (unsigned-byte 8)) or character arrays")))
