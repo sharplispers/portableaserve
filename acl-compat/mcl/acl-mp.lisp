@@ -16,6 +16,7 @@
    #-openmcl-native-threads
    "PROCESS-ADD-RUN-REASON"
    "PROCESS-KILL"
+   "PROCESS-ACTIVE-P"
    "PROCESS-PROPERTY-LIST"
    #-openmcl-native-threads
    "PROCESS-REVOKE-RUN-REASON"
@@ -143,8 +144,10 @@
      (unless (ccl:process-active-p ,process) ;won't die unless enabled
        (ccl:process-reset-and-enable ,process) )
      (ccl:process-kill ,process)))
-
 )
+
+(defun process-active-p (process)
+  (ccl::process-active-p process))
 
 (defun interrupt-process (process function &rest args)
   "Run FUNCTION in PROCESS."

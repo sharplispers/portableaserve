@@ -24,11 +24,12 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: webact.cl,v 1.1 2003/12/02 14:36:33 rudi Exp $
+;; $Id: webact.cl,v 1.2 2003/12/05 21:23:15 kevinrosenberg Exp $
 
 
 
 (defpackage :net.aserve
+  (:use :common-lisp :acl-compat.excl :net.html.generator :net.uri)
   (:export 
    #:initialize-websession-master
    #:locate-action-path
@@ -465,6 +466,7 @@
 	    ; and user should be using / in http paths for that.
 	    (return-from compute-symname-as-filename nil))
     
+    #+allegro
     (if* sys:*tilde-expand-namestrings*
        then (setq realname (excl::tilde-expand-unix-namestring realname)))
     
@@ -486,7 +488,8 @@
   ;; websession is non-nil.
   ;;
   (let (pos sessid sm)
-    (if* (and (eq #\~ (aref following 0))
+    (if* (and (> (length following) 0)
+	      (eq #\~ (aref following 0))
 	      (setq pos (position #\~ following :start 1))
 	      (> (length following) (1+ pos))
 	      (eql #\/ (aref following (1+ pos)))
@@ -632,7 +635,7 @@
        then ; must restart it
 	    (setq *webaction-cleanup-process*
 	      (mp:process-run-function "session reaper" 
-		'webaction-cleanup-process)))))
+		#'webaction-cleanup-process)))))
 
 
   

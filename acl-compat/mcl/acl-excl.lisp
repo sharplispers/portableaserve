@@ -61,6 +61,7 @@
 		"*CL-DEFAULT-SPECIAL-BINDINGS*"
 		"FILESYS-SIZE"
 		"FILESYS-WRITE-DATE"
+		"FILESYS-INODE"
 		"STREAM-INPUT-FN"
 		"MATCH-REGEXP"
 		"COMPILE-REGEXP"
@@ -147,9 +148,21 @@
 (defun filesys-write-date (stream)
 	(file-write-date stream))
 
+#+openmcl
+(defun filesys-inode (path)
+  (let ((checked-path (probe-file path)))
+    (cond (checked-path
+	   (ccl:rlet ((lstat :stat))
+		     (ccl:with-cstrs ((str (namestring checked-path)))
+				     (#_stat str lstat))
+		     (ccl:pref lstat :stat.st_ino)))
+	  (t (error "path ~s does not exist" path)))))
+
+(defun cl-internal-real-time ()
+  (round (/ (get-internal-real-time) 1000)))
+
 (defun stream-input-fn (stream)
   stream)
-	
 
 (defun match-regexp (pattern string &key (return :string))
   (let ((res (cond ((stringp pattern)
