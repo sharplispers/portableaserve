@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.3 2002/02/01 22:56:49 neonsquare Exp $
+;; $Id: client.cl,v 1.4 2002/02/15 01:17:39 neonsquare Exp $
 
 ;; Description:
 ;;   http client code.
@@ -822,7 +822,7 @@ or \"foo.com:8000\", not ~s" proxy))
 
 (defun put-header-line-buffer (buff &optional buff2)
   ;; put back up to two buffers
-  (mp:without-scheduling
+  (acl-mp:without-scheduling
     (push buff *response-header-buffers*)
     (if* buff2 then (push buff2 *response-header-buffers*))))
 

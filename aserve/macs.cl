@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: macs.cl,v 1.2 2001/12/28 15:55:27 neonsquare Exp $
+;; $Id: macs.cl,v 1.3 2002/02/15 01:17:39 neonsquare Exp $
 
 ;; Description:
 ;;   useful internal macros
@@ -207,7 +207,7 @@
 #-allegro
 (defmacro with-timeout-local ((time &rest actions) &rest body)
   ;; same as with-timeout 
-  `(mp:with-timeout (,time ,@actions) ,@body))   ; ok w-t
+  `(acl-mp:with-timeout (,time ,@actions) ,@body))   ; ok w-t
 
 
 ;#+(version>= 6 1)

@@ -14,16 +14,18 @@
 ;    :binary-pathname nil
 ;    :binary-extension nil
     :components ((:file "nregex")
-                 (:file "acl-mp-cmu")
+                 (:file "acl-mp-package")
+                 (:file "acl-mp-cmu"
+                  :depends-on ("acl-mp-package"))
                  (:file "acl-socket-cmu")
                  (:file "acl-excl-cmu"
-                        :depends-on ("nregex"))
+                  :depends-on ("nregex"))
                  (:file "acl-sys-cmu")
                  (:file "meta")
                  (:file "uri"
-                        :depends-on ("meta"))
+                  :depends-on ("meta"))
                  (:file "chunked"
-                        :depends-on ("acl-excl-cmu")))
+                  :depends-on ("acl-excl-cmu")))
     ;; Stig: if we're CMU and a debian-package, we need graystreams
     #+(and cmu common-lisp-controller)
     :depends-on

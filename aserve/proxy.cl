@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.3 2001/08/09 14:44:09 neonsquare Exp $
+;; $Id: proxy.cl,v 1.4 2002/02/15 01:17:39 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -71,7 +71,7 @@
   disk-caches   ; list of pcache-disk items
 
   cleaner	; process doing housecleaning
-  (cleaner-lock  (mp:make-process-lock :name "cache cleaner")) 
+  (cleaner-lock  (acl-mp:make-process-lock :name "cache cleaner")) 
 
   size		; specified size of the cache (in blocks)
   high-water    ; when blocks in cache gets above this start flushing to disk
@@ -143,7 +143,7 @@
   high-water  ; when free blocks is less than this start flushing
   low-water   ; when free blocks is more than this stop flushing
   
-  (lock (mp:make-process-lock :name "disk pcache"))
+  (lock (acl-mp:make-process-lock :name "disk pcache"))
   ; doubly linked list of pcache-ents in this cache
   queueobj
   )
@@ -955,7 +955,7 @@ cached connection = ~s~%" cond cached-connection))
     
     (incf *connections-cached*)
     
-    (mp:without-scheduling
+    (acl-mp:without-scheduling
       (let ((start (first-valid-entry now queue)))
 		
 	(if* (null start)
@@ -993,7 +993,7 @@ cached connection = ~s~%" cond cached-connection))
   ;; build a new one if there isn't  one cached
   (let ((now (get-universal-time))
 	(queue *connection-cache-queue*))
-    (mp:without-scheduling
+    (acl-mp:without-scheduling
       (let ((start (first-valid-entry now queue))
 	    (prev nil))
 	(loop
@@ -1020,7 +1020,7 @@ cached connection = ~s~%" cond cached-connection))
 
     (incf *connections-made*)
 ;    (socket:with-pending-connect
-	(mp:with-timeout (*connection-timed-out-wait*
+	(acl-mp:with-timeout (*connection-timed-out-wait*
 			  (error "connection timed out"))
 	  (socket:make-socket :remote-host host
 			      :remote-port port
@@ -1084,8 +1084,8 @@ cached connection = ~s~%" cond cached-connection))
 (defun start-proxy-cache-processes (server pcache)
   (let ((name (format nil "~d-cache-cleaner" (incf *thread-index*))))
     (setf (pcache-cleaner pcache)
-      (mp:process-run-function 
-       name #-allegro nil
+      (acl-mp:process-run-function 
+       name 
        #'(lambda (server)
 	   (let ((*wserver* server)
 		 (pcache (wserver-pcache server)))
@@ -1094,12 +1094,11 @@ cached connection = ~s~%" cond cached-connection))
 		  then ; we are shutting down, exit thread
 		       (return))
 		 
-	       (mp:with-process-lock ((pcache-cleaner-lock pcache))
+	       (acl-mp:with-process-lock ((pcache-cleaner-lock pcache))
 		 (ignore-errors (cache-housekeeping)))
 	       (sleep 30))))
        server))
-    (setf (getf #+allegro (mp:process-property-list (pcache-cleaner pcache))
-		#-allegro (mp:process-plist (pcache-cleaner pcache))
+    (setf (getf (acl-mp:process-property-list (pcache-cleaner pcache))
 		'short-name)
       (format nil "c~d" *thread-index*))
     )
@@ -1140,7 +1139,7 @@ cached connection = ~s~%" cond cached-connection))
     
     (if* (null pcache) then (return-from kill-proxy-cache))
     
-    (mp:with-process-lock ((pcache-cleaner-lock pcache))
+    (acl-mp:with-process-lock ((pcache-cleaner-lock pcache))
       ;; now we know that the other thread cleaning out
       ;; the cache won't call cache-housekeeping while we're
       ;; busy doing our business.
@@ -1837,7 +1836,7 @@ cached connection = ~s~%" cond cached-connection))
 
 (defun unlock-pcache-ent (pcache-ent)
   ;; reduce the use count of this entry
-  (mp:without-scheduling
+  (acl-mp:without-scheduling
     (let ((val (pcache-ent-use pcache-ent)))
       (if* val
 	 then (if* (and (zerop (excl::fast
@@ -1858,7 +1857,7 @@ cached connection = ~s~%" cond cached-connection))
   (let ((prev (pcache-ent-prev pcache-ent))
 	(next (pcache-ent-next pcache-ent)))
     
-    (mp:without-scheduling
+    (acl-mp:without-scheduling
       ; unlink
       (if* (and prev next)
 	 then (setf (pcache-ent-next prev) next
@@ -1900,7 +1899,7 @@ cached connection = ~s~%" cond cached-connection))
 (defun kill-pcache-ent (pcache-ent &optional (pcache (wserver-pcache
 						      *wserver*)))
   ; make this entry dead
-  (mp::without-scheduling
+  (acl-mp:without-scheduling
     
     ; stop any scanning of this uri
     (setf (pcache-ent-level pcache-ent) -1) 
@@ -2113,7 +2112,7 @@ cached connection = ~s~%" cond cached-connection))
 	 then (return))
       
       ; pick off the lru and kill it
-      (mp::with-process-lock ((pcache-disk-lock pcache-disk))
+      (acl-mp:with-process-lock ((pcache-disk-lock pcache-disk))
 	(let ((lru (pcache-ent-prev lru-head)))
 	  (if* (not (eq lru mru-head))
 	     then ; a legit block
@@ -2147,7 +2146,7 @@ cached connection = ~s~%" cond cached-connection))
       (block main
 	(setq ent-todo nil)
 	
-	(mp:without-scheduling
+	(acl-mp:without-scheduling
 	  ;; find the next ent to process without other processes running
 	  (let ((lru lru-head))
 	    (loop
@@ -2209,7 +2208,7 @@ cached connection = ~s~%" cond cached-connection))
   ;; remove everything from all caches
   
   (let ((pcache (wserver-pcache server)))
-    (mp:with-process-lock ((pcache-cleaner-lock pcache))
+    (acl-mp:with-process-lock ((pcache-cleaner-lock pcache))
       (flush-dead-entries pcache)
       (flush-memory-cache pcache 0) ; empty memory
       (dolist (dcache (pcache-disk-caches pcache))
@@ -2253,7 +2252,7 @@ cached connection = ~s~%" cond cached-connection))
 	    (store-data-on-disk pcache-ent pcache-disk to-store-list)
 	    (log-proxy (pcache-ent-key pcache-ent) 0 :wd nil)
 	    (let ((ans
-		   (mp:without-scheduling
+		   (acl-mp:without-scheduling
 		     (if* (and (null (pcache-ent-state pcache-ent))
 			       (eql 1 (pcache-ent-use pcache-ent)))
 			then ; we are tre sole user of this entry so we cna
@@ -2308,14 +2307,11 @@ cached connection = ~s~%" cond cached-connection))
 			then (setf (pcache-ent-loading-flag pcache-ent) t))
 		     val)))))
     (if* flagval
-       then #+allegro (mp:process-wait "cache entry to be loaded"
-			     #'(lambda (pcache-ent) 
-				 (null (pcache-ent-loading-flag pcache-ent)))
-			     pcache-ent)
-	    #-allegro (mp:process-wait "cache entry to be loaded"
-			     #'(lambda () 
-				 (null (pcache-ent-loading-flag pcache-ent))))
-	    (return-from retrieve-pcache-from-disk))
+         then (acl-mp:process-wait "cache entry to be loaded"
+                                   #'(lambda (pcache-ent) 
+                                       (null (pcache-ent-loading-flag pcache-ent)))
+                                   pcache-ent)
+         (return-from retrieve-pcache-from-disk))
     
     ; it's our job to load in the entry
     (let* ((block-list (pcache-ent-disk-location pcache-ent))
@@ -2329,7 +2325,7 @@ cached connection = ~s~%" cond cached-connection))
 		       block-list))
       (log-proxy (pcache-ent-key pcache-ent) 0 :rd nil)
       
-      (mp:with-process-lock ((pcache-disk-lock pcache-disk))
+      (acl-mp:with-process-lock ((pcache-disk-lock pcache-disk))
 	; get a lock so we're the only thread doing operations
 	; on the stream to the cache
 	(dolist (ent block-list)
@@ -2368,7 +2364,7 @@ cached connection = ~s~%" cond cached-connection))
 (defun get-disk-cache-blocks (pcache-disk count)
   ;; return the location of count cache blocks
   
-  (mp:with-process-lock ((pcache-disk-lock pcache-disk))
+  (acl-mp:with-process-lock ((pcache-disk-lock pcache-disk))
     (let ((free (pcache-disk-free-blocks pcache-disk)))
       (decf free count)
       (if* (>= free 0)
@@ -2410,7 +2406,7 @@ cached connection = ~s~%" cond cached-connection))
   ;; list of block is a list of conses (start . end)
   ;; and we must insert them in the free list which has the
   ;; same form, and we want to merge blocks too.
-  (mp:with-process-lock ((pcache-disk-lock pcache-disk))
+  (acl-mp:with-process-lock ((pcache-disk-lock pcache-disk))
     (let ((giveback 0)
 	  (free-list (pcache-disk-free-list pcache-disk)))
       (dolist (ent list-of-blocks)

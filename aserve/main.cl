@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.12 2002/01/11 16:21:38 neonsquare Exp $
+;; $Id: main.cl,v 1.13 2002/02/15 01:17:39 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -243,7 +243,7 @@
   `(if* (member ,kind *debug-current* :test #'eq)
       then (write-sequence 
 	    (concatenate 'string
-	      (format nil "d> (~a): " (mp:process-name mp:*current-process*))
+	      (format nil "d> (~a): " (acl-mp:process-name acl-mp:*current-process*))
 	      (format nil ,@args))
 	    *debug-stream*)))
 
@@ -259,7 +259,7 @@
 		  (write-sequence
 		   (concatenate 'string 
 		     (format nil "x>(~a): " 
-			     (mp:process-name mp:*current-process*))
+			     (acl-mp:process-name acl-mp:*current-process*))
 		     (format nil ,@(cdr args)))
 		   *debug-stream*))))
 
@@ -580,7 +580,7 @@
        (catch 'with-http-response
 	 (compute-strategy ,g-req ,g-ent ,g-format)
 	 (up-to-date-check ,g-check-modified ,g-req ,g-ent)
-	 (mp::with-timeout ((if* (and (fixnump ,g-timeout)  ; ok w-t
+	 (acl-mp::with-timeout ((if* (and (fixnump ,g-timeout)  ; ok w-t
 				      (> ,g-timeout 0))
 			       then ,g-timeout
 			       else 9999999)
@@ -650,10 +650,10 @@ Problems with protocol may occur." (ef-name ef)))))
 ; safe versions during multiprocessing
 
 (defmacro atomic-incf (var)
-  `(mp:without-scheduling (incf ,var)))
+  `(acl-mp:without-scheduling (incf ,var)))
 
 (defmacro atomic-decf (var)
-  `(mp:without-scheduling (decf ,var)))
+  `(acl-mp:without-scheduling (decf ,var)))
 
 
 ;;;;;;;;; end macros
@@ -1179,15 +1179,15 @@ by keyword symbols and not by strings"
     (if* proc
        then ; we want this thread gone and the socket closed 
 	    ; so that we can reopen it if we want to.
-	    (mp:process-kill proc)
-	    (mp:process-allow-schedule)
+	    (acl-mp:process-kill proc)
+	    (acl-mp:process-allow-schedule)
 	    (let ((oldsock (wserver-socket server)))
 	      (if* oldsock then (ignore-errors (close oldsock))))
 	    (setf (wserver-accept-thread server) nil)))
   
   (dolist (th (wserver-worker-threads server))
-    (mp:process-kill th)
-    (mp:process-allow-schedule))
+    (acl-mp:process-kill th)
+    (acl-mp:process-allow-schedule))
   
   (setf (wserver-worker-threads server) nil)
   
@@ -1250,50 +1250,58 @@ by keyword symbols and not by strings"
   ; create accept thread
   (setf (wserver-accept-thread *wserver*)
 
-	#+allegro
-	(mp:process-run-function 
+;	#+(or allegro lispworks)
+	(acl-mp:process-run-function 
 	 (list :name (format nil "aserve-accept-~d" (incf *thread-index*))
 	       :initial-bindings
 	       `((*wserver*  . ',*wserver*)
 		 #+ignore (*debug-io* . ',(wserver-terminal-io *wserver*))
 		 ,@excl:*cl-default-special-bindings*))
-	 #'http-accept-thread
-         *wserver*)
+	 #'http-accept-thread)
 
-	#-allegro
+#| NEW-MP
+	#+cmu
 	(mp:process-run-function (format nil "aserve-accept-~d" (incf *thread-index*))
-				 nil #'http-accept-thread *wserver*)))
+				 nil #'http-accept-thread *wserver*)
+|#
+))
 
 (defun make-worker-thread ()
+#| NEW-MP
+  #+cmu
   (mp:without-scheduling
    (let* ((name (format nil "~d-aserve-worker" (incf *thread-index*)))
-	  (proc #-allegro
-		(mp:process-run-function name nil #'http-worker-thread *wserver*)
-		#+allegro
-		(mp:make-process :name name
+	  (proc (mp:process-run-function name nil #'http-worker-thread *wserver*)))
+     
+     (setf (mp:process-run-reasons proc) nil)
+
+     (push proc (wserver-worker-threads *wserver*))
+     (atomic-incf (wserver-free-workers *wserver*))
+     (setf (getf (mp:process-plist proc) 'short-name)
+	   (format nil "w~d" *thread-index*))))
+|#
+
+;   #+(or allegro lispworks)
+   (let* ((name (format nil "~d-aserve-worker" (incf *thread-index*)))
+	  (proc (acl-mp:make-process :name name
 				 :initial-bindings
 				 `((*wserver*  . ',*wserver*)
 				   #+ignore (*debug-io* . ',(wserver-terminal-io 
 							     *wserver*))
 				   ,@excl:*cl-default-special-bindings*)
 				 )))
-     #+allegro
-     (mp:process-preset proc #'http-worker-thread *wserver*)
-     #-allegro
-     (setf (mp:process-run-reasons proc) nil)
+
+     (acl-mp:process-preset proc #'http-worker-thread)
 
      (push proc (wserver-worker-threads *wserver*))
      (atomic-incf (wserver-free-workers *wserver*))
-     (setf (getf #+allegro (mp:process-property-list proc) 
-		 #-allegro (mp:process-plist proc) 'short-name)
-	   (format nil "w~d" *thread-index*))
-     )))
+     (setf (getf (acl-mp:process-property-list proc)  'short-name)
+	   (format nil "w~d" *thread-index*))))
 
 
-(defun http-worker-thread (server)
+(defun http-worker-thread ()
   ;; made runnable when there is an socket on which work is to be done
   (let ((*print-level* 5)
-        (*wserver* server)
         (*worker-request* nil)
 	(*default-aserve-external-format* 
 	 (wserver-external-format *wserver*))
@@ -1302,7 +1310,7 @@ by keyword symbols and not by strings"
     ;; need to restrict the print level
     (loop
 
-      (let ((sock (car (mp:process-run-reasons mp:*current-process*))))
+      (let ((sock (car (acl-mp:process-run-reasons acl-mp:*current-process*))))
 	#-allegro
 	(when (eq sock :kill) (return))
 	(restart-case
@@ -1325,17 +1333,17 @@ by keyword symbols and not by strings"
 	      :report "Abandon this request and wait for the next one"
 	    nil))
 	(atomic-incf (wserver-free-workers *wserver*))
-	(mp:process-revoke-run-reason mp:*current-process* sock))
+	(acl-mp:process-revoke-run-reason acl-mp:*current-process* sock))
     
       )))
 
-(defun http-accept-thread (server)
+(defun http-accept-thread ()
   ;; loop doing accepts and processing them
   ;; ignore sporatic errors but stop if we get a few consecutive ones
   ;; since that means things probably aren't going to get better.
   (let* ((error-count 0)
 	 (workers nil)
-	 (*wserver* server)
+         (server *wserver*)
 	 (main-socket (wserver-socket server))
 	 (ipaddrs (wserver-ipaddrs server)))
     (unwind-protect
@@ -1399,9 +1407,9 @@ by keyword symbols and not by strings"
 			   
 			    (setq workers (wserver-worker-threads server))
 			    (incf looped))
-		    (if* (null (mp:process-run-reasons (car workers)))
+		    (if* (null (acl-mp:process-run-reasons (car workers)))
 		       then (atomic-decf (wserver-free-workers server))
-			    (mp:process-add-run-reason (car workers) sock)
+			    (acl-mp:process-add-run-reason (car workers) sock)
 			    (pop workers)
 			    (return) ; satisfied
 			    )
@@ -1420,7 +1428,7 @@ by keyword symbols and not by strings"
 		 then (logmess "accept: too many errors, bailing")
 		      (return-from http-accept-thread nil)))))
       (ignore-errors (progn
-		       (mp:without-scheduling
+		       (acl-mp:without-scheduling
 			 (if* (eql (wserver-socket server) main-socket)
 			    then (setf (wserver-socket server) nil)))
 		       (close main-socket))))))
@@ -1468,7 +1476,7 @@ by keyword symbols and not by strings"
       (let ((req))
 	;; get first command
 	(loop
-	  (mp:with-timeout (*read-request-timeout* 
+	  (acl-mp:with-timeout (*read-request-timeout* 
 			    (debug-format :info "request timed out on read~%")
 			    ; this is too common to log, it happens with
 			    ; every keep alive socket when the user stops
@@ -1695,7 +1703,7 @@ by keyword symbols and not by strings"
 			     then ; must be no body
 				  ""
 			     else ; read until the end of file
-				  (mp:with-timeout 
+				  (acl-mp:with-timeout 
 				      (*read-request-body-timeout* 
 				       nil)
 				    (let ((ans (make-array 
@@ -1731,7 +1739,7 @@ by keyword symbols and not by strings"
 			   (accept-char #\linefeed stream))))
 	   
 	   (read-body-without-content-length (stream)
-	     (mp:with-timeout (*read-request-body-timeout* nil)
+	     (acl-mp:with-timeout (*read-request-body-timeout* nil)
 	       (if (equalp "keep-alive" (header-slot-value req :connection))
 		   "" ; no body
 		   (loop with result = (make-array 2048 :element-type 'character :fill-pointer 0)
@@ -2649,7 +2657,7 @@ in get-multipart-sequence"))|#
   ;; size
   (let (to-return)
     ;; force new ones to be allocated
-    (mp:without-scheduling 
+    (acl-mp:without-scheduling 
       (let ((buffers (sresource-data sresource)))
 	(if* size
 	   then ; must get one of at least a certain size
@@ -2685,7 +2693,7 @@ in get-multipart-sequence"))|#
   ;; return a resource to the pool
   ;; we silently ignore nil being passed in as a buffer
   (if* buffer 
-     then (mp:without-scheduling
+     then (acl-mp:without-scheduling
 	    ;; if debugging
 	    (if* (member buffer (sresource-data sresource) :test #'eq)
 	       then (error "freeing freed buffer"))

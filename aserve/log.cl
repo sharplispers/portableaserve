@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: log.cl,v 1.2 2001/12/28 15:55:27 neonsquare Exp $
+;; $Id: log.cl,v 1.3 2002/02/15 01:17:39 neonsquare Exp $
 
 ;; Description:
 ;;   iserve's logging
@@ -41,7 +41,7 @@
       (decode-universal-time (get-universal-time))
     (let ((str (format nil
 		       "~a: ~2,'0d/~2,'0d/~2,'0d - ~2,'0d:~2,'0d:~2,'0d - ~a~%"
-		       (mp:process-name mp:*current-process*)
+		       (acl-mp:process-name acl-mp:*current-process*)
 		       cmonth cday (mod cyear 100)
 		       chour cmin csec
 		       message)))
@@ -101,10 +101,9 @@
   ;;
   (brief-logmess 
    (format nil "~a ~d ~a ~a~@[ ~s~]"
-	   (or (getf #-allegro (mp:process-plist mp:*current-process*)
-		     #+allegro (mp:process-property-list mp:*current-process*)
+	   (or (getf (acl-mp:process-property-list acl-mp:*current-process*)
 		     'short-name)
-	       (mp:process-name mp:*current-process*))
+	       (acl-mp:process-name acl-mp:*current-process*))
 	   level
 	   action
 	   (if* (stringp uri) 

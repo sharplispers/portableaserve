@@ -25,7 +25,7 @@
 ;;
 
 ;;
-;; $Id: parse.cl,v 1.3 2001/12/28 15:55:27 neonsquare Exp $
+;; $Id: parse.cl,v 1.4 2002/02/15 01:17:39 neonsquare Exp $
 
 ;; Description:
 ;;   parsing and encoding code  
@@ -52,14 +52,14 @@
 
 (defun allocate-parseobj ()
   (let (res)
-    (mp::without-scheduling 
+    (acl-mp:without-scheduling 
       (if* (setq res (pop *parseobjs*))
 	 then (setf (parseobj-next res) 0)
 	      res
 	 else (make-parseobj)))))
 
 (defun free-parseobj (po)
-  (mp::without-scheduling
+  (acl-mp:without-scheduling
     (push po *parseobjs*)))
 
 (defun add-to-parseobj (po start end)

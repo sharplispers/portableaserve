@@ -5,6 +5,7 @@
   :members
   ("nregex"
    "acl-excl-lw"
+   "acl-mp-package"
    "acl-mp-lw"
    "acl-socket-lw"
    "acl-sys-lw"
@@ -19,6 +20,10 @@
 
    (:in-order-to :load "acl-excl-lw"
     (:requires (:load "nregex")))
+
+   (:in-order-to :compile "acl-mp-lw"
+    (:caused-by (:compile "acl-mp-package"))
+    (:requires (:load "acl-mp-package")))
 
    (:in-order-to :compile "acl-socket-lw"
     (:requires (:load "chunked")))
