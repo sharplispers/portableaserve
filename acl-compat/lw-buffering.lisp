@@ -123,7 +123,7 @@
                         ;; not yet begun responding, we get premature
                         ;; EOFs in some upper layer, or we'd have to
                         ;; busy-loop somewhere.
-                        while (and (if (> 0 n-read)
+                        while (and (if (< 0 n-read)
                                        (listen (native-lisp-stream stream))
                                      t)
                                    (setf byte (read-byte
