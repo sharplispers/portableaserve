@@ -539,15 +539,23 @@
 
 
 (defun start-server (&key (port 80) (ssl nil))
-	(declare (ignore ssl))
-	(mp:process-run-function "aserve-example" nil
-		#'(lambda ()
-			(start :server *wserver* 
-			       :port port 
-			       :listeners 5 
-			       :chunking #+lispworks t #-lispworks nil 
-			       :keep-alive #+lispworks t #-lispworks nil)))
-)
+  (declare (ignore ssl))
+  ;; Stig: Added this here to make things work for debian-packages
+  ;;       it should not alter anything if this was done in INSTALL.lisp 
+  #+cmu
+  (unless (find-if
+	   #'(lambda (proc) (string= (mp:process-name proc) "Top Level Loop"))
+	   (mp:all-processes))
+    (mp::startup-idle-and-top-level-loops))
+  
+  (mp:process-run-function "aserve-example" nil
+			   #'(lambda ()
+			       (start :server *wserver* 
+				      :port port 
+				      :listeners 5 
+				      :chunking #+lispworks t #-lispworks nil 
+				      :keep-alive #+lispworks t #-lispworks nil)))
+  )
 
 (defun start-simple-server (&key (port 80) ssl)
 	(start :server *wserver* :port port :chunking nil :listeners 0) :ssl ssl)
