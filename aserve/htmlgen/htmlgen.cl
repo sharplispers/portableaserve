@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: htmlgen.cl,v 1.2 2002/06/09 11:34:59 rudi Exp $
+;; $Id: htmlgen.cl,v 1.3 2002/06/10 17:15:14 rudi Exp $
 
 ;; Description:
 ;;   html generator
@@ -63,7 +63,7 @@
             :do (write-byte (char-code (schar string i)) stream))
 ;     (loop :for c :across (subseq string start end)
 ;           :do (write-byte (char-code c) stream))
-      (write-string string stream :start start :end end)))
+      (write-string string stream :start start :end (or end (length string)))))
 
 ;; html generation
 
