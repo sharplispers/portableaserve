@@ -1,8 +1,21 @@
 The Debian Package cl-portable-aserve
 -------------------------------------
 
-Add lots of info here.
+[Add more info later]
+
+Only tested with CMUCL on sid:
+
+$ lisp
+* (require :aserve)
+* (load "aserve:example.cl")
+* (in-package :aserve-example)
+* (start-server :port 2001)
+
+You can now test on http://localhost:2001/
+
+Mor info about Portable Aserve may be found on
+http://www.sourceforge.net/projects/portableaserve/
 
 
-Maintainer:
+Package maintainer:
 Stig E Sandoe <stig@users.sourceforge.net>
