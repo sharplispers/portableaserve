@@ -114,7 +114,11 @@ lisp-system"))
 	       #+mcl (:file "mcl-timers")
 	       (:file "acl-mp-package")
 	       (:unportable-cl-source-file "acl-mp"
- 		      :depends-on ("acl-mp-package" "acl-socket" #+mcl "mcl-timers"))
+ 		      :depends-on ("acl-mp-package"
+				   #-mcl "acl-socket"
+				   #+(and mcl openmcl) "acl-socket-openmcl"
+				   #+(and mcl (not openmcl)) "acl-socket-mcl"
+				   #+mcl "mcl-timers"))
 	       (:unportable-cl-source-file "acl-excl"
 		      :depends-on ("gray-stream-package" "nregex"))
                ;; Debian cmucl has gray stream support for
