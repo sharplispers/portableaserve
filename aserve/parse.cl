@@ -25,7 +25,7 @@
 ;;
 
 ;;
-;; $Id: parse.cl,v 1.9 2002/12/03 14:44:37 rudi Exp $
+;; $Id: parse.cl,v 1.10 2003/04/27 12:35:57 rudi Exp $
 
 ;; Description:
 ;;   parsing and encoding code  
@@ -241,9 +241,16 @@
 			   then (incf i)))
 		; i points to the [cr] lf
 		(if* echo 
-		   then (write-sequence buff *debug-stream*
-					:start 0
-					:end i))
+		   then
+                   #+allegro (write-sequence buff *debug-stream*
+                                             :start 0
+                                             :end i)
+                   ;;; No bivalent terminal streams on non-allegro lisps
+                   #-allegro (write-sequence
+                              (map 'string #'code-char (subseq buff 0 i))
+                              *debug-stream*)
+                   )
+                
 		(return i))))))
 
 	  
