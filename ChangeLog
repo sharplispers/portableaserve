@@ -1,3 +1,7 @@
+2004-01-21  Rudi Schlatte  <rudi@constantly.at>
+
+	* contrib/asdf.lisp: New upstream version.
+
 2004-01-11  Rudi Schlatte  <rudi@constantly.at>
 
 	* aserve/cgi.cl: Frob package references to acl-compat ones.
