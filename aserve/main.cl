@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.39 2004/06/10 03:52:10 kevinrosenberg Exp $
+;; $Id: main.cl,v 1.40 2004/08/31 02:53:17 kevinrosenberg Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -221,7 +221,7 @@
   (defun getpid () (sb-posix:getpid))
   (defun setuid (uid) (sb-posix:setuid uid))
   (defun setgid (gid) (sb-posix:setgid gid))
-  (defun unix-fork () (sb-unix:unix-fork)))
+  (defun unix-fork () (sb-posix:fork)))
 
 
 

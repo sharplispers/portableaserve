@@ -1,3 +1,6 @@
+2004-08-30  Kevin Rosenberg <kevin@rosenberg.net>
+        * Fixes for compilation on SBCL
+	
 2004-08-04  Kevin Rosenberg <kevin@rosenberg.net>
 	* Commit patch from Chaskiel M Grundman <cg2v@andrew.cmu.edu>
 	for better Allegro support

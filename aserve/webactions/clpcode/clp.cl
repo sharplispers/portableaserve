@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: clp.cl,v 1.3 2004/06/10 03:52:10 kevinrosenberg Exp $
+;; $Id: clp.cl,v 1.4 2004/08/31 02:53:17 kevinrosenberg Exp $
 
 
 (in-package :net.aserve)
@@ -50,9 +50,9 @@
   ;;  the session
   ;;
   (let ((location :request))
-    (if* (assoc "query" args :test #'equal)
+    (if* (assoc "query" args :test 'equal)
        then (setq location :query)
-     elseif (assoc "session" args :test #'equal)
+     elseif (assoc "session" args :test 'equal)
        then (setq location :session))
     
     (case location
@@ -65,14 +65,14 @@
 
 ;; NDL 2004-06-04  -- LispWorks needs the eval-when in order to use this form further down
 ;; the same file.
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defsetf locate-any-value .inv-locate-any-value))
 
 (defun .inv-locate-any-value (req args name value)
   (let ((location :request))
-    (if* (assoc "query" args :test #'equal)
+    (if* (assoc "query" args :test 'equal)
        then (setq location :query)
-     elseif (assoc "session" args :test #'equal)
+     elseif (assoc "session" args :test 'equal)
        then (setq location :session))
     
     (case location
@@ -82,7 +82,7 @@
        (setf (request-query-value name req) value))
       (:session
        (setf (websession-variable (websession-from-req req) name) value)))))
-  
+
 (defun cvt-to-integer (value)
   ;; convert value to an integer if possible
   (if* (integerp value)

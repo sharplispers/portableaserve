@@ -25,9 +25,6 @@
   (declare (ignore signal pid))
   (error "unix-signal not implemented in acl-excl-sbcl.lisp"))
 
-(defmacro without-package-locks (&body forms)
-  `(progn ,@forms))
-
 (defun filesys-inode (path)
   (multiple-value-bind (found ign inode)
       (sb-unix::unix-lstat path)
@@ -37,3 +34,4 @@
 
 (defun cl-internal-real-time ()
   (round (/ (get-internal-real-time) internal-time-units-per-second)))
+
