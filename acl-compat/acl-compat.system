@@ -3,7 +3,8 @@
 (in-package :CL-USER)
 
 ;; Stig: we're a debian-package if clc is present
-#+common-lisp-controller
+;; Rudi: Not if kludge-no-cclan is also present (see README.cmucl)
+#+(and common-lisp-controller (not kludge-no-cclan))
 (setf (logical-pathname-translations "acl-compat")
       '(("**;*.*.*" "cl-library:;acl-compat;**;*.*.*")))
 
