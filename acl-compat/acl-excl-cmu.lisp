@@ -217,76 +217,7 @@ program-controlled interception of a break."
 
 ;;; Bivalent Gray streams
 
-
-(defclass lisp-stream-mixin ()
-  ;; For bivalent streams, lisp-stream must be a stream of type
-  ;; (unsigned-byte 8)
-  ((lisp-stream :initarg :lisp-stream
-		:accessor lisp-stream)))
-
-(defclass bivalent-input-stream (lisp-stream-mixin
-                                 fundamental-character-input-stream
-                                 fundamental-binary-input-stream)
-  ())
-
-(defclass bivalent-output-stream (lisp-stream-mixin
-                                  fundamental-character-output-stream
-                                  fundamental-binary-output-stream)
-  ())
-
-(defclass bivalent-stream (bivalent-input-stream bivalent-output-stream)
-  ())
-
-
-(defun make-bivalent-input-stream (lisp-stream)
-  (declare (type system:lisp-stream lisp-stream))
-  (make-instance 'bivalent-input-stream :lisp-stream lisp-stream))
-
-(defun make-bivalent-output-stream (lisp-stream)
-  (declare (type system:lisp-stream lisp-stream))
-  (make-instance 'bivalent-output-stream :lisp-stream lisp-stream))
-
-(defun make-bivalent-stream (lisp-stream)
-  (declare (type system:lisp-stream lisp-stream))
-  (make-instance 'bivalent-stream :lisp-stream lisp-stream))
-
-
-(defmethod open-stream-p ((stream lisp-stream-mixin))
-  (common-lisp::open-stream-p (lisp-stream stream)))
-
-(defmethod close ((stream lisp-stream-mixin) &key abort)
-  (close (lisp-stream stream) :abort abort))
-
-(defmethod input-stream-p ((stream lisp-stream-mixin))
-  (input-stream-p (lisp-stream stream)))
-
-(defmethod output-stream-p ((stream lisp-stream-mixin))
-  (output-stream-p (lisp-stream stream)))
-
-(defmethod stream-element-type ((stream bivalent-input-stream))
-  '(or character (unsigned-byte 8)))
-
-(defmethod stream-read-char ((stream bivalent-input-stream))
-  (code-char (read-byte (lisp-stream stream) nil :eof)))
-
-(defmethod stream-read-byte ((stream bivalent-input-stream))
-  (read-byte (lisp-stream stream) nil :eof))
-
-;; stream-unread-char
-
-(defmethod stream-read-char-no-hang ((stream bivalent-input-stream))
-  (if (listen (lisp-stream stream))
-      (code-char (read-byte (lisp-stream stream)))
-      nil))
-
-;; stream-peek-char
-
-(defmethod stream-listen ((stream bivalent-input-stream))
-  (listen (lisp-stream stream)))
-
-(defmethod stream-clear-input ((stream bivalent-input-stream))
-  (clear-input (lisp-stream stream)))
-
+#||
 (defmethod stream-read-sequence ((stream bivalent-input-stream)
                                  (seq vector) &optional start end)
   (unless start (setf start 0))
@@ -317,26 +248,9 @@ program-controlled interception of a break."
   (declare (ignore end))
   start)
 
-(defmethod stream-element-type ((stream bivalent-output-stream))
-  '(or character (unsigned-byte 8)))
 
-(defmethod stream-write-char ((stream bivalent-output-stream) character)
-  (write-byte (char-code character) (lisp-stream stream)))
 
-(defmethod stream-write-byte ((stream bivalent-output-stream) byte)
-  (write-byte byte (lisp-stream stream)))
 
-(defmethod stream-line-column ((stream bivalent-output-stream))
-  nil)
-
-(defmethod stream-finish-output ((stream bivalent-output-stream))
-  (finish-output (lisp-stream stream)))
-
-(defmethod stream-force-output ((stream bivalent-output-stream))
-  (force-output (lisp-stream stream)))
-
-(defmethod stream-clear-output ((stream bivalent-output-stream))
-  (clear-output (lisp-stream stream)))
 
 (defmethod stream-write-sequence ((stream bivalent-output-stream)
                                   (seq vector) &optional (start 0) end)
@@ -386,6 +300,6 @@ program-controlled interception of a break."
   seq)
 
 ;;; End bivalent Gray streams
-
+||#
 
 (provide 'acl-excl)

@@ -109,7 +109,7 @@ lisp-system"))
 	       (:file "nregex")
                (:file "packages" :depends-on ("nregex"))
 	       #+mcl (:file "mcl-timers")
-	       ;;(:file "acl-mp-package")
+               #-lispworks (:file "lw-buffering" :depends-on ("packages"))
 	       (:unportable-cl-source-file "acl-mp"
  		      :depends-on ("packages" "acl-socket"
                                    ;"acl-mp-package"
@@ -132,17 +132,15 @@ lisp-system"))
 	       (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
 	       (:file "meta")
 	       (:file "uri" :depends-on ("meta"))
-          ;;     (:file "gray-stream-package"
-          ;;      :depends-on ("vendor-gray-streams"))
 	       #-(or allegro mcl)
 	       (:legacy-cl-source-file "chunked-stream-mixin"
-		      :depends-on ("packages" "acl-excl" #+nil "gray-stream-package"))
-
+		      :depends-on ("packages"
+                                   "acl-excl"
+                                   #-lispworks "lw-buffering"))
 	       #-(or allegro mcl cmu)
                (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
 	       #-(or allegro mcl cmu)
                (:file "acl-ssl-streams" :depends-on ("packages"))
-
                #+nil
                (:legacy-cl-source-file "md5")
                #+nil

@@ -11,7 +11,7 @@ CMU Common Lisp-specific requirements
    To begin, just load INSTALL.lisp.  Then, load
    aserve/examples/examples.cl and start the server with
 
-(net.aserve:start :port 8080 :chunking nil)
+(net.aserve:start :port 8080)
 
    If you experience problems or want to get rid of some annoying
    warnings, read on.

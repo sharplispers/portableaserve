@@ -14,23 +14,49 @@
     (input-index nil)
     (input-limit *default-input-buffer-size* :type fixnum)
     (output-buffer (make-array *default-output-buffer-size* :element-type '(unsigned-byte 8)))
-    (output-index 0))
+    (output-index 0)
     (output-limit *default-output-buffer-size* :type fixnum)))
 
 ;; Can be used to implement resourcing of buffers later
 (defun %allocate-buffer-state (&optional (input-limit *default-input-buffer-size*) (output-limit *default-output-buffer-size*))
+  (declare (ignore input-limit output-limit))
   (make-buffer-state))
 
-(defun %deallocate-buffer-state (state))
-        
-(defclass buffered-stream (fundamental-binary-input-stream fundamental-binary-output-stream)
-  ((buffer-state :initform (%allocate-buffer-state))
-   (lisp-stream :reader buffered-stream-lisp-stream
-                :initarg :lisp-stream)))
+(defun %deallocate-buffer-state (state)
+  (declare (ignore state)))
 
-(defgeneric STREAM-FLUSH-BUFFER (stream))
-(defgeneric STREAM-FILL-BUFFER (stream))
-(defgeneric STREAM-WRITE-BUFFER (stream buffer start end))
+;; Can be used to implement unbuffered encapsulating streams later
+(defclass native-lisp-stream-mixin ()
+  ((lisp-stream :initarg :lisp-stream
+		:reader native-lisp-stream))
+  (:documentation "Stream mixin that encapsulates a native stream."))
+
+(defclass buffered-stream-mixin (native-lisp-stream-mixin)
+  ((buffer-state :initform (%allocate-buffer-state)))
+  (:documentation "Stream mixin that provides buffering for a native lisp stream."))
+
+;; fundamental-bivalent-xxx-streams can be used to implement buffered
+;; and unbuffered bivalent streams.  At the moment, we only implement
+;; buffered ones.
+(defclass fundamental-bivalent-input-stream (fundamental-character-input-stream
+                                             fundamental-binary-input-stream)
+  ())
+
+(defclass fundamental-bivalent-output-stream (fundamental-character-output-stream
+                                              fundamental-binary-output-stream)
+  ())
+
+(defclass buffered-bivalent-input-stream (buffered-stream-mixin
+                                          fundamental-bivalent-input-stream)
+  ())
+
+(defclass buffered-bivalent-output-stream (buffered-stream-mixin
+                                           fundamental-bivalent-output-stream)
+  ())
+
+(defclass buffered-bivalent-stream (buffered-bivalent-input-stream
+                                    buffered-bivalent-output-stream)
+  ())
 
 (defmacro with-stream-output-buffer ((buffer index limit) stream &body forms)
   (let ((state (gensym "BUFFER-STATE-")))
@@ -40,79 +66,21 @@
                        (,limit ,(list 'buffer-state-output-limit state)))
        ,@forms))))
 
-(defmacro with-stream-input-buffer ((buffer index limit) stream &body forms)
-  (let ((state (gensym "BUFFER-STATE-")))
-  `(let ((,state (slot-value ,stream 'buffer-state)))
-     (symbol-macrolet ((,buffer ,(list 'buffer-state-input-buffer state))
-                       (,index ,(list 'buffer-state-input-index state))
-                       (,limit ,(list 'buffer-state-input-limit state)))
-       ,@forms))))
+;;; Encapsulated native streams
 
-(defmethod stream-fill-buffer ((stream buffered-stream))
-  (with-stream-input-buffer (buffer index limit) stream
-    (let* ((read-bytes (system:read-n-bytes (buffered-stream-lisp-stream stream)
-                                            buffer 0 limit nil)))
-      (cond ((zerop read-bytes) nil)
-            (t (setf limit read-bytes
-                     index 0)
-               t)))))
+(defmethod close ((stream native-lisp-stream-mixin) &key abort)
+  (close (native-lisp-stream stream) :abort abort))
 
-(defmethod stream-write-buffer ((stream buffered-stream) buffer start end)
-  (let ((lisp-stream (buffered-stream-lisp-stream stream)))
-    (write-sequence buffer lisp-stream :start start :end end)
-    (force-output lisp-stream)))
+(defmethod stream-listen ((stream native-lisp-stream-mixin))
+  (listen (native-lisp-stream stream)))
 
-(defmethod stream-flush-buffer ((stream buffered-stream))
-  (with-stream-output-buffer (buffer index limit)
-    (when (plusp index)
-      (stream-write-buffer stream buffer index limit)
-      (setf index 0))))
+(defmethod open-stream-p ((stream native-lisp-stream-mixin))
+  (common-lisp::open-stream-p (native-lisp-stream stream)))
 
-(defmethod stream-read-byte ((stream buffered-stream))
-  (with-stream-input-buffer (buffer index limit) stream
-     (unless (and index (<= index limit))
-       (when (null (stream-fill-buffer stream))
-	 (return-from stream-read-byte :eof)))
-     (prog1 (aref buffer index)
-       (incf index))))
+(defmethod stream-clear-output ((stream native-lisp-stream-mixin))
+  (clear-output (native-lisp-stream stream)))
 
-(defmethod stream-read-char ((stream buffered-stream))
-  (let ((byte (stream-read-byte stream)))
-    (declare (type (unsigned-byte 8) byte))
-    (if (eq byte :eof)
-        :eof
-      (code-char byte))))
-
-(defmethod stream-write-byte ((stream buffered-stream) byte)
-  (with-stream-output-buffer (buffer index limit) stream
-    (unless (<= index limit)
-      (stream-flush-buffer stream))
-    (setf (aref buffer index) byte)
-    (incf index)))
-
-(defmethod stream-write-char ((stream buffered-stream) character)
-  (stream-write-byte stream (char-code character)))
-
-(defmethod stream-write-string ((stream buffered-stream) string &optional start end)
-  (write-elements stream string start end #'stream-write-char))
-
-(defmethod stream-write-sequence (sequence (stream buffered-stream) &optional start end)
-  (write-elements stream sequence start end (%writer-function-for-sequence sequence)))
-
-(defun read-elements (stream sequence start end reader-fn)
-  (let* ((len (length sequence))
-         (chars (- (min (or end len) len) start)))
-    (loop for i upfrom start
-          repeat chars
-          for char = (funcall reader-fn socket-stream)
-          if (eq char :eof) do (return-from read-elements i)
-          do (setf (elt sequence i) char))
-    (+ start chars)))
-
-(defun write-elements (stream sequence start end writer-fn)
-  (typecase sequence
-    (array (loop for c across sequence do (funcall writer-fn stream c)))
-    (otherwise (dolist (c sequence) (funcall writer-fn stream c)))))
+;;; Input streams
 
 (declaim (inline %reader-function-for-sequence))
 (defun %reader-function-for-sequence (sequence)
@@ -122,18 +90,57 @@
     ((array signed-byte (*)) #'read-byte)
     (otherwise #'read-byte)))
 
-(declaim (inline %writer-function-for-sequence))
-(defun %writer-function-for-sequence (sequence)
-  (typecase sequence
-    (string #'write-char)
-    ((array unsigned-byte (*)) #'write-byte)
-    ((array signed-byte (*)) #'write-byte)
-    (otherwise #'write-byte)))
+(defun read-elements (socket-stream sequence start end reader-fn)
+  (let* ((len (length sequence))
+         (chars (- (min (or end len) len) start)))
+    (loop for i upfrom start
+          repeat chars
+          for char = (funcall reader-fn socket-stream)
+          if (eq char :eof) do (return-from read-elements i)
+          do (setf (elt sequence i) char))
+    (+ start chars)))
 
-(defmethod stream-read-sequence (sequence (stream buffered-stream) &optional start end)
-  (read-elements stream sequence start end (%reader-function-for-sequence sequence)))
+(defmacro with-stream-input-buffer ((buffer index limit) stream &body forms)
+  (let ((state (gensym "BUFFER-STATE-")))
+  `(let ((,state (slot-value ,stream 'buffer-state)))
+     (symbol-macrolet ((,buffer ,(list 'buffer-state-input-buffer state))
+                       (,index ,(list 'buffer-state-input-index state))
+                       (,limit ,(list 'buffer-state-input-limit state)))
+       ,@forms))))
 
-(defmethod stream-unread-char ((stream buffered-stream) character)
+(defgeneric stream-fill-buffer (stream))
+(defmethod stream-fill-buffer ((stream buffered-stream-mixin))
+  (with-stream-input-buffer (buffer index limit) stream
+    (let* ((read-bytes
+            #+cmu (system:read-n-bytes (native-lisp-stream stream)
+                                       buffer 0 limit nil)
+            #-cmu (read-sequence buffer (native-lisp-stream stream)
+                                 :start 0 :end limit)))
+      (if (zerop read-bytes)
+          nil
+          (setf index 0
+                limit read-bytes)))))
+
+(defmethod stream-read-byte ((stream buffered-bivalent-input-stream))
+  (with-stream-input-buffer (buffer index limit) stream
+     (unless (and index (<= index limit))
+       (when (null (stream-fill-buffer stream))
+	 (return-from stream-read-byte :eof)))
+     (prog1 (aref buffer index)
+       (incf index))))
+
+(defmethod stream-read-char ((stream buffered-bivalent-input-stream))
+  (let ((byte (stream-read-byte stream)))
+    (if (eq byte :eof)
+        :eof
+      (code-char byte))))
+
+(defmethod stream-read-char-no-hang ((stream buffered-bivalent-input-stream))
+  (if (listen stream)
+      (read-char stream)
+      nil))
+
+(defmethod stream-unread-char ((stream buffered-bivalent-input-stream) character)
   (with-stream-input-buffer (buffer index limit) stream
       (let ((new-index (1- index)))
         (when (minusp new-index)
@@ -142,35 +149,106 @@
               index new-index)))
   nil)
 
-(defmethod stream-peek-char ((stream buffered-stream))
+(defmethod stream-peek-char ((stream buffered-bivalent-input-stream))
   (let ((char (stream-read-char stream)))
     (unless (eq char :eof)
       (stream-unread-char stream char))
     char))
 
-(defmethod stream-read-line ((stream buffered-stream))
-  (let ((res (make-string 80))
-	(len 80)
-	(index 0))
+
+(defmethod stream-read-line ((stream buffered-bivalent-input-stream))
+  (let ((res (make-array 80 :element-type 'character :fill-pointer 0)))
     (loop
      (let ((ch (stream-read-char stream)))
        (cond ((eq ch :eof)
-	      (return (values (shrink-vector res index) t)))
-	     (t
-	      (when (char= ch #\newline)
-		(return (values (shrink-vector res index) nil)))
-	      (when (= index len)
-		(setq len (* len 2))
-		(let ((new (make-string len)))
-		  (replace new res)
-		  (setq res new)))
-	      (setf (schar res index) ch)
-	      (incf index)))))))
+	      (return (values (copy-seq res) t)))
+	     ((char= ch #\Linefeed)
+              (return (values (copy-seq res) nil)))
+             (t
+              (vector-push-extend ch res)))))))
 
-(defmethod stream-element-type ((stream buffered-stream))
-  '(unsigned-byte 8))
 
-(defmethod close ((stream buffered-stream) &key abort)
-  (close (buffered-stream-lisp-stream stream) :abort abort))
+(defmethod stream-read-sequence ((stream buffered-bivalent-input-stream) sequence &optional start end)
+  (read-elements stream sequence start end (%reader-function-for-sequence sequence)))
+
+;;(defmethod stream-clear-input ((stream buffered-bivalent-input-stream))
+;;  (clear-input (native-lisp-stream stream)))
+
+(defmethod stream-element-type ((stream fundamental-bivalent-input-stream))
+  '(or character (unsigned-byte 8)))
+
+;;; Output streams
+
+(declaim (inline %writer-function-for-sequence))
+(defun %writer-function-for-sequence (sequence)
+  (typecase sequence
+    (string #'stream-write-char)
+    ((array unsigned-byte (*)) #'stream-write-byte)
+    ((array signed-byte (*)) #'stream-write-byte)
+    (otherwise #'stream-write-byte)))
+
+(defun write-elements (stream sequence start end writer-fn)
+  (let* ((len (length sequence))
+         (start (min start (1- len)))
+         (end (min end len)))
+    (etypecase sequence
+      (simple-vector (loop for i from start below end
+                           do (funcall writer-fn stream (svref sequence i))))
+      (vector (loop for i from start below end
+                    do (funcall writer-fn stream (aref sequence i))))
+      (list (loop for i from start below end
+                  for c in (nthcdr start sequence)
+                  do (funcall writer-fn stream c))))))
+
+(defgeneric stream-write-buffer (stream buffer start end &optional wait))
+(defmethod stream-write-buffer ((stream buffered-stream-mixin) buffer start end &optional wait)
+  (let ((lisp-stream (native-lisp-stream stream)))
+    (write-sequence buffer lisp-stream :start start :end end)
+    (if wait
+        (finish-output lisp-stream)
+        (force-output lisp-stream))))
+
+(defgeneric stream-flush-buffer (stream &optional wait))
+(defmethod stream-flush-buffer ((stream buffered-stream-mixin) &optional wait)
+  (with-stream-output-buffer (buffer index limit) stream
+    (when (plusp index)
+      (stream-write-buffer stream buffer 0 index wait)
+      (setf index 0))))
+
+(defmethod stream-write-byte ((stream buffered-bivalent-output-stream) byte)
+  (with-stream-output-buffer (buffer index limit) stream
+    (unless (< index limit)
+      (stream-flush-buffer stream))
+    (setf (aref buffer index) byte)
+    (incf index)))
+
+(defmethod stream-write-char ((stream buffered-bivalent-output-stream) character)
+  (stream-write-byte stream (char-code character)))
+
+(defmethod stream-write-string ((stream buffered-bivalent-output-stream) string &optional start end)
+  (write-elements stream string start end #'stream-write-char))
+
+(defmethod stream-write-sequence ((stream buffered-stream-mixin) sequence
+                                  &optional start end)
+  (write-elements stream sequence start end (%writer-function-for-sequence sequence)))
+
+(defmethod stream-element-type ((stream fundamental-bivalent-output-stream))
+  '(or character (unsigned-byte 8)))
+
+(defmethod stream-line-column ((stream fundamental-bivalent-output-stream))
+  nil)
+
+(defmethod stream-finish-output ((stream buffered-bivalent-output-stream))
+  (stream-flush-buffer stream t))
+
+(defmethod stream-force-output ((stream buffered-bivalent-output-stream))
+  (stream-flush-buffer stream nil))
+
+(defmethod stream-clear-output ((stream buffered-bivalent-output-stream))
+  (with-stream-output-buffer (buffer index limit) stream
+     (setf index 0
+           limit 0))
+  (call-next-method)                    ; Clear native stream also
+  )
 
 

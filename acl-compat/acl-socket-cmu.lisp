@@ -55,7 +55,7 @@ client wanted to initiate a connection and wait is nil."
                    :element-type (element-type server-socket)
                    :auto-close t)))
       (if (eq (stream-type server-socket) :bivalent)
-          (excl::make-bivalent-stream stream)
+          (make-bivalent-stream stream)
           stream))))
 
 (defun make-socket (&key (remote-host "localhost")
@@ -90,7 +90,7 @@ to read about the missing parts."
                       (ext:connect-to-inet-socket remote-host remote-port)
                       :input t :output t :element-type element-type)))
          (if (eq :bivalent format)
-             (excl::make-bivalent-stream stream)
+             (make-bivalent-stream stream)
              stream))))))
 
 (defmethod close ((server server-socket) &key abort)
@@ -149,8 +149,8 @@ streams and handled by their close methods."
 
 (defgeneric get-fd (stream))
 
-(defmethod get-fd ((stream excl::lisp-stream-mixin))
-  (system:fd-stream-fd (excl::lisp-stream stream)))
+(defmethod get-fd ((stream gray-stream::native-lisp-stream-mixin))
+  (system:fd-stream-fd (gray-stream::native-lisp-stream stream)))
 
 (defmethod get-fd ((stream system:lisp-stream))
   (system:fd-stream-fd stream))
@@ -175,11 +175,30 @@ streams and handled by their close methods."
         (declare (ignore host))
         port)))
 
-(defun socket-control (stream &key output-chunking output-chunking-eof input-chunking)
-  (declare (ignore stream))
-  (warn "SOCKET-CONTROL function not implemented.")
-  (when (or output-chunking output-chunking-eof input-chunking)
-    (error "Chunking is not yet supported in cmucl. Restart the server with chunking off.")))
+;; Now, throw chunking in the mix
+
+(defclass chunked-stream (de.dataheaven.chunked-stream-mixin::chunked-stream-mixin
+                          gray-stream::buffered-bivalent-stream)
+  ())
+
+
+(defun make-bivalent-stream (lisp-stream)
+  (make-instance 'chunked-stream :lisp-stream lisp-stream))
+
+
+(defun socket-control (stream &key (output-chunking nil oc-p) output-chunking-eof (input-chunking nil ic-p))
+  (when oc-p
+    (when output-chunking
+      (de.dataheaven.chunked-stream-mixin::initialize-output-chunking stream))
+    (setf (de.dataheaven.chunked-stream-mixin::output-chunking-p stream)
+          output-chunking))
+  (when output-chunking-eof
+    (de.dataheaven.chunked-stream-mixin::disable-output-chunking stream))
+  (when ic-p
+    (when input-chunking
+      (de.dataheaven.chunked-stream-mixin::initialize-input-chunking stream))
+    (setf (de.dataheaven.chunked-stream-mixin::input-chunking-p stream)
+          input-chunking)))
 
 
 (provide 'acl-socket)
