@@ -101,9 +101,11 @@ process-add-run-reason, process-revoke-run-reason.")
 
 (defun process-run-function (name-or-options preset-function
                              &rest preset-arguments)
-  (let ((process (ctypecase name-or-options
-                   (string (make-process :name name-or-options))
-                   (list (apply #'make-process name-or-options)))))
+  (let ((process (etypecase name-or-options
+                   (string (make-process :name name-or-options
+                                         :run-reasons '(t)))
+                   (list (apply #'make-process :run-reasons '(t)
+                                name-or-options)))))
     (apply #'acl-mp::process-preset process preset-function preset-arguments)
     process))
 

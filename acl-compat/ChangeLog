@@ -1,4 +1,7 @@
-2004-02-02  Rudi Schlatte  <rudi@62-99-252-74.C-GMITTE.Xdsl-line.inode.at>
+2004-02-02  Rudi Schlatte  <rudi@constantly.at>
+
+	* cmucl/acl-mp.lisp (process-run-function): Give the new process
+	a run reason, so that it doesn't hang from the start.
 
 	* cmucl/acl-socket.lisp (get-fd): Added method for server-socket.
 
