@@ -117,12 +117,13 @@
 (defun process-wait-with-timeout (whostate seconds function &rest args)
   (apply #'mp:process-wait-with-timeout whostate seconds function args))
 
-(defun wait-for-input-available (streams &key (wait-function #'stream:stream-listen) whostate timeout)
+(defun wait-for-input-available (streams &key (wait-function #'socket::stream-input-available) whostate timeout)
   (let ((collected-fds nil))
     (flet ((fd (stream-or-fd)
              (typecase stream-or-fd
                (stream::os-file-handle-stream (stream::os-file-handle-stream-file-handle stream-or-fd))
                (comm:socket-stream (comm:socket-stream-socket stream-or-fd))
+               (socket::passive-socket (socket::socket-os-fd stream-or-fd))
                (fixnum stream-or-fd)))
            (collect-fds ()
              (setf collected-fds
