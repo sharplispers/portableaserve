@@ -344,7 +344,7 @@ pos2) result)
   (setf (uri-path uri)
         (%render-parsed-path value)))
 
-(defun copy-uri (uri &key place scheme host port path query fragment plist)
+(defun copy-uri (uri &key place scheme host port path query fragment plist string)
   (when place
     (error "PLACE keyword of COPY-URI not implemented."))
   (make-instance 'uri
