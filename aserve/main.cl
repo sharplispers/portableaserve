@@ -1,4 +1,4 @@
-;; -*- mode: common-lisp; package: net.aserve -*-
+;; -*- mode: lisp; package: net.aserve -*-
 ;;
 ;; main.cl
 ;;
@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.2 2001/08/08 15:21:26 neonsquare Exp $
+;; $Id: main.cl,v 1.3 2001/08/09 08:04:17 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -515,7 +515,7 @@ Problems with protocol may occur." (ef-name ef)))))
 	(g-ent (gensym))
 	(g-format (gensym))
 	(g-headers (gensym))
-	(g-external-format (gensym))
+	#+allegro(g-external-format (gensym))
 	)
     `(let ((,g-req ,req)
 	   (,g-ent ,ent)
@@ -2314,8 +2314,9 @@ in get-multipart-sequence"))|#
       (labels ((make-result ()
                             (make-array 0 :element-type 'base-char :fill-pointer 0 :adjustable t))
                (skip-day-of-week (&aux c)
+				 (declare (ignorable c))
                                  (meta:match [$[@(alpha-char c)] !(skip-delimiters)]))
-               (skip-delimiters (&aux c)
+               (skip-delimiters ()
                                 (meta:match $[{#\: #\, #\space #\-}]))
                (word (&aux (old-index meta::index) c
                            (result (make-result)))
