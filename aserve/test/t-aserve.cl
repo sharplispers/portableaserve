@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: t-aserve.cl,v 1.2 2002/06/09 11:34:59 rudi Exp $
+;; $Id: t-aserve.cl,v 1.3 2003/08/31 09:05:33 rudi Exp $
 
 ;; Description:
 ;;   test iserve
@@ -31,8 +31,16 @@
 ;;- http://www.franz.com/~jkf/coding_standards.html
 ;;-
 
+#+allegro
 (eval-when (compile load eval)
   (require :tester))
+
+;;; Get Kevin Rosenberg's port of Franz tester at
+;;; http://files.b9.com/ptester/
+#-allegro
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (asdf:oos 'asdf:load-op :ptester)
+  (rename-package (find-package :ptester) :ptester '(:util.test)))
 
 (defpackage :net.aserve.test
   (:use :common-lisp :excl :net.html.generator :net.aserve 
@@ -43,7 +51,7 @@
 (in-package :net.aserve.test)
 
 ; set to nil before loading the test to prevent the test from auto-running
-(defvar user::*do-aserve-test* t)
+(defvar common-lisp-user::*do-aserve-test* t)
 (defvar *x-proxy* nil) ; when true x-do-http-request will go through a proxy
 (defvar *x-ssl*   nil) ; true when we want to do ssl client calls
 (defvar *proxy-wserver* nil)
@@ -1644,7 +1652,7 @@
 
 
     
-(if* user::*do-aserve-test* 
+(if* common-lisp-user::*do-aserve-test* 
    then (test-aserve *test-timeouts*)
    else (format t 
 		" (net.aserve.test::test-aserve) will run the aserve test~%"))

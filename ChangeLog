@@ -1,3 +1,8 @@
+2003-08-31  Rudi Schlatte  <rudi@constantly.at>
+
+	* aserve/test/t-aserve.cl: First steps for activating test code,
+	using kmr's port of Franz's tester
+
 2003-04-27  Rudi Schlatte  <rudi@constantly.at>
 
 	* aserve/parse.cl (read-headers-into-buffer): (Finally) merge
