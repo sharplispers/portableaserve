@@ -279,26 +279,28 @@ program-controlled interception of a break."
   (unless end (setf end (length seq)))
   (assert (<= end (length seq)))
   (if (subtypep (array-element-type seq) 'character)
-      (loop for i from start below end
-            do (setf (aref seq i) (code-char (read-byte stream))))
+      (loop for count upfrom start
+            for i from start below end
+            do (setf (aref seq i) (code-char (read-byte stream)))
+            finally (return count))
       (read-sequence seq (lisp-stream stream)
-                     :start start :end end))
-  seq)
+                     :start start :end end)))
 
 (defmethod stream-read-sequence ((stream bivalent-input-stream)
                                  (seq cons) &optional (start 0) end)
   (unless end (setf end (length seq)))
   (let  ((seq (nthcdr start seq)))
-    (loop for head across seq
+    (loop for count upfrom start
+          for head on seq
           for i below (- end start)
-          while seq
-          do (setf (car seq) (read-byte stream))))
-  seq)
+          while head
+          do (setf (car head) (read-byte stream))
+          finally (return count))))
 
 (defmethod stream-read-sequence ((stream bivalent-input-stream)
                                  (seq null) &optional (start 0) end)
-  (declare (ignore start end))
-  seq)
+  (declare (ignore end))
+  start)
 
 (defmethod stream-element-type ((stream bivalent-output-stream))
   '(or character (unsigned-byte 8)))
