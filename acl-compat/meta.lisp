@@ -2,9 +2,9 @@
 ;;;; (c) 2001 by Jochen Schmidt.
 ;;;;
 ;;;; File:            meta.lisp
-;;;; Revision:        1.0.0
+;;;; Revision:        1.0.1
 ;;;; Description:     A simple parsing technique
-;;;; Date:            01.07.2001
+;;;; Date:            30.05.2002
 ;;;; Authors:         Jochen Schmidt
 ;;;; Tel:             (+49 9 11) 47 20 603
 ;;;; Email:           jsc@dataheaven.de
@@ -75,7 +75,7 @@
      (let ((old-index-symbol (gensym "OLD-INDEX-")))
        `(let ((,old-index-symbol index))
           (or (and ,@(map 'list #'(lambda (c) `(string-match ,c
-                                                             :source-symbol ',source-symbol)) x))
+                                                             :source-symbol ,source-symbol)) x))
               (progn (setq index ,old-index-symbol) nil)))))))
 
 (defmacro string-match-type (x v &key source-symbol)
