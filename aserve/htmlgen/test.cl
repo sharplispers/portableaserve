@@ -1,4 +1,4 @@
-(defpackage :user (:use :net.html.generator))
+(defpackage :user (:use :htmlgen))
 
 (defun simple-table-a ()
   (with-open-file (p "~/public_html/test.html"

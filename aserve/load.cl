@@ -1,6 +1,6 @@
 ;; load in aserve
 ;;
-;; $Id: load.cl,v 1.1 2001/08/06 03:42:24 neonsquare Exp $
+;; $Id: load.cl,v 1.2 2002/06/09 11:35:01 rudi Exp $
 ;;
 
 (defvar *loadswitch* :compile-if-needed)
@@ -18,6 +18,7 @@
       "log" 
       "client"
       "proxy"
+      "cgi"
       ))
 
 (defparameter *aserve-other-files*
@@ -41,9 +42,24 @@
       "load.cl"
       "test/t-aserve.cl"
       "test/server.pem"
+      "test/testdir/suba/subsuba/foo.html"
+      "test/testdir/suba/access.cl"
+      "test/testdir/suba/foo.html"
+      "test/testdir/suba/subd/ddd.html"
+      "test/testdir/subc/ccc.html"
+      "test/testdir/subd/ddee.html"
+      "test/testdir/access.cl"
+      "test/testdir/aaa.foo"
+      "test/testdir/bbb.ign"
+      "test/testdir/ccc.html"
+      "test/testdir/readme"
+      "test/testdir/subb/access.cl"
+      "test/testdir/subb/foo.html"
+      "examples/cgitest.sh"
       "doc/aserve.html"
       "doc/tutorial.html"
       "doc/htmlgen.html"
+      "doc/cvs.html"
       ))
 
 (defparameter *aserve-examples*
@@ -145,6 +161,13 @@
 	   *aserve-root*
 	   *aserve-root*
 	   ))
+  
+  (run-shell-command 
+   (format nil "mkdir ~aaserve-dist/test/testdir ~aaserve-dist/test/testdir/suba ~aaserve-dist/test/testdir/subb"
+	   *aserve-root*
+	   *aserve-root*
+	   *aserve-root*
+	   ))
    
   (copy-files-to *aserve-files* "aserve.fasl" :root *aserve-root*)
   
@@ -152,19 +175,21 @@
 		  "doc/aserve.html"
 		  "doc/tutorial.html"
 		  "doc/htmlgen.html"
+		  "doc/cvs.html"
 		  "readme.txt"
 		  "examples/examples.cl"
 		  "examples/examples.fasl"
 		  "examples/foo.txt"
 		  "examples/fresh.jpg"
-		  "examples/prfile9.jpg"))
+		  "examples/prfile9.jpg"
+		  "examples/cgitest.sh"))
     (copy-files-to (list file)
 		   (format nil "aserve-dist/~a" file)
 		   :root *aserve-root*)))
 
 
 ;; checklist for publishing aserve source for source-master:
-;; 1. incf version number in main.cl, edit ChangeLog and commit
+;; 1. incf version number in main.cl,doc/aserve.html, edit ChangeLog and commit
 ;; 2. make clean
 ;; 3. start lisp and load aserve/load to compile all files, there should
 ;;    be no warnings.
@@ -173,7 +198,8 @@
 ;; 5. :cl test/t-aserve
 ;; 6. (make-src-distribution)
 ;; 7. (ftp-publish-src)
-;; 8. (publish-docs)   ;  to put latest docs on aserve web page
+;; 8. on cobweb in /fi/opensource/src/aserve 
+;;    do cvs update to put code on opensource site
 ;; 9. on spot run /fi/sa/bin/aserve-sync
 ;; 10. ftp upload.sourceforge.net and put the tar file in the
 ;;     incoming directory, then go to the aserve sourceforge web page and 
@@ -195,7 +221,7 @@
 
 
 
-(defun make-src-distribution ()
+(defun make-src-distribution (&optional (dist-name aserve-version-name))
   ;; make a source distribution of aserve
   ;;
     
@@ -207,23 +233,53 @@
 	   *aserve-root*
 	   
 	   *aserve-root*
-	   aserve-version-name
+	   dist-name
 	   
 	   *aserve-root*
-	   aserve-version-name
+	   dist-name
 	   ))
   
   (run-shell-command 
    (format nil "mkdir ~aaserve-src/~a/doc ~aaserve-src/~a/examples ~aaserve-src/~a/test"
 	   *aserve-root*
-	   aserve-version-name
+	   dist-name
 	   
 	   *aserve-root*
-	   aserve-version-name
+	   dist-name
 	   
 	   *aserve-root*
-	   aserve-version-name
+	   dist-name
 	   
+	   ))
+  (run-shell-command 
+   (format nil "mkdir ~aaserve-src/~a/test/testdir ~aaserve-src/~a/test/testdir/suba ~aaserve-src/~a/test/testdir/subb"
+	   *aserve-root*
+	   dist-name
+	   
+	   *aserve-root*
+	   dist-name
+	   
+	   *aserve-root*
+	   dist-name
+	   
+	   ))
+  
+  (run-shell-command 
+   (format nil "mkdir  ~aaserve-src/~a/test/testdir/subc ~aaserve-src/~a/test/testdir/subd"
+	   *aserve-root*
+	   dist-name
+	   
+	   *aserve-root*
+	   dist-name
+	   
+	   ))
+  (run-shell-command 
+   (format nil "mkdir ~aaserve-src/~a/test/testdir/suba/subsuba ~aaserve-src/~a/test/testdir/suba/subd "
+	   *aserve-root*
+	   dist-name
+	   
+	   *aserve-root*
+	   dist-name
 	   ))
 	   
   (dolist (file (append (mapcar #'(lambda (file) (format nil "~a.cl" file))
@@ -231,7 +287,7 @@
 			*aserve-other-files*))
     (copy-files-to
      (list file)
-     (format nil "aserve-src/~a/~a" aserve-version-name file)
+     (format nil "aserve-src/~a/~a" dist-name file)
      :root *aserve-root*)))
 
 

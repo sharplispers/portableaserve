@@ -172,17 +172,23 @@
 			:file
 			nil)))
 
-(defmacro errorset (&body form)
-	`(let* ((ok nil)
-			(results 
-				(ignore-errors
-					(prog1
-						(multiple-value-list
-							,@form)
-						(setq ok t)))))
-		(if ok
-			(apply #'values t results)
-			nil)))
+(defmacro errorset (form &optional (announce nil) (catch-breaks nil))
+  "This macro is incomplete.  It was hacked to get AllegroServe
+running, but the announce and catch-breaks arguments are ignored.  See
+documentation at
+http://franz.com/support/documentation/6.1/doc/pages/operators/excl/errorset.htm
+An implementation of the catch-breaks argument will necessarily be
+implementation-dependent, since Ansi does not allow any
+program-controlled interception of a break."
+  (declare (ignore announce catch-breaks))
+  `(let* ((ok nil)
+          (results (ignore-errors
+                     (prog1 (multiple-value-list ,form)
+                       (setq ok t)))))
+     (if ok
+         (apply #'values t results)
+         nil)))
+
 
 (defmacro atomically (&body forms)
   `(mp:without-preemption ,@forms))
@@ -190,6 +196,9 @@
 (defmacro fast (&body forms)
   `(locally (declare (optimize (speed 3) (safety 0) (debug 0)))
 	    ,@forms))
+
+(defmacro without-package-locks (&body forms)
+  `(progn ,@forms))
 
 (define-condition socket-error (error)
   ((stream :initarg :stream)

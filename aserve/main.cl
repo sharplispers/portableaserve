@@ -1,4 +1,4 @@
-;; -*- mode: lisp; package: net.aserve -*-
+;; -*- mode: common-lisp; package: net.aserve -*-
 ;;
 ;; main.cl
 ;;
@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.18 2002/04/11 02:19:03 desoi Exp $
+;; $Id: main.cl,v 1.19 2002/06/09 11:35:01 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -47,10 +47,15 @@
    ; #:debug-on			
    #:denied-request
    #:enable-proxy
+   #:ensure-stream-lock
+   #:entity-plist
    #:failed-request
    #:form-urlencoded-to-query
+   #:function-authorizer ; class
+   #:function-authorizer-function
    #:get-basic-authorization
    #:get-cookie-values
+   #:get-all-multipart-data
    #:get-multipart-header
    #:get-multipart-sequence
    #:get-request-body
@@ -61,11 +66,15 @@
    #:locator		; class
    #:location-authorizer  ; class
    #:location-authorizer-patterns
+   #:map-entities
+   #:parse-multipart-header
    #:password-authorizer  ; class
    #:process-entity
    #:publish
    #:publish-file
    #:publish-directory
+   #:publish-multi
+   #:publish-prefix
    #:query-to-form-urlencoded
    #:reply-header-slot-value 
    #:run-cgi-program
@@ -76,6 +85,7 @@
    #:vhost-log-stream
    #:vhost-error-stream
    #:vhost-names
+   #:vhost-plist
 
    #:request-method
    #:request-protocol
@@ -146,13 +156,13 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 12 :c))
+(defparameter *aserve-version* '(1 2 23))
 
 #+allegro
 (eval-when (eval load)
     (require :sock)
     (require :process)
-    #| #+(version>= 6) |# (require :acldns) ; not strictly required but this is preferred
+    #+ (and allegro (version>= 6)) (require :acldns) ; not strictly required but this is preferred
 )
 
 #+lispworks
@@ -169,11 +179,10 @@
 
 (defparameter *aserve-version-string*
     ;; for when we need it in string format
-    (format nil "~d.~d.~d.~a" 
+    (format nil "~d.~d.~d" 
 	    (car *aserve-version*)
 	    (cadr *aserve-version*)
-	    (caddr *aserve-version*)
-            (cadddr *aserve-version*)))
+	    (caddr *aserve-version*)))
 	    
 ;;;;;;;  debug support 
 
@@ -187,7 +196,9 @@
 ; set to true to automatically close sockets about to be gc'ed
 ; open sockets should never be subject to gc unless there's a bug
 ; in the code leading to leaks.
-(defvar *watch-for-open-sockets* nil) 
+
+; rudi: cmucl has socket auto-finalization (see excl:accept-connection)
+(defvar *watch-for-open-sockets* #+allegro t #-allegro nil) 
 
 (defmacro define-debug-kind (name class what)
   `(progn (ecase ,class
@@ -337,6 +348,7 @@
 ;; more specials
 (defvar *max-socket-fd* 0) ; the maximum fd returned by accept-connection
 (defvar *aserve-debug-stream* nil) ; stream to which to seen debug messages
+(defvar *debug-connection-reset-by-peer* nil) ; true to signal these too
 (defvar *default-aserve-external-format* :latin1-base) 
 (defvar *worker-request*)  ; set to current request object
 
@@ -348,7 +360,7 @@
     )
 
 ; this is only useful on acl6.1 where we do timeout on I/O operations
-(defvar *http-io-timeout* 60)
+(defvar *http-io-timeout* 120)
 
 ; usually set to the default server object created when aserve is loaded.
 ; users may wish to set or bind this variable to a different server
@@ -360,10 +372,8 @@
 ; type of socket stream built.
 ; :hiper is possible in acl6
 (defvar *socket-stream-type* 
-;    #+(and allegro (version>= 6)) :hiper
-;    #-(and allegro (version>= 6)) :stream
-  #+allegro :hiper
-  #-allegro :stream
+  #+(and allegro (version>= 6)) :hiper
+  #-(and allegro (version>= 6)) :stream
 )
 
 ;; specials from other files
@@ -372,7 +382,7 @@
 (defvar *header-keyword-array*
     ;; indexed by header-number, holds the keyword naming this header
     )
-    
+
 (defvar *not-modified-entity*) ; used to send back not-modified message
 
 	
@@ -423,12 +433,12 @@
     :initarg :log-function
     :initform nil	; no logging initially
     :accessor wserver-log-function)
-   
+
    (log-stream
     ;; place for log-function to store stream to log to if
-    ;; it makes sense to do so
+    ;; it makes sense to do so.  
     :initarg :log-stream
-    :initform  t 	; initially to *standard-output*
+    :initform *initial-terminal-io*
     :accessor wserver-log-stream)
 
    (accept-hook
@@ -469,8 +479,7 @@
     :initarg :io-timeout
     :initform *http-io-timeout*
     :accessor wserver-io-timeout)
-
-   
+    
    ;;
    ;; -- internal slots --
    ;;
@@ -539,30 +548,49 @@
 		 then (socket:local-port sock)
 		 else "-no socket-")))))
      
-     
+
 ;;;;; virtual host class
 (defclass vhost ()
   ((log-stream :accessor vhost-log-stream
 	       :initarg :log-stream
-	       :initform *standard-output*)
+	       :initform (ensure-stream-lock *standard-output*))
    (error-stream :accessor vhost-error-stream
 		 :initarg :error-stream
-		 :initform *standard-output*)
+		 :initform (ensure-stream-lock *standard-output*))
    (names :accessor vhost-names
 	  :initarg :names
-	  :initform nil)))          
+	  :initform nil)
+   
+   ; vhost specific filters, see wserver-filters for doc
+   (filters :accessor vhost-filters
+	    :initarg :filters
+	    :initform nil)
+
+   ; property list for users to store per-vhost specific info
+   (plist  :accessor vhost-plist
+	   :initarg :plist
+	   :initform nil)
+   ))
+
+(defmethod print-object ((vhost vhost) stream)
+  (print-unreadable-object (vhost stream :type t :identity t)
+    (format stream "~{ ~a~}"
+	    (let ((names (vhost-names vhost)))
+	      (if* (or (null names) (consp names)) 
+		 then names
+		 else (list names))))))
 
 
 ;;;;;; macros 
 
 (defmacro with-http-response ((req ent
-				&key timeout
-				     (check-modified t)
-				     (response '*response-ok*)
-				     content-type
-                                     format
-				     )
-			       &rest body)
+			       &key timeout
+				    (check-modified t)
+				    (response '*response-ok*)
+				    content-type
+				    format
+				    )
+			      &rest body)
   ;;
   ;; setup to response to an http request
   ;; do the checks that can shortciruit the request
@@ -570,19 +598,20 @@
   (let ((g-req (gensym))
 	(g-ent (gensym))
 	(g-timeout (gensym))
-        (g-format (gensym))
+	(g-format (gensym))
 	(g-check-modified (gensym)))
     `(let* ((,g-req ,req)
-	   (,g-ent ,ent)
-           (,g-format ,format)
-	   (,g-timeout ,(or timeout
-
-                            `(or
-                              (entity-timeout ,g-ent)
-                              (wserver-response-timeout *wserver*))))
-	   (,g-check-modified ,check-modified)
-	   )
+	    (,g-ent ,ent)
+	    (,g-format ,format)
+	    (,g-timeout ,(or timeout 
+			     
+			     `(or
+			       (entity-timeout ,g-ent)
+			       (wserver-response-timeout *wserver*))))
+	    (,g-check-modified ,check-modified)
+	    )
        (catch 'with-http-response
+	 ;(format t "timeout is ~d~%" ,g-timeout)
 	 (compute-strategy ,g-req ,g-ent ,g-format)
 	 (up-to-date-check ,g-check-modified ,g-req ,g-ent)
 	 (acl-mp::with-timeout ((if* (and (fixnump ,g-timeout)  ; ok w-t
@@ -599,8 +628,7 @@
 	   )))))
 
 
-;#+(and allegro (version>= 6 0 pre-final 1))
-#+allegro
+#+(and allegro (version>= 6 0))
 (defun warn-if-crlf (external-format)
   (let ((ef (find-external-format external-format)))
     (if* (not (eq (crlf-base-ef ef) ef))
@@ -610,33 +638,32 @@ Problems with protocol may occur." (ef-name ef)))))
 
 (defmacro with-http-body ((req ent
 			   &key headers 
-                                (external-format
-                                 *default-aserve-external-format*))
+				(external-format 
+				 '*default-aserve-external-format*))
 			  &rest body)
   (declare (ignorable external-format))
   (let ((g-req (gensym))
 	(g-ent (gensym))
 	(g-headers (gensym))
-	#+allegro(g-external-format (gensym))
+	#+allegro (g-external-format (gensym))
 	)
     `(let ((,g-req ,req)
 	   (,g-ent ,ent)
 	   (,g-headers ,headers)
-;	   #+(and allegro (version>= 6 0 pre-final 1))
-	   #+allegro
+	   #+(and allegro (version>= 6 0 pre-final 1))
 	   (,g-external-format (find-external-format ,external-format))
 	   )
        (declare #+allegro (ignore-if-unused ,g-req ,g-ent ,g-external-format)
-	        #-allegro (ignorable ,g-req ,g-ent))
+                #-allegro (ignorable ,g-req ,g-ent))
        ,(if* body 
 	   then `(compute-response-stream ,g-req ,g-ent))
        (if* ,g-headers
 	  then (bulk-set-reply-headers ,g-req ,g-headers))
        (send-response-headers ,g-req ,g-ent :pre)
-       (if* (not (member :omit-body (request-reply-strategy ,g-req)))
+       (if* (not (member :omit-body (request-reply-strategy ,g-req) 
+			 :test #'eq))
 	  then (let ((*html-stream* (request-reply-stream ,g-req)))
-;		 #+(and allegro (version>= 6 0 pre-final 1))
-		 #+allegro
+		 #+(and allegro (version>= 6 0 pre-final 1))
 		 (if* (and (streamp *html-stream*)
 			   (not (eq ,g-external-format
 				    (stream-external-format *html-stream*))))
@@ -645,7 +672,7 @@ Problems with protocol may occur." (ef-name ef)))))
 			   ,g-external-format))
 		 (progn ,@body)))
        
-       (if* (member :keep-alive (request-reply-strategy ,g-req))
+       (if* (member :keep-alive (request-reply-strategy ,g-req) :test #'eq)
 	  then ; force the body to be read so we can continue
 	       (get-request-body ,g-req))
        (send-response-headers ,g-req ,g-ent :post))))
@@ -839,7 +866,7 @@ by keyword symbols and not by strings"
    
    (method  ;; keyword giving the command in this request :get .. etc.
     :initarg :method
-    :reader request-method)
+    :accessor request-method)
    
    (uri  ;; uri object holding the current request with the scheme, host
          ;; and port filled in.
@@ -849,6 +876,10 @@ by keyword symbols and not by strings"
    (raw-uri  ;; uri object holding the actual uri from the command
     :initarg :raw-uri
     :accessor request-raw-uri)
+
+   (decoded-uri-path
+    :initarg :decoded-uri-path
+    :accessor request-decoded-uri-path)
    
    (protocol ;; symbol naming the http protocol  (e.g. :http/1.0)
     :initarg :protocol
@@ -869,7 +900,7 @@ by keyword symbols and not by strings"
    (raw-request  ;; the actual command line from the browser
     :initarg :raw-request
     :reader request-raw-request)
-
+   
    (vhost  ;; the virtual host to which this request is directed
     :initarg :vhost
     :initform (wserver-default-vhost *wserver*)
@@ -961,7 +992,8 @@ by keyword symbols and not by strings"
 (defparameter *response-ok* (make-resp 200 "OK"))
 (defparameter *response-created* (make-resp 201 "Created"))
 (defparameter *response-accepted* (make-resp 202 "Accepted"))
-
+(defparameter *response-partial-content*
+    (make-resp 206 "Partial Content"))
 (defparameter *response-moved-permanently* (make-resp 301 "Moved Permanently"))
 (defparameter *response-found* (make-resp 302 "Found"))
 (defparameter *response-see-other* (make-resp 303 "See Other"))
@@ -971,7 +1003,8 @@ by keyword symbols and not by strings"
 (defparameter *response-bad-request* (make-resp 400 "Bad Request"))
 (defparameter *response-unauthorized* (make-resp 401 "Unauthorized"))
 (defparameter *response-not-found* (make-resp 404 "Not Found"))
-
+(defparameter *response-requested-range-not-satisfiable*
+    (make-resp 416 "Requested range not satisfiable"))
 (defparameter *response-internal-server-error*
     (make-resp 500 "Internal Server Error"))
 (defparameter *response-not-implemented* (make-resp 501 "Not Implemented"))
@@ -988,7 +1021,10 @@ by keyword symbols and not by strings"
 	  *response-temporary-redirect*
 	  *response-bad-request*
 	  *response-unauthorized*
-	  *response-not-found*))
+	  *response-not-found*
+	  *response-requested-range-not-satisfiable*
+	  *response-partial-content*
+	  ))
 
 (defvar *crlf* (make-array 2 :element-type 'character :initial-contents
 			   '(#\return #\linefeed)))
@@ -999,6 +1035,7 @@ by keyword symbols and not by strings"
 				    
 			      
 (defun start (&key (port 80 port-p) 
+		   host
 		   (listeners 5)
 		   (chunking t)
 		   (keep-alive t)
@@ -1014,7 +1051,7 @@ by keyword symbols and not by strings"
 		   accept-hook
 		   ssl		 ; enable ssl
 		   os-processes  ; to fork and run multiple instances
-                   (external-format nil efp); to set external format
+		   (external-format nil efp); to set external format
 		   )
   ;; -exported-
   ;;
@@ -1035,7 +1072,7 @@ by keyword symbols and not by strings"
      then (setq server (make-instance 'wserver)))
 
   (if* efp then (setf (wserver-external-format server) external-format))
-
+	  
   (if* ssl
      then (if* (pathnamep ssl)
 	     then (setq ssl (namestring ssl)))
@@ -1052,8 +1089,7 @@ by keyword symbols and not by strings"
 	     then ; ssl defaults to port 443
 		  (setq port 443)))
 	    
-  (if* accept-hook
-     then (setf (wserver-accept-hook server) accept-hook))
+  (setf (wserver-accept-hook server) accept-hook)
   
   
   ; shut down existing server
@@ -1109,6 +1145,7 @@ by keyword symbols and not by strings"
   
   (let* ((main-socket (socket:make-socket :connect :passive
 					  :local-port port
+					  :local-host host
 					  :reuse-address t
 					  :format :bivalent
 					  
@@ -1139,10 +1176,10 @@ by keyword symbols and not by strings"
 		(if* (zerop (setq child (unix-fork)))
 		   then ; we're a child, let the *lisp-listener* go 
 			; catatonic
-		        #+allegro
-		        (excl::unix-signal 15 0) ; let term kill it
-		        #-allegro 
-		        (net.aserve::unix-signal 15 0)
+                        #+allegro
+			(excl::unix-signal 15 0) ; let term kill it
+                        #-allegro
+                        (net.aserve::unix-signal 15 0)
 			(setq is-a-child t 
 			      children nil)
 			(return) ; exit dotimes 
@@ -1211,7 +1248,7 @@ by keyword symbols and not by strings"
   ;; debug problems
   (let ((main-socket (wserver-socket *wserver*))
 	(ipaddrs (wserver-ipaddrs *wserver*))
-        (*default-aserve-external-format* (wserver-external-format *wserver*)))
+	(*default-aserve-external-format* (wserver-external-format *wserver*)))
     (unwind-protect
 	(loop
 	  (restart-case
@@ -1222,20 +1259,23 @@ by keyword symbols and not by strings"
 		   then ; new ip address by which this machine is known
 			(push localhost ipaddrs)
 			(setf (wserver-ipaddrs *wserver*) ipaddrs))
-                ;; cmucl: we use auto-finalization instead; see
-		;; excl:accept-connection -- rudi
-		#+allegro(if* *watch-for-open-sockets*
+		(if* *watch-for-open-sockets*
 		   then (schedule-finalization 
 			 sock 
 			 #'check-for-open-socket-before-gc))
-
+		
+		; disable the nagle alorithm
+                ;; TODO: implement set-socket-options in acl-compat
+                #+allegro
+		(socket:set-socket-options sock :nodelay t)
+		
 		#+io-timeout
 		(socket:socket-control 
 		 sock 
 		 :read-timeout (wserver-io-timeout *wserver*)
 		 :write-timeout (wserver-io-timeout *wserver*))
-		(process-connection sock)
-		)
+		       
+		(process-connection sock))
 	    
 	    (:loop ()  ; abort out of error without closing socket
 	      nil)))
@@ -1254,63 +1294,39 @@ by keyword symbols and not by strings"
   
   ; create accept thread
   (setf (wserver-accept-thread *wserver*)
-
-;	#+(or allegro lispworks)
-	(acl-mp:process-run-function 
-	 (list :name (format nil "aserve-accept-~d" (incf *thread-index*))
-	       :initial-bindings
-	       `((*wserver*  . ',*wserver*)
-		 #+ignore (*debug-io* . ',(wserver-terminal-io *wserver*))
-		 ,@excl:*cl-default-special-bindings*))
-	 #'http-accept-thread)
-
-#| NEW-MP
-	#+cmu
-	(mp:process-run-function (format nil "aserve-accept-~d" (incf *thread-index*))
-				 nil #'http-accept-thread *wserver*)
-|#
-))
+    (acl-mp:process-run-function 
+     (list :name (format nil "aserve-accept-~d" (incf *thread-index*))
+	   :initial-bindings
+	   `((*wserver*  . ',*wserver*)
+	     #+ignore (*debug-io* . ',(wserver-terminal-io *wserver*))
+	     ,@excl:*cl-default-special-bindings*)
+           :run-reasons '(:enable))
+     #'http-accept-thread)))
 
 (defun make-worker-thread ()
-#| NEW-MP
-  #+cmu
-  (mp:without-scheduling
-   (let* ((name (format nil "~d-aserve-worker" (incf *thread-index*)))
-	  (proc (mp:process-run-function name nil #'http-worker-thread *wserver*)))
-     
-     (setf (mp:process-run-reasons proc) nil)
-
-     (push proc (wserver-worker-threads *wserver*))
-     (atomic-incf (wserver-free-workers *wserver*))
-     (setf (getf (mp:process-plist proc) 'short-name)
-	   (format nil "w~d" *thread-index*))))
-|#
-
-;   #+(or allegro lispworks)
-   (let* ((name (format nil "~d-aserve-worker" (incf *thread-index*)))
-	  (proc (acl-mp:make-process :name name
-				 :initial-bindings
-				 `((*wserver*  . ',*wserver*)
-				   #+ignore (*debug-io* . ',(wserver-terminal-io 
-							     *wserver*))
-				   ,@excl:*cl-default-special-bindings*)
-				 )))
-
-     (acl-mp:process-preset proc #'http-worker-thread)
-
-     (push proc (wserver-worker-threads *wserver*))
-     (atomic-incf (wserver-free-workers *wserver*))
-     (setf (getf (acl-mp:process-property-list proc)  'short-name)
-	   (format nil "w~d" *thread-index*))))
+  (let* ((name (format nil "~d-aserve-worker" (incf *thread-index*)))
+	 (proc (acl-mp:make-process :name name
+				:initial-bindings
+				`((*wserver*  . ',*wserver*)
+				  #+ignore (*debug-io* . ',(wserver-terminal-io 
+						   *wserver*))
+				  ,@excl:*cl-default-special-bindings*)
+				)))
+    (acl-mp:process-preset proc #'http-worker-thread)
+    (push proc (wserver-worker-threads *wserver*))
+    (atomic-incf (wserver-free-workers *wserver*))
+    (setf (getf (acl-mp:process-property-list proc) 'short-name) 
+      (format nil "w~d" *thread-index*))
+    ))
 
 
 (defun http-worker-thread ()
   ;; made runnable when there is an socket on which work is to be done
   (let ((*print-level* 5)
-        (*worker-request* nil)
+	(*worker-request* nil)
 	(*default-aserve-external-format* 
 	 (wserver-external-format *wserver*))
-        )
+	)
     ;; lots of circular data structures in the caching code.. we 
     ;; need to restrict the print level
     (loop
@@ -1322,18 +1338,33 @@ by keyword symbols and not by strings"
 	    (if* (not (member :notrap *debug-current* :test #'eq))
 	       then (handler-case (process-connection sock)
 		      (error (cond)
-			(logmess 
-                         (format nil "~agot error ~a~%" 
-                                 (if* *worker-request*
-                                      then (format
-                                            nil
-                                            "while processing command ~s~%"
-                                            (request-raw-request
-                                             *worker-request*))
-                                      else "")
-                                 cond
-                                 ))))
-	       else (process-connection sock))
+			(if* (connection-reset-error cond)
+			   thenret ; don't print these errors,
+			   else (logmess 
+				 (format nil "~agot error ~a~%" 
+					 (if* *worker-request*
+					    then (format 
+						  nil 
+						  "while processing command ~s~%"
+						  (request-raw-request 
+						   *worker-request*))
+					    else "")
+					 cond
+					 )))))
+	       else ; in debugging mode where we don't ignore errors
+		    ; still, we want to ignore connection-reset-by-peer
+		    ; since they are often not errors
+		    (catch 'out-of-connection
+		      (handler-bind 
+			  ((stream-error 
+			    #'(lambda (c)
+				(if* (and 
+				      (not *debug-connection-reset-by-peer*)
+				      (connection-reset-error c))
+				   then (throw 'out-of-connection nil)))))
+			(process-connection sock)))
+		      
+		    )
 	  (abandon ()
 	      :report "Abandon this request and wait for the next one"
 	    nil))
@@ -1342,13 +1373,24 @@ by keyword symbols and not by strings"
     
       )))
 
+(defun connection-reset-error (c)
+  ;; return true if this is what results from a connection reset
+  ;; by peer 
+  (if* (typep c 'stream-error)
+     then (or (eq (stream-error-identifier c) :connection-reset)
+	      #+(and allegro unix) (eq (stream-error-code c) 32) ; sigpipe
+	      )))
+
+	  
+
+  
 (defun http-accept-thread ()
   ;; loop doing accepts and processing them
   ;; ignore sporatic errors but stop if we get a few consecutive ones
   ;; since that means things probably aren't going to get better.
   (let* ((error-count 0)
 	 (workers nil)
-         (server *wserver*)
+	 (server *wserver*)
 	 (main-socket (wserver-socket server))
 	 (ipaddrs (wserver-ipaddrs server)))
     (unwind-protect
@@ -1360,9 +1402,6 @@ by keyword symbols and not by strings"
 		
 		; optional.. useful if we find that sockets aren't being
 		; closed
-		; cmucl: we use auto-finalizatino instead; see
-		; excl:accept-connection
-		#+allegro
 		(if* *watch-for-open-sockets*
 		   then (schedule-finalization 
 			 sock 
@@ -1374,8 +1413,8 @@ by keyword symbols and not by strings"
 		   then ; new ip address by which this machine is known
 			(push localhost ipaddrs)
 			(setf (wserver-ipaddrs *wserver*) ipaddrs))
-
-                #+io-timeout
+		
+		#+io-timeout
 		(socket:socket-control 
 		 sock 
 		 :read-timeout (wserver-io-timeout *wserver*)
@@ -1383,7 +1422,7 @@ by keyword symbols and not by strings"
 		
 		; another useful test to see if we're losing file
 		; descriptors
-		#+allegro
+                #+allegro
 		(let ((fd (excl::stream-input-fn sock)))
 		  (if* (> fd *max-socket-fd*)
 		     then (setq *max-socket-fd* fd)
@@ -1471,6 +1510,7 @@ by keyword symbols and not by strings"
   ;; another request.
   ;; When this function returns the given socket has been closed.
   ;;
+  
   ; run the accept hook on the socket if there is one
   (let ((ahook (wserver-accept-hook *wserver*)))
     (if* ahook then (setq sock (funcall ahook sock))))
@@ -1480,13 +1520,13 @@ by keyword symbols and not by strings"
       (let ((req))
 	;; get first command
 	(loop
-	  (acl-mp:with-timeout (*read-request-timeout* 
-			    (debug-format :info "request timed out on read~%")
-			    ; this is too common to log, it happens with
-			    ; every keep alive socket when the user stops
-			    ; clicking
-			    ;;(log-timed-out-request-read sock)
-			    (return-from process-connection nil))
+	  (with-timeout-local (*read-request-timeout* 
+			       (debug-format :info "request timed out on read~%")
+			       ; this is too common to log, it happens with
+			       ; every keep alive socket when the user stops
+			       ; clicking
+			       ;;(log-timed-out-request-read sock)
+			       (return-from process-connection nil))
 	    (setq req (read-http-request sock)))
 	  (if* (null req)
 	     then ; end of file, means do nothing
@@ -1494,14 +1534,14 @@ by keyword symbols and not by strings"
 		  ; end this connection by closing socket
 		  (return-from process-connection nil)
 	     else ;; got a request
-                  (setq *worker-request* req)
-
-		  (handle-request req)		  
+		  (setq *worker-request* req) 
+		  
+		  (handle-request req)
 		  (force-output-noblock (request-socket req))
 		  
 		  (log-request req)
 		  
-                  (setq *worker-request* nil)
+		  (setq *worker-request* nil)
 		  (free-req-header-block req)
 		  
 		  (let ((sock (request-socket req)))
@@ -1529,6 +1569,7 @@ by keyword symbols and not by strings"
 (defun read-http-request (sock)
   ;; read the request from the socket and return and http-request
   ;; object
+  
   (let ((buffer (get-request-buffer))
 	(req)
 	(end)
@@ -1542,6 +1583,7 @@ by keyword symbols and not by strings"
 	    ;
 	    ; we handle the case of a blank line before the command
 	    ; since the spec says that we should (even though we don't have to)
+      
 	    (multiple-value-setq (buffer end)
 	      (read-sock-line sock buffer 0))
       
@@ -1575,6 +1617,9 @@ by keyword symbols and not by strings"
 			:method cmd
 			:uri (net.uri:copy-uri uri)
 			:raw-uri uri
+			:decoded-uri-path
+			(uridecode-string (net.uri:uri-path uri))
+					  
 			:protocol protocol
 			:protocol-string (case protocol
 					   (:http/1.0 "HTTP/1.0")
@@ -1613,13 +1658,13 @@ by keyword symbols and not by strings"
 				   then (setf (uri-port uri) port)))
 			
 			(setf (uri-scheme uri) :http)  ; always http
-                        
-                        ;; set virtual host in the request
+			
+			;; set virtual host in the request
 			(let ((vhost 
 			       (gethash host (wserver-vhosts *wserver*))))
 			  (setf (request-vhost req)
-			        (or vhost (wserver-default-vhost *wserver*))))
-
+			    (or vhost (wserver-default-vhost *wserver*))))
+					      
 			))))
 	  
 	    
@@ -1653,7 +1698,8 @@ by keyword symbols and not by strings"
       ("CONNECT " . :connect)))
   
 
-#+obsolete	    
+	    
+
 (defmethod get-request-body ((req http-request))
   ;; return a string that holds the body of the http-request
   ;;  cache it for later too
@@ -1664,18 +1710,11 @@ by keyword symbols and not by strings"
 		    (header-slot-value-integer req :content-length)
 		  (if* believe-it
 		     then ; we know the length
-  		          (prog1 (let ((ret (make-string length)))
+			  (prog1 (let ((ret (make-string length)))
 				   (read-sequence-with-timeout 
 				    ret length 
 				    (request-socket req)
-				    *read-request-body-timeout*)
-				   ;; TODO: implement bivalent rational-read-sequence
-                                   #+ignore
-				   (loop :with result = (make-string length)
-				         :for i :from 0 :below length
-					 :do (setf (aref result i) (code-char (aref ret i)))
-					 :finally (return result)))
-			    
+				    *read-request-body-timeout*))
 	    
 			    ; netscape (at least) is buggy in that 
 			    ; it sends a crlf after
@@ -1705,7 +1744,7 @@ by keyword symbols and not by strings"
 			     then ; must be no body
 				  ""
 			     else ; read until the end of file
-				  (acl-mp:with-timeout 
+				  (with-timeout-local
 				      (*read-request-body-timeout* 
 				       nil)
 				    (let ((ans (make-array 
@@ -1722,41 +1761,7 @@ by keyword symbols and not by strings"
 	   else "" ; no body
 		))))
 
-;; This is intented to be a bit more maintainable than the original
-;; -- jsc 02.09.2001
-(defmethod get-request-body ((req http-request))
-  "Return and cache the body of the http-request as string"
-  (labels ((accept-char (char stream)
-	     (let ((c (read-char-no-hang stream nil nil)))
-	       (cond ((eql c char))
-		     (c (unread-char c stream)))))
-	   
-	   (read-body-with-content-length (length stream)
-	     (prog1 (let ((ret (make-string length)))
-		      (read-sequence-with-timeout 
-		       ret length stream *read-request-body-timeout*))
-		      
-	       ;; Chop CRLF for buggy browsers like Netscape
-		      (and (accept-char #\return stream)
-			   (accept-char #\linefeed stream))))
-	   
-	   (read-body-without-content-length (stream)
-	     (acl-mp:with-timeout (*read-request-body-timeout* nil)
-	       (if (equalp "keep-alive" (header-slot-value req :connection))
-		   "" ; no body
-		   (loop with result = (make-array 2048 :element-type 'character :fill-pointer 0)
-			 for c = (read-char stream nil :eof)
-			 do (vector-push-extend c result)
-			 finally (return result))))))
 
-    (or (request-request-body req)
-	(setf (request-request-body req)
-	      (multiple-value-bind (length believe-it) 
-		  (header-slot-value-integer req :content-length)
-		(cond ((not (member (request-method req) '(:put :post))) "") ; no body
-		      (believe-it (read-body-with-content-length length (request-socket req)))
-		      (t (read-body-without-content-length (request-socket req)))))))))
-		    
 
 ;; multipart code
 ;; used when enctype=multipart/form-data is used
@@ -1822,7 +1827,7 @@ by keyword symbols and not by strings"
 
 
 (defparameter *crlf-crlf-usb8*
-  ;; the correct way to end a block of headers
+    ;; the correct way to end a block of headers
     (make-array 4 :element-type '(unsigned-byte 8)
 		:initial-contents
 		(list #.(char-code #\return)
@@ -2128,28 +2133,28 @@ by keyword symbols and not by strings"
 			     (return-from scan-forward
 			       (values i :partial)))
 		     
- 		     ; boundary value is downcased so we must downcase 
- 		     ; value in buffer.  we had to do the downcasing since
- 		     ; I found cases where a case insensitive match had
- 		     ; to be done
- 		     (let ((bufch (aref mpbuffer j)))
- 		       (if* (<= #.(char-code #\A) bufch #.(char-code #\Z))
- 			  then (incf bufch #.(- (char-code #\a)
- 						(char-code #\A))))
- 		       (if* (not (eq bufch (aref boundary ind)))
+		     ; boundary value is downcased so we must downcase 
+		     ; value in buffer.  we had to do the downcasing since
+		     ; I found cases where a case insensitive match had
+		     ; to be done
+		     (let ((bufch (aref mpbuffer j)))
+		       (if* (<= #.(char-code #\A) bufch #.(char-code #\Z))
+			  then (incf bufch #.(- (char-code #\a)
+						(char-code #\A))))
+		       (if* (not (eq bufch (aref boundary ind)))
 			  then (return))))))))))) 
-
-
        
 		     
-		     
+
+
+
 (defmethod get-multipart-sequence ((req http-request)
 				   buffer
 				   &key (start 0)
 					(end (length buffer))
 					(external-format 
-                                         *default-aserve-external-format*
-                                         ef-spec))
+					 *default-aserve-external-format* 
+					 ef-spec))
   ;; fill the buffer with the chunk of data.
   ;; start at 'start' and go no farther than (1- end) in the buffer
   ;; return the index of the first character not placed in the buffer.
@@ -2158,8 +2163,7 @@ by keyword symbols and not by strings"
   ;; Since external-format not used in all versions
   (declare (ignorable external-format ef-spec))
 
-;  #-(and allegro (version>= 6 0 pre-final 1))
-#|  #-(or allegro lispworks)
+#|  #-(and allegro (version>= 6 0 pre-final 1))
   (if* ef-spec
      then (warn "~
 For this version of Lisp, external-format is ignored ~
@@ -2213,8 +2217,7 @@ in get-multipart-sequence"))|#
 		      then 
 			   ; here is where we should do
 			   ; external format processing
-#|;			   #+(and allegro (version>= 6 0 pre-final 1))
-		           #+allegro
+#|			   #+(and allegro (version>= 6 0 pre-final 1))
 			   (multiple-value-setq (buffer items tocopy)
 			     (octets-to-string
 			      mpbuffer
@@ -2224,9 +2227,9 @@ in get-multipart-sequence"))|#
 			      :string-start start
 			      :string-end (length buffer)
 			      :external-format external-format
-			      :truncate t)
+			      :truncate t))
 ;			   #-(and allegro (version>= 6 0 pre-final 1))
-|#			   #-allegro
+|#                         #-allegro
 			   (dotimes (i tocopy)
 			     (setf (aref buffer (+ start i))
 			       (code-char (aref mpbuffer (+ cur i)))))
@@ -2253,8 +2256,119 @@ in get-multipart-sequence"))|#
 		 (return-from get-multipart-sequence nil)))))))
 
   
+(defun parse-multipart-header (header)
+  ;; look for known patterns in the mulitpart header and return
+  ;; the information we can find.  Header is the return value from
+  ;; get-multipart-header
+  ;;
+  ;; return values:
+  ;; 1.  nil, :eof, :file, :data, :nofile   - description of the header
+  ;; 2. name  - name of the item
+  ;; 3. filename - if type is :file then this is the filename
+  ;; 4. content-type - if type is :file this this is the content-type
+  (if* (and (consp header) (consp (car header)))
+     then (let ((cd (assoc :content-disposition header :test #'eq))
+		(ct (assoc :content-type header :test #'eq))
+		(name)
+		(filename)
+		(content-type))
+	    (if* (and cd
+		      (consp (cadr cd))
+		      (eq :param (car (cadr cd)))
+		      (equal "form-data" (cadr (cadr cd))))
+	       then (let ((fd (cddr (cadr cd))))
+		      (let ((aname (assoc "name" fd :test #'equal)))
+			(if* aname then (setq name (cdr aname))))
+		      (let ((afname (assoc "filename" fd :test #'equal)))
+			(if* afname then (setq filename (cdr afname))))))
+	    (if* (and (consp ct) (stringp (cadr ct)))
+	       then (setq content-type (cadr ct)))
+	    
+	    (values (if* filename 
+		       then (if* (equalp filename "")
+			       then :nofile
+			       else :file)
+		       else :data)
+		    name
+		    filename
+		    content-type))
+   elseif (null header)
+     then :eof
+     else nil ; doesn't match anything we know about
+	  ))
+		      
+	  
+(defun get-all-multipart-data (req &key (type :text) 
+					(size 4096)
+					(external-format 
+					 *default-aserve-external-format*)
+					(limit nil)
+					)
+  ;; retreive all the data for one multipart item
+  ;;
+  (let (res buffer (total-size 0) index)
+    (loop
+      (if* (null buffer)
+	 then (setq buffer 
+		(ecase  type 
+		  (:text (make-string size))
+		  (:binary (make-array size :element-type '(unsigned-byte 8))))
+		index 0))
+      (let ((nextindex (get-multipart-sequence 
+			req buffer 
+			:start index
+			:external-format external-format)))
+	(if* (null nextindex)
+	   then (if* (> index 0)
+		   then (incf total-size index)
+			(push buffer res))
+		(return))
+	(if* (>= nextindex (length buffer))
+	   then ; full buffer
+		(incf total-size (length buffer))
+		(if* (and limit (> total-size limit))
+		   then ; we in the overlimit stage, just
+			; keep reading but don't save
+			(setq index 0)
+		   else ; save away this full buffer
+			(push buffer res)
+			(setq buffer nil))
+	   else (setq index nextindex))))
+      
+    ; read it all, data in res
+    (if* (zerop total-size)
+       then (case type
+	      (:text "")
+	      (:binary (make-array 0 :element-type '(unsigned-byte 8))))
+     elseif (and limit (> total-size limit))
+       then (values :limit total-size)	; over limit return
+     elseif (null (cdr res))
+       then ; just one buffer
+	    (subseq (car res) 0 total-size)
+       else ; multiple buffers, must build result
+	    (let ((result (case type
+			    (:text (make-string total-size))
+			    (:binary (make-array total-size
+						 :element-type
+						 '(unsigned-byte 8))))))
+	      (do ((to 0)
+		   (buffs (nreverse res) (cdr buffs)))
+		  ((null buffs))
+		(replace result (car buffs)
+			 :start1 to)
+		(incf to (length (car buffs))))
+	      result))))
 
-
+		     
+	      
+		
+	  
+	  
+		
+    
+    
+  
+  
 
 ;; end multipart code
 
@@ -2263,16 +2377,19 @@ in get-multipart-sequence"))|#
 
 
 
+
+		      
 	      
 (defun read-sequence-with-timeout (string length sock timeout)
   ;; read length bytes into sequence, timing out after timeout
   ;; seconds
   ;; return nil if things go wrong.
+  (declare (ignorable timeout))
   (with-timeout-local (timeout nil)
     (let ((got 0))
       (loop
 	(let ((this (rational-read-sequence string sock :start got)))
-	  (if* (<= this 0)
+	  (if* (<= this got)
 	     then (return nil) ; eof too early
 	     else (setq  got    this)
 		  (if* (>= got length ) then (return string))))))))
@@ -2292,10 +2409,10 @@ in get-multipart-sequence"))|#
     (loop
       (let ((ch (read-byte sock nil :eof)))
 	(if* (eq ch :eof)
-	   then (debug-format :info "eof on socket~%")
+	   then (debug-format :info"eof on socket~%")
 		(free-request-buffer buffer)
 		(return-from read-sock-line nil))
-
+      
       	(setq ch (code-char ch))
 	(if* (eq ch #\linefeed)
 	   then (if* (eq prevch #\return)
@@ -2337,7 +2454,7 @@ in get-multipart-sequence"))|#
 		      
 				  
 (defmethod request-query ((req http-request) &key (post t) (uri t)
-						  (external-format
+						  (external-format 
 						   *default-aserve-external-format*))
   ;; decode if necessary and return the alist holding the
   ;; args to this url.  In the alist items the value is the 
@@ -2382,11 +2499,15 @@ in get-multipart-sequence"))|#
       (setf (request-query-alist req) res))))
 			
 
-(defun request-query-value (key req &key (post t) (uri t) (test #'equal))
+(defun request-query-value (key req &key (post t) (uri t) (test #'equal)
+					 (external-format 
+						   *default-aserve-external-format*))
   ;; access the value of the given key in the request's 
   ;; request query.  We do this so often that it's useful
   ;; to make this a function
-  (cdr (assoc key (request-query req :post post :uri uri) :test test)))
+  (cdr (assoc key (request-query req :post post :uri uri
+				 :external-format external-format)
+	      :test test)))
 
 
 	
@@ -2796,8 +2917,25 @@ in get-multipart-sequence"))|#
 		    (if* port
 		       then (values (car parts) port))))))
 
-	    
-	
+f;-------
+
+#+allegro
+(defun ensure-stream-lock (stream)
+  ;; ensure that the stream has a lock object on it so that
+  ;; it can be used as log stream.
+  ;;
+  ;; return the stream object passed in.
+  ;;
+  (if* (and (streamp stream)
+	    (null (getf (excl::stream-property-list stream) :lock)))
+     then (setf (getf (excl::stream-property-list stream) :lock)
+	    (mp:make-process-lock)))
+  stream)
+	  
+#-allegro
+;; TODO: implement this and turn on locking in log.cl
+(defun ensure-stream-lock (stream)
+  stream)
 		
 	
 ;;-------------------

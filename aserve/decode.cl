@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: decode.cl,v 1.4 2002/04/08 14:31:19 desoi Exp $
+;; $Id: decode.cl,v 1.5 2002/06/09 11:35:01 rudi Exp $
 
 ;; Description:
 ;;   decode/encode code
@@ -119,8 +119,8 @@
      else (svref *uri-encode* code)))
 
 #+allegro
-(defun uriencode-string (str &key (external-format
-                                     *default-aserve-external-format*))
+(defun uriencode-string (str &key (external-format 
+				      *default-aserve-external-format*))
   ;; encode the given string using uri encoding.
   ;; It may return the same string if no encoding need be done
   ;;
@@ -167,8 +167,9 @@
 		 ;; We use mb-to-string for 5.0.1 compatibility.
 		 ;; octets-to-string is generally prefered after 6.0.
 		 (mb-to-string newmbvec
-			       :external-format :latin1-base ;;bug?
+			       :external-format :latin1-base
 			       :end (+ len (* 2 count)))))))))
+
 
 #-allegro
 (defun uriencode-string (str &key (external-format 
@@ -189,34 +190,35 @@
 
       (if (zerop count)
 	  str ;; just return the string, no encoding done
-        (let* ((newstr (make-string (+ len (* 2 count))))
-               (j 0))
-          (dotimes (i len)
-            (let ((code (aref byte-string i)))
-              (if (uri-encode-p code)
-                  (progn
-                    (setf (aref newstr j) #\%)
-                    (macrolet ((hexdig (code)
-                                       ;; return char code of hex digit
-                                       `(if* (< ,code 10)
-                                             then (code-char (+ ,code
-                                                                #.(char-code #\0)))
-                                             else (code-char(+ (- ,code 10)
-                                                               #.(char-code #\a))))))
-                      (let* ((upcode (logand #xf (ash code -4)))
-                             (downcode (logand #xf code)))
-                        (setf (aref newstr (+ j 1))
-                              (hexdig upcode))
-                        (setf (aref newstr (+ j 2))
-                              (hexdig downcode))))
-                    (incf j 3))
-                (progn
-                  (setf (aref newstr j) (code-char code))
-                   (incf j)))))
-          newstr)))))
+          (let* ((newstr (make-string (+ len (* 2 count))))
+                 (j 0))
+            (dotimes (i len)
+              (let ((code (aref byte-string i)))
+                (if (uri-encode-p code)
+                    (progn
+                      (setf (aref newstr j) #\%)
+                      (macrolet ((hexdig (code)
+                                   ;; return char code of hex digit
+                                   `(if* (< ,code 10)
+                                         then (code-char (+ ,code
+                                                            #.(char-code #\0)))
+                                         else (code-char(+ (- ,code 10)
+                                                           #.(char-code #\a))))))
+                        (let* ((upcode (logand #xf (ash code -4)))
+                               (downcode (logand #xf code)))
+                          (setf (aref newstr (+ j 1))
+                                (hexdig upcode))
+                          (setf (aref newstr (+ j 2))
+                                (hexdig downcode))))
+                      (incf j 3))
+                    (progn
+                      (setf (aref newstr j) (code-char code))
+                      (incf j)))))
+            newstr)))))
 
 
-(defun uridecode-string (str &key (external-format
+
+(defun uridecode-string (str &key (external-format 
                                    *default-aserve-external-format*))
   ;; decoded the uriencoded string, returning possibly the
   ;; same string
@@ -266,8 +268,8 @@
       res))
 
 
-(defun query-to-form-urlencoded (query &key (external-format
-                                             *default-aserve-external-format*))
+(defun query-to-form-urlencoded (query &key (external-format 
+					     *default-aserve-external-format*))
   ;; query is a list of conses, each of which has as its 
   ;; car the query name and as its cdr the value.  A value of
   ;; nil means we encode  name=   and nothing else
@@ -306,8 +308,8 @@
 		  `(aref ,buf ,i)))
        ,@body)))
 
-(defun encode-form-urlencoded (str &key (external-format
-                                         *default-aserve-external-format*))
+(defun encode-form-urlencoded (str &key (external-format 
+					     *default-aserve-external-format*))
   ;; encode the given string using form-urlencoding
   
   ;; a x-www-form-urlencoded string consists of a sequence 
@@ -386,16 +388,16 @@
   
 
 (defun form-urlencoded-to-query (str &key (external-format 
-                                           *default-aserve-external-format*))
+					   *default-aserve-external-format*))
   ;; decode the x-www-form-urlencoded string returning a list
   ;; of conses, the car being the name and the cdr the value, for
   ;; each form element.  This list is called a query list.
   ;;
-
+  
   (if* (not (typep str 'simple-array))
      then ; we need it to be a simple array for the code below to work
 	  (setq str (copy-seq str)))
-
+  
   (let ((res nil)
 	(max (length str)))
     
@@ -404,6 +406,12 @@
 	 (name)
 	 (max-minus-1 (1- max))
 	 (seenpct)
+	 ;; The following is a flag which determines whether we should do
+	 ;; external-format processing on the source string.
+	 ;; Note that we are assuming the source string not to be in Unicode,
+	 ;; but to contain one latin1 octet per element.  This is the way
+	 ;; a uri gets returned by parse-uri.
+	 (seen-non-ascii nil)
 	 (ch))
 	((>= i max))
       (setq ch (schar str i))
@@ -417,10 +425,13 @@
 	   then (setq obj (buffer-substr str start (1+ i)))
 	 elseif (and (not seenpct) (or (eq ch #\%)
 				       (eq ch #\+)))
-	   then (setq seenpct t))
+	   then (setq seenpct t)
+	 elseif (and (not seen-non-ascii)
+		     (>= (char-code ch) #.(expt 2 7)))
+	   then (setq seen-non-ascii t))
       
 	(if* obj
-	   then (if* seenpct
+	   then (if* (or seenpct seen-non-ascii)
 		   then (setq obj (un-hex-escape
 				   obj t
 				   :external-format external-format)
@@ -446,7 +457,7 @@
   ;; Buffer is a string, which gets returned
   `(let ((,buffer-var (make-string ,size)))
      (macrolet ((cvt-buf-to-string (x &key external-format end)
-		  (declare (ignore external-format end))
+		  (declare (ignore external-format))
 		  x)
 		(set-buf-elt (buf i char)
 		  `(setf (schar ,buf ,i) ,char))
@@ -468,7 +479,7 @@
        ,@body)))
 
 (defun un-hex-escape (given spacep
-		      &key (external-format
+		      &key (external-format 
                             *default-aserve-external-format*))
   ;; convert a string with %xx hex escapes into a string without
   ;; if spacep it true then also convert +'s to spaces
@@ -476,6 +487,12 @@
   (declare (ignorable external-format))
   (let ((count 0)
 	(seenplus nil)
+	 ;; The following is a flag which determines whether we should do
+	 ;; external-format processing on the source string.
+	 ;; Note that we are assuming the source string not to be in Unicode,
+	 ;; but to contain one latin1 octet per element.  This is the way
+	 ;; a uri gets returned by parse-uri.
+	(seen-non-ascii nil)
 	(len (length given)))
     
     ; compute the number of %'s (times 2)
@@ -500,9 +517,12 @@
 		   else (incf count 2) 
 			(incf i 2))
 	 elseif (eq ch #\+)
-	   then (setq seenplus t))))
+	   then (setq seenplus t)
+	 elseif (>= (char-code ch) #.(expt 2 7))
+	   then (setq seen-non-ascii t))))
     
     (if* (and (null seenplus)
+	      (null seen-non-ascii)
 	      (eq 0 count))
        then ; move along, nothing to do here
 	    (return-from un-hex-escape given))

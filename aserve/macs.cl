@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: macs.cl,v 1.3 2002/02/15 01:17:39 neonsquare Exp $
+;; $Id: macs.cl,v 1.4 2002/06/09 11:35:01 rudi Exp $
 
 ;; Description:
 ;;   useful internal macros
@@ -44,9 +44,8 @@
 (in-package :net.aserve)
 
 ;; add features based on the capabilities of the host lisp
-;;#+(version>= 6 1)
-#+allegro
- (pushnew :io-timeout *features*) ; support i/o timeouts
+#+(and allegro (version>= 6 1))
+(pushnew :io-timeout *features*) ; support i/o timeouts
 
 ;; Note for people using this code in non-Allegro lisps.
 ;;
@@ -125,10 +124,10 @@
   ;; bogus ansi definition where the whole buffer was filled up.
   ;; even for socket stream. 
   ;; rational-read-sequence does read-sequence the right way.
-;  #-(version>= 6 0 pre-final 9) 
-  `(read-sequence ,@args)
-;  #+(version>= 6 0 pre-final 9) 
-;  `(read-sequence ,@args :partial-fill t)
+#-(and allegro (version>= 6 0 pre-final 9)) 
+`(read-sequence ,@args)
+#+(and allegro (version>= 6 0 pre-final 9)) 
+`(read-sequence ,@args :partial-fill t)
 )
 
 
@@ -203,15 +202,13 @@
 ; with-timeout-local: use with-timeout if that all we've got
 ; else use read-write timeouts
 ; 
-;#-(version>= 6 1)
-#-allegro
+#-(and allegro (version>= 6 1))
 (defmacro with-timeout-local ((time &rest actions) &rest body)
   ;; same as with-timeout 
   `(acl-mp:with-timeout (,time ,@actions) ,@body))   ; ok w-t
 
 
-;#+(version>= 6 1)
-#+allegro
+#+(and allegro (version>= 6 1))
 (defmacro with-timeout-local ((time &rest actions) &rest body)
   (declare (ignore time))
   (let ((g-blocktag (gensym)))
@@ -225,3 +222,6 @@
 				   (return-from ,g-blocktag
 				     (progn ,@actions))))))
 	 ,@body))))
+			 
+
+

@@ -35,9 +35,9 @@
                (:file "decode"
                       :depends-on ("main"))
                (:file "publish"
-                      :depends-on ("htmlgen"))
+                      :depends-on ("main" "htmlgen"))
                (:file "authorize"
-                      :depends-on ("main"))
+                      :depends-on ("main" "publish"))
                (:file "log"
                       :depends-on ("main"))
                (:file "client"

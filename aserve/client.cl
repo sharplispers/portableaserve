@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.5 2002/02/26 16:26:18 desoi Exp $
+;; $Id: client.cl,v 1.6 2002/06/09 11:35:01 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -195,10 +195,10 @@
 			proxy	    ; naming proxy server to access through
 			user-agent
 			(external-format *default-aserve-external-format*)
-			ssl	; do an ssl connection
+			ssl		; do an ssl connection
 			skip-body ; fcn of request object
 			)
-  
+  (declare (ignorable format))          ; We are always binary, anyways.
   ;; send an http request and return the result as four values:
   ;; the body, the response code, the headers and the uri 
   (let ((creq (make-http-client-request 
@@ -224,26 +224,26 @@
 	  
 	  (loop
 	    (read-client-response-headers creq)
-	    ; if it's a continue, then start the read again
+	    ;; if it's a continue, then start the read again
 	    (if* (not (eql 100 (client-request-response-code creq)))
 	       then (return)))
-
-          (if* (and (member (client-request-response-code creq)
-                            '( #.(net.aserve::response-number *response-found*)
-                               #.(net.aserve::response-number *response-moved-permanently*)
-                               #.(net.aserve::response-number *response-see-other*))
-				:test #'eq)
-			redirect
-			(member method redirect-methods :test #'eq)
-			(if* (integerp redirect)
-			   then (> redirect 0)
-                           else t))         ; unrestricted depth
-               then
-                    (setq new-location
-			  (cdr (assoc :location (client-request-headers creq)
-				      :test #'eq))))
-
-          (if* (and (null new-location) 
+	  
+	  (if* (and (member (client-request-response-code creq)
+			    '(#.(net.aserve::response-number *response-found*)
+			      #.(net.aserve::response-number *response-moved-permanently*)
+			      #.(net.aserve::response-number *response-see-other*))
+			    :test #'eq)
+		    redirect
+		    (member method redirect-methods :test #'eq)
+		    (if* (integerp redirect)
+		       then (> redirect 0)
+		       else t))		; unrestricted depth
+	     then
+		  (setq new-location
+		    (cdr (assoc :location (client-request-headers creq)
+				:test #'eq))))
+	  
+	  (if* (and (null new-location) 
 		    ; not called when redirecting
 		    (if* (functionp skip-body)
 		       then (funcall skip-body creq)
@@ -256,78 +256,73 @@
 		     (client-request-headers  creq)
 		     (client-request-uri creq))))
 	  
-          ;; read the body of the response
-	  (let* ( ; (atype '(unsigned-byte 8)) ; JSC: We do not need to set this all over and over
-		 ans
-		 res
-		 (start 0)
-		 (end nil)
-		 body)
-
+	  ;; read the body of the response
+	  (let ( #+ignore (atype (if* (eq format :text) ; JSC: We do not need to set this all over and over
+			  then 'character
+			  else '(unsigned-byte 8)))
+		ans
+		res
+		(start 0)
+		(end nil)
+		body)
+	    
 	    (loop
-              (if* (null ans)
+	      (if* (null ans)
 		 then (setq ans (make-array 1024 :element-type '(unsigned-byte 8)) ; was atype)
 			    start 0))
 		
-	
 	      (setq end (client-request-read-sequence ans creq :start start))
 	      (if* (zerop end)
-		 then ; eof
+		 then			; eof
 		      (return))
 	      (if* (eql end 1024)
-   	         then ; filled up
+		 then			; filled up
 		      (push ans res)
 		      (setq ans nil)
 		 else (setq start end)))
-      
-	    ; we're out with res containing full arrays and 
-	    ; ans either nil or holding partial data up to but not including
-	    ; index start
-      
+	    
+	    ;; we're out with res containing full arrays and 
+	    ;; ans either nil or holding partial data up to but not including
+	    ;; index start
+	    
 	    (if* res
-	       then ; multiple items
+	       then			; multiple items
 		    (let* ((total-size (+ (* 1024 (length res)) start))
-			   (bigarr (make-array total-size :element-type '(unsigned-byte 8)))); was atype)))
+			   (bigarr (make-array total-size :element-type '(unsigned-byte 8)) ; was atype)
+                             ))
 		      (let ((sstart 0))
 			(dolist (arr (reverse res))
 			  (replace bigarr arr :start1 sstart)
 			  (incf sstart (length arr)))
 			(if* ans 
-			   then ; final one 
+			   then		; final one 
 				(replace bigarr ans :start1 sstart)))
-		
+		      
 		      (setq body bigarr))
-	       else ; only one item
+	       else			; only one item
 		    (if* (eql 0 start)
-		       then ; nothing returned
+		       then		; nothing returned
 			    (setq body "")
 		       else (setq body (subseq ans 0 start))))
-
-            (if* new-location
-		 then                   ; must do a redirect to get to the real site
-		      (client-request-close creq)
-		      (apply #'do-http-request
-			     (net.uri:merge-uris new-location uri)
-			     :redirect
-			     (if* (integerp redirect)
-				then (1- redirect)
-				else redirect)
-			     args)
-		 else 
-		      (values 
-		       (if (eq format :text)
-			   (loop :with result = (make-string (length body))
-			         :for i :from 0 :below (length body)
-				 :do (setf (aref result i)
-					   (code-char (aref body i)))
-				 :finally (return result))
-			 body)
-		       (client-request-response-code creq)
-		       (client-request-headers  creq)
-		       (client-request-uri creq)
-		       ))))
+	    
+	    (if* new-location
+	       then			; must do a redirect to get to the real site
+		    (client-request-close creq)
+		    (apply #'do-http-request
+			   (net.uri:merge-uris new-location uri)
+			   :redirect
+			   (if* (integerp redirect)
+			      then (1- redirect)
+			      else redirect)
+			   args)
+	       else
+		    (values 
+		     body
+		     (client-request-response-code creq)
+		     (client-request-headers  creq)
+		     (client-request-uri creq)))))
       
-      ; protected form:
+      ;; protected form:
       (client-request-close creq))))
 
 
@@ -356,8 +351,8 @@
 				     headers
 				     proxy
 				     user-agent
-				     ;; :utf8-base might be better
-				     (external-format *default-aserve-external-format*) ;; FIXME
+				     (external-format 
+				      *default-aserve-external-format*)
 				     ssl
 				     )
   
@@ -381,12 +376,12 @@
        then (error "need a host in the client request: ~s" uri))
 
     (setq scheme-default-port
-          (case (or (net.uri:uri-scheme uri) (if* ssl
-                                                  then :https
-                                                  else :http))
-            (:http 80)
-            (:https 443)))
-
+      (case (or (net.uri:uri-scheme uri) (if* ssl 
+					    then :https
+					    else :http))
+	(:http 80)
+	(:https 443)))
+    
     ; default the port to what's appropriate for http or https
     (setq port (or (net.uri:uri-port uri) scheme-default-port))
     
@@ -404,6 +399,7 @@ or \"foo.com:8000\", not ~s" proxy))
 					     :remote-port pport
 					     :format :bivalent
 					     :type net.aserve::*socket-stream-type*
+					     :nodelay t
 					     )))
        else (setq sock 
 	      (socket:make-socket :remote-host host
@@ -411,6 +407,7 @@ or \"foo.com:8000\", not ~s" proxy))
 				  :format :bivalent
 				  :type 
 				  net.aserve::*socket-stream-type*
+				  :nodelay t
 					     
 				  ))
 	    (if* ssl
@@ -418,16 +415,13 @@ or \"foo.com:8000\", not ~s" proxy))
 		      (funcall 'socket::make-ssl-client-stream sock)))
 	    )
 
-    ;#+(and allegro (version>= 6 0))
-    #+allegro
+    #+(and allegro (version>= 6 0))
     (let ((ef (find-external-format external-format)))
-      ;#+(version>= 6)
-       #+allegro 
-        (net.aserve::warn-if-crlf ef)
+      #+(and allegro (version>= 6)) (net.aserve::warn-if-crlf ef)
       (setf (stream-external-format sock) ef))
 
-    ;; we use socket auto finalization instead (CMU)
-    #+allegro(if* net.aserve::*watch-for-open-sockets*
+    #+allegro
+    (if* net.aserve::*watch-for-open-sockets*
        then (schedule-finalization 
 	     sock 
 	     #'net.aserve::check-for-open-socket-before-gc))
@@ -461,7 +455,7 @@ or \"foo.com:8000\", not ~s" proxy))
 
     ; always send a Host header, required for http/1.1 and a good idea
     ; for http/1.0
-    (if* (not (eql scheme-default-port port))
+    (if*  (not (eql scheme-default-port  port))
        then (net.aserve::format-dif :xmit sock "Host: ~a:~a~a" host port crlf)
        else (net.aserve::format-dif :xmit  sock "Host: ~a~a" host crlf))
     
@@ -783,25 +777,26 @@ or \"foo.com:8000\", not ~s" proxy))
   ;; JSC Note: This function is only used for reading headers. Therefore we
   ;;           are safe in always doing CODE->CHAR conversions here.
 
-  ;; JSC 01.Feb.2002: Rewritten because it got too ugly
-  ;; with this character conversion. The original approach would have lead either
-  ;; to unneeded conversions or double (null ch) checking. 
-
   (let ((i 0))
-    (loop 
-     (let ((ch (read-byte socket nil nil)))
-          
-        (when (null ch) ; eof from socket
-          (if (> i 0)
-              (return i)   ; actually read some stuff first
-            (return nil))) ; eof
-
-        (setf ch (code-char ch))
-        (cond ((eql ch #\return)) ; ignore CR
-              ((eql ch #\linefeed) (return i)) ; end of line
-              ((< i max) ; ignore characters beyond line end
-               (setf (schar buffer i) ch)
-               (incf i)))))))
+    (loop
+      (let* ((ch (read-byte socket nil nil))
+             (ch (and ch (code-char ch))))
+	(if* (null ch)
+	   then ; eof from socket
+		(if* (> i 0)
+		   then ; actually read some stuff first
+			(return i)
+		   else (return nil) ; eof
+			)
+	 elseif (eq ch #\return)
+	   thenret ; ignore
+	 elseif (eq ch #\newline)
+	   then ; end of the line,
+		(return i)
+	 elseif (< i max)
+	   then ; ignore characters beyone line end
+		(setf (schar buffer i) ch)
+		(incf i))))))
 		
 		
     

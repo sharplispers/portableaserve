@@ -24,7 +24,8 @@
 ;;
 
 ;;
-;; $Id: htmlgen.cl,v 1.1 2001/08/06 03:43:00 neonsquare Exp $
+;; $Id: htmlgen.cl,v 1.2 2002/06/09 11:34:59 rudi Exp $
+
 ;; Description:
 ;;   html generator
 
@@ -57,12 +58,12 @@
 
 (defun write-html-string (string &optional stream &key (start 0) end)
   (if (and stream (equal (stream-element-type stream)
-                  '(unsigned-byte 8)))
+                         '(unsigned-byte 8)))
       (loop :for i :from start :below (or end (length string))
             :do (write-byte (char-code (schar string i)) stream))
 ;     (loop :for c :across (subseq string start end)
 ;           :do (write-byte (char-code c) stream))
-    (write-string string stream :start start :end end)))
+      (write-string string stream :start start :end end)))
 
 ;; html generation
 
@@ -89,9 +90,9 @@
 
 (defvar *html-stream* nil) ; where the output goes
 
-(defmacro html (&rest forms)
+(defmacro html (&rest forms &environment env)
   ;; just emit html to the curfent stream
-  (process-html-forms forms))
+  (process-html-forms forms env))
 
 (defmacro html-out-stream-check (stream)
   ;; ensure that a real stream is passed to this function
@@ -108,7 +109,7 @@
 
 
 
-(defun process-html-forms (forms)
+(defun process-html-forms (forms env)
   (let (res)
     (flet ((do-ent (ent args argsp body)
 	     ;; ent is an html-process object associated with the 
@@ -135,7 +136,7 @@
 			       nil
 			  else ; some args
 			       (push `(,(html-process-macro ent) ,args
-								 ,(process-html-forms body))
+								 ,(process-html-forms body env))
 				     res)
 			       nil)))))
 				 
@@ -144,6 +145,8 @@
       (do* ((xforms forms (cdr xforms))
 	    (form (car xforms) (car xforms)))
 	  ((null xforms))
+
+	(setq form (macroexpand form env))
 	
 	(if* (atom form)
 	   then (if* (keywordp form)
@@ -214,7 +217,7 @@
   
   
   (if* args
-     then `(progn (write-html-string ,(format nil "<~a" string-code)
+     then `(progn (write-string ,(format nil "<~a" string-code)
 				*html-stream*)
 		  ,@(do ((xx args (cddr xx))
 			 (res))
@@ -223,44 +226,42 @@
 		      (if* (eq :if* (car xx))
 			 then ; insert following conditionally
 			      (push `(if* ,(cadr xx)
-					then (write-html-string 
-					      ,(format nil " ~a" (caddr xx));,(format nil " ~a=" (caddr xx))
+					then (write-string 
+					      ,(format nil " ~a" (caddr xx))
 					      *html-stream*)
 					     (prin1-safe-http-string ,(cadddr xx)))
 				    res)
 			      (pop xx) (pop xx)
 			 else 
 					     
-			      (push `(write-html-string 
-				      ,(format nil " ~a" (car xx));,(format nil " ~a=" (car xx))
+			      (push `(write-string 
+				      ,(format nil " ~a" (car xx))
 				      *html-stream*)
 				    res)
 			      (push `(prin1-safe-http-string ,(cadr xx)) res)))
 						    
 		      
-		  (write-html-string ">" *html-stream*)
+		  (write-string ">" *html-stream*)
 		  ,@body
 		  ,(if* (and body has-inv)
-		      then `(write-html-string ,(format nil "</~a>" string-code)
+		      then `(write-string ,(format nil "</~a>" string-code)
 					  *html-stream*)))
-     else `(progn (write-html-string ,(format nil "<~a>" string-code)
+     else `(progn (write-string ,(format nil "<~a>" string-code)
 				*html-stream*)
 		  ,@body
 		  ,(if* (and body has-inv)
-		      then `(write-html-string ,(format nil "</~a>" string-code)
+		      then `(write-string ,(format nil "</~a>" string-code)
 					  *html-stream*)))))
 			     
 		 
 
 (defun princ-http (val)
   ;; print the given value to the http stream using ~a
-  (write-html-string
-  (format nil "~a" val) *html-stream*))
+  (format *html-stream* "~a" val))
 
 (defun prin1-http (val)
   ;; print the given value to the http stream using ~s
-  (write-html-string
-  (format nil "~s" val) *html-stream*))
+  (format *html-stream* "~s" val))
 
 
 (defun princ-safe-http (val)
@@ -303,9 +304,9 @@
       ((>= i end)
        (if* (< start i)
 	  then  (write-html-string string
-				   stream
-				   :start start
-				   :end i)))
+                                   stream
+                                   :start start
+                                   :end i)))
 	 
       
     (let ((ch (schar string i))
@@ -322,11 +323,11 @@
 	 then ; must do a conversion, emit previous chars first
 		
 	      (if* (< start i)
-		 then  (write-html-string string
-					  stream
-					  :start start
-					  :end i))
-	      (write-html-string cvt stream)
+		 then  (write-sequence string
+				       stream
+				       :start start
+				       :end i))
+	      (write-string cvt stream)
 		
 	      (setq start (1+ i))))))
 	
@@ -388,7 +389,7 @@
        then (if* (keywordp form)
 	       then (funcall print-handler ent :set nil nil nil stream)
 	     elseif (stringp form)
-	       then (write-html-string form stream)
+	       then (write-string form stream)
 	       else (princ form stream))
      elseif ent
        then (funcall print-handler 
@@ -432,7 +433,7 @@
   ;; the print handler for the normal html operators
   (ecase cmd
     (:set ; just turn it on
-     (write-html-string (format nil "<~a>" (html-process-key ent)) stream))
+     (format stream "<~a>" (html-process-key ent)))
     (:full ; set, do body and then unset
      (let (iter)
        (if* args
@@ -449,20 +450,20 @@
 				stream)
 		       (return-from html-standard-print)
 		  else
-		       (write-html-string (format nil "<~a" (html-process-key ent)) stream)
+		       (format stream "<~a" (html-process-key ent))
 		       (do ((xx args (cddr xx)))
 			   ((null xx))
 			 ; assume that the arg is already escaped 
 			 ; since we read it
 			 ; from the parser
-			 (write-html-string (format nil " ~a=\"~a\"" (car xx) (cadr xx)) stream))
-		       (write-html-string ">" stream))
-	  else (write-html-string (format nil "<~a>" (html-process-key ent)) stream))
+			 (format stream " ~a=\"~a\"" (car xx) (cadr xx)))
+		       (format stream ">"))
+	  else (format stream "<~a>" (html-process-key ent)))
        (dolist (ff (cdr form))
 	 (html-print-subst ff subst stream)))
      (if* (html-process-has-inverse ent)
 	then ; end the form
-	     (write-html-string (format nil "</~a>" (html-process-key ent)) stream)))))
+	     (write-html-string (format nil "</~a>" (html-process-key ent)))))))
      
   
   
@@ -507,7 +508,7 @@
       (declare (ignore args ent subst))
       (assert (eql 2 (length form)))
       (if* (eq cmd :full)
-	 then (write-html-string (format nil "~a" (cadr form)) stream)
+	 then (write-html-string (format nil "~a" (cadr form)))
 	 else (error ":princ must be given an argument")))
   )
 
@@ -534,7 +535,7 @@
       (declare (ignore ent args subst))
       (assert (eql 2 (length form)))
       (if* (eq cmd :full)
-	 then (write-html-string (format nil "~s" (cadr form)) stream)
+	 then (format stream "~s" (cadr form))
 	 else (error ":prin1 must be given an argument")))
   
   )
@@ -566,7 +567,7 @@
   
   #'(lambda (ent cmd args form stream)
       (declare (ignore ent cmd args))
-      (write-html-string (format nil "<!--~a-->" (cadr form)) stream)))
+      (write-html-string (format nil "<!--~a-->" (cadr form)))))
 
       
 

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: log.cl,v 1.3 2002/02/15 01:17:39 neonsquare Exp $
+;; $Id: log.cl,v 1.4 2002/06/09 11:35:01 rudi Exp $
 
 ;; Description:
 ;;   iserve's logging
@@ -37,25 +37,61 @@
 (defvar *enable-logging* t) ; to turn on/off the standard logging method
 
 (defmethod logmess (message)
+  ;; send log message to the default vhost's error stream 
+  (logmess-stream message (vhost-error-stream
+			   (wserver-default-vhost
+			    *wserver*))))
+
+
+
+(defmethod logmess-stream (message stream)
+  ;; send the log message to the given stream which should be a
+  ;; stream object and not a stream indicator (like t)
+  ;; If the stream has a lock use that.
   (multiple-value-bind (csec cmin chour cday cmonth cyear)
       (decode-universal-time (get-universal-time))
-    (let ((str (format nil
-		       "~a: ~2,'0d/~2,'0d/~2,'0d - ~2,'0d:~2,'0d:~2,'0d - ~a~%"
-		       (acl-mp:process-name acl-mp:*current-process*)
-		       cmonth cday (mod cyear 100)
-		       chour cmin csec
-		       message)))
-      (write-sequence str (or *aserve-debug-stream* *initial-terminal-io*)))))
+    (let* ((*print-pretty* nil)
+	   (str (format
+		 nil
+		 "~a: ~2,'0d/~2,'0d/~2,'0d - ~2,'0d:~2,'0d:~2,'0d - ~a~%"
+		 (acl-mp:process-name #+allegro sys:*current-process*
+                                      #-allegro acl-mp:*current-process*)
+		 cmonth cday (mod cyear 100)
+		 chour cmin csec
+		 message))
+	   (lock #+allegro (getf (excl::stream-property-list stream) :lock)
+                 #-allegro nil))
+      (if* lock
+	 then (acl-mp:with-process-lock (lock)
+		(if* (open-stream-p stream)
+		   then (write-sequence str stream)
+			(finish-output stream)))
+	 else (write-sequence str stream)
+	      (finish-output stream)))))
 
 (defmethod brief-logmess (message)
   ;; omit process name and month, day, year
   (multiple-value-bind (csec cmin chour)
       (decode-universal-time (get-universal-time))
-    (let ((str (format nil
-		       "~2,'0d:~2,'0d:~2,'0d - ~a~%"
-		       chour cmin csec
-		       message)))
-      (write-sequence str (or *aserve-debug-stream* *initial-terminal-io*)))))
+    (let* ((*print-pretty* nil)
+	   (stream (vhost-error-stream
+		    (wserver-default-vhost
+		     *wserver*)))
+	   (str (format nil
+			"~2,'0d:~2,'0d:~2,'0d - ~a~%"
+			chour cmin csec
+			message))
+	   (lock #+allegro (getf (excl::stream-property-list stream) :lock)
+                 #-allegro nil))
+      (if* lock
+	 then (acl-mp:with-process-lock (lock)
+		(setq stream (vhost-error-stream
+			      (wserver-default-vhost
+			       *wserver*)))
+		(write-sequence str stream)
+		(finish-output stream))
+	 else (write-sequence str stream)
+	      (finish-output stream)))))
 
 
 
@@ -70,28 +106,41 @@
 (defmethod log-request ((req http-request))
   ;; after the request has been processed, write out log line
   (if* *enable-logging*
-     then (let ((ipaddr (socket:remote-host (request-socket req)))
-		(time   (request-reply-date req))
-		(code   (let ((obj (request-reply-code req)))
-			  (if* obj
-			     then (response-number obj)
-			     else 999)))
-		(length  (or (request-reply-content-length req)
-;			     #+(and allegro (version>= 6))
-			     #+allegro
-			     (excl::socket-bytes-written 
-			      (request-socket req))))
+     then (let* ((ipaddr (socket:remote-host (request-socket req)))
+		 (time   (request-reply-date req))
+		 (code   (let ((obj (request-reply-code req)))
+			   (if* obj
+			      then (response-number obj)
+			      else 999)))
+		 (length  (or (request-reply-content-length req)
+			      #+(and allegro (version>= 6))
+			      (excl::socket-bytes-written 
+			       (request-socket req))))
 	
-		(stream (vhost-log-stream
-			 (request-vhost req))))
-    
-	    (format stream
-		    "~a - - [~a] ~s ~s ~s~%"
-		    (socket:ipaddr-to-dotted ipaddr)
-		    (maybe-universal-time-to-date time)
-		    (request-raw-request req)
-		    code
-		    (or length -1)))))
+		 (stream (vhost-log-stream (request-vhost req)))
+		
+		 (lock #+allegro (and (streamp stream)
+			    (getf (excl::stream-property-list stream) 
+				  :lock))
+                       #-allegro nil))
+
+	    (macrolet ((do-log ()
+			 '(progn (format stream
+				  "~a - - [~a] ~s ~s ~s~%"
+				  (socket:ipaddr-to-dotted ipaddr)
+				  (maybe-universal-time-to-date time)
+				  (request-raw-request req)
+				  code
+				  (or length -1))
+			   (force-output stream))))
+			 
+	      (if* lock
+		 then (acl-mp:with-process-lock (lock)
+			; in case stream switched out while we weren't busy
+			; get the stream again
+			(setq stream (vhost-log-stream (request-vhost req)))
+			(do-log))
+		 else (do-log))))))
 
 	    	
     
@@ -110,7 +159,9 @@
 	      then uri 
 	      else (net.uri:render-uri uri nil))
 	   extra))
-  (force-output (or *aserve-debug-stream* *initial-terminal-io*)))
+  (force-output (vhost-error-stream
+		 (wserver-default-vhost
+		  *wserver*))))
 
     
   

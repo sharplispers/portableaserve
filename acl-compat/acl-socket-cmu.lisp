@@ -63,7 +63,13 @@ client wanted to initiate a connection and wait is nil."
 			 &allow-other-keys)
   "Return a stream connected to remote-host if connect is :active, or
 something listening on local-port that can be fed to accept-connection
-if connect is :passive."
+if connect is :passive.
+
+This is an incomplete implementation of ACL's make-socket function!
+It was written to provide the functionality necessary to port
+AllegroServe.  Refer to
+http://franz.com/support/documentation/6.1/doc/pages/operators/socket/make-socket.htm
+to read about the missing parts."
   (check-type remote-host string)
   (let ((element-type (ecase format
 			(:text 'base-char)

@@ -30,7 +30,7 @@
 #+cmu
 (progn
   ;; Avoid setting path to example files to
-  ;; /usr/share/doc/cl-aserve/... later on in aserve.system.  (The
+  ;; /usr/share/doc/cl-aserve/... later on in aserve-cmu.system.  (The
   ;; feature will be removed again at the end of the load process)
   (pushnew :kludge-no-cclan *features*)
   ;; Load Gray-streams support
@@ -69,13 +69,13 @@
   (load (merge-pathnames "logical-hostnames.lisp" *load-truename*))
 
   ;; Load definition of ACL Compatibility system
-  (load "acl-compat:acl-compat.system")
+  (load "acl-compat:acl-compat-cmu.system")
 
   ;; Compile and load ACL Compatibility system
   (mk:oos "ACL-COMPAT" :load :compile-during-load t)
 
   ;; Load definition of Aserve system
-  (load "aserve:aserve.system")
+  (load "aserve:aserve-cmu.system")
 
   ;; Compile and load the ASERVE system
   (mk:oos "ASERVE" :load :compile-during-load t)

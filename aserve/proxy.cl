@@ -1,4 +1,4 @@
-;; -*- mode: lisp; package: net.aserve -*-
+;; -*- mode: common-lisp; package: net.aserve -*-
 ;;
 ;; proxy.cl
 ;;
@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.6 2002/03/02 22:02:40 neonsquare Exp $
+;; $Id: proxy.cl,v 1.7 2002/06/09 11:35:00 rudi Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -485,7 +485,8 @@ cached connection = ~s~%" cond cached-connection))
 			       " on port "
 			       (:b (:princ-safe (or port 80)))))))))
 		(return-from proxy-request)))
-	    #+allegro
+
+            #+allegro
 	    (if* *watch-for-open-sockets*
 	       then (schedule-finalization 
 		     sock 
@@ -1020,12 +1021,13 @@ cached connection = ~s~%" cond cached-connection))
 
     (incf *connections-made*)
 ;    (socket:with-pending-connect
-	(acl-mp:with-timeout (*connection-timed-out-wait*
+	(acl-mp:with-timeout (*connection-timed-out-wait*   ; ok w-t
 			  (error "connection timed out"))
 	  (socket:make-socket :remote-host host
 			      :remote-port port
 			      :format :bivalent
-			      :type *socket-stream-type*))))
+			      :type *socket-stream-type*
+			      :nodelay t))))
 ;)
 
 	
@@ -1085,7 +1087,7 @@ cached connection = ~s~%" cond cached-connection))
   (let ((name (format nil "~d-cache-cleaner" (incf *thread-index*))))
     (setf (pcache-cleaner pcache)
       (acl-mp:process-run-function 
-       name 
+       name
        #'(lambda (server)
 	   (let ((*wserver* server)
 		 (pcache (wserver-pcache server)))
@@ -1124,8 +1126,7 @@ cached connection = ~s~%" cond cached-connection))
 	   :function
 	   #'(lambda (req ent)
 	       #+allegro (gc t)
-	       #+cmu (ext:gc)
-	       #+lispworks (hcl:gc-if-needed)
+               #+cmu (ext:gc :full t)
 	       (display-proxy-cache-statistics req ent pcache)))
   
 	       
@@ -1199,9 +1200,9 @@ cached connection = ~s~%" cond cached-connection))
 				     :if-exists :supersede
 				     :if-does-not-exist :create
 				     :direction :io
-				     #-allegro
+				     #-(and allegro (version>= 6))
 				     :element-type
-				     #-allegro
+				     #-(and allegro (version>= 6))
 				     '(unsigned-byte 8)))))
     (push pcache-disk (pcache-disk-caches 
 		       (wserver-pcache server)))
@@ -1276,7 +1277,7 @@ cached connection = ~s~%" cond cached-connection))
 	   "Connection caching is " 
 	   (:princ (if* *connection-caching* 
 		      then "enabled"
-		      else "disabled"))
+		      else "diabled"))
 	   :br
 	   ((:table :border 2)
 	    (:tr
@@ -1899,7 +1900,7 @@ cached connection = ~s~%" cond cached-connection))
 (defun kill-pcache-ent (pcache-ent &optional (pcache (wserver-pcache
 						      *wserver*)))
   ; make this entry dead
-  (acl-mp:without-scheduling
+  (acl-mp::without-scheduling
     
     ; stop any scanning of this uri
     (setf (pcache-ent-level pcache-ent) -1) 
@@ -2112,7 +2113,7 @@ cached connection = ~s~%" cond cached-connection))
 	 then (return))
       
       ; pick off the lru and kill it
-      (acl-mp:with-process-lock ((pcache-disk-lock pcache-disk))
+      (acl-mp::with-process-lock ((pcache-disk-lock pcache-disk))
 	(let ((lru (pcache-ent-prev lru-head)))
 	  (if* (not (eq lru mru-head))
 	     then ; a legit block
@@ -2307,11 +2308,11 @@ cached connection = ~s~%" cond cached-connection))
 			then (setf (pcache-ent-loading-flag pcache-ent) t))
 		     val)))))
     (if* flagval
-         then (acl-mp:process-wait "cache entry to be loaded"
-                                   #'(lambda (pcache-ent) 
-                                       (null (pcache-ent-loading-flag pcache-ent)))
-                                   pcache-ent)
-         (return-from retrieve-pcache-from-disk))
+       then (acl-mp:process-wait "cache entry to be loaded"
+			     #'(lambda (pcache-ent) 
+				 (null (pcache-ent-loading-flag pcache-ent)))
+			     pcache-ent)
+	    (return-from retrieve-pcache-from-disk))
     
     ; it's our job to load in the entry
     (let* ((block-list (pcache-ent-disk-location pcache-ent))
@@ -2628,14 +2629,10 @@ cached connection = ~s~%" cond cached-connection))
 (defmethod make-load-form ((obj queueobj) &optional env)
   (make-load-form-saving-slots obj :environment env))
 
-#+lispworks
-(let ((lw:*handle-warn-on-redefinition* :warn))
-  (defmethod make-load-form ((obj #+allegro mp:process-lock #-allegro mp:lock) &optional env)
-    (make-load-form-saving-slots obj :environment env)))
-
-#-lispworks
-(defmethod make-load-form ((obj #+allegro mp:process-lock #-allegro mp:lock) &optional env)
-    (make-load-form-saving-slots obj :environment env))
+(without-package-locks
+ #+allegro     ;; No class process-lock, at least in acl-mp-cmu.lisp
+(defmethod make-load-form ((obj acl-mp:process-lock) &optional env)
+  (make-load-form-saving-slots obj :environment env))
 
 ; this is just temporary until we get a patch for this in uri.fasl
 (defmethod make-load-form ((self net.uri:uri) &optional env)
@@ -2651,7 +2648,7 @@ cached connection = ~s~%" cond cached-connection))
      :string ,(net.uri::uri-string self)
      ; bug is missing ' in parsed-path value
      :parsed-path ',(net.uri::uri-parsed-path self)))
-;)
+)
 
 (defun save-proxy-cache (filename &key (server *wserver*))
   ;; after the server threads have been saved, this function can 

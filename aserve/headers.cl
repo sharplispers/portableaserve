@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: headers.cl,v 1.2 2001/12/28 15:55:27 neonsquare Exp $
+;; $Id: headers.cl,v 1.3 2002/06/09 11:35:01 rudi Exp $
 
 ;; Description:
 ;;   header parsing
@@ -91,18 +91,6 @@
   ;; where in the buffer the 2byte entry for header 'index' is located
   `(- *header-block-size* 6  (ash ,index 1)))
 
-;; this must be kept in sync with the length of *http-headers*.
-;; we don't want to make it a defparameter and compute it at runtime
-;; since we want to take advantage of it being a constant, plus
-;; its size will effectively be hardwired into cache entries and
-;; thus a change in this value should be accompanied by a 
-;; clearing of the cache.
-(defconstant *headers-count* 51)
-
-(defmacro header-block-data-start ()
-  ;; return index right above the first data index object stored
-  `(- *header-block-size* 4 (* *headers-count* 2)))
-
 (eval-when (compile eval)
   ;; the headers from the http spec
   ;; Following the header name we specify how to 
@@ -164,7 +152,7 @@
 	("Retry-After" :nf :p nil )
 	("Server" :nf :p nil)
 	("Set-Cookie" :nf :p nil)
-        ("Status" :nf :nf nil) ; not real header but found in cgi responses
+	("Status" :nf :nf nil) ; not real header but found in cgi responses
 	("TE" :p :nf   :mx)
 	("Trailer" :np :np nil)
 	("Transfer-Encoding" :np :np nil)
@@ -175,6 +163,19 @@
 	("Warning" :p :p :mx)
 	("WWW-Authenticate" :nf :p nil)
 	)))
+
+;; number of headers.
+;; we take advantage of this being a constant in the code below and 
+;; in the proxy caches.  If this number should change all proxy caches
+;; should be removed.
+(defconstant *headers-count* #.(length *http-headers*))
+
+(defmacro header-block-data-start ()
+  ;; return index right above the first data index object stored
+  `(- *header-block-size* 4 (* *headers-count* 2)))
+
+
+
 
 (eval-when (compile eval)
   (defmacro build-header-lookup-table ()
@@ -247,10 +248,11 @@
 		    ;; number of distinct headers
 		    ,(1+ header-number))
 		  
-                  (if* (not (eql *header-count* *headers-count*))
+		  (if* (not (eql *header-count* *headers-count*))
 		     then (error "setq *headers-count* to ~d in headers.cl" 
 				 *header-count*))
-
+		  
+			    
 		  (dolist (hkw ',plists)
 		    (setf (get (car hkw) 'kwdi) (cdr hkw)))
 		  
@@ -687,10 +689,10 @@
   (let* ((buff (get-sresource *header-block-sresource*))
 	 (end (read-headers-into-buffer sock buff)))
     (if* end
-         then (prog1 (parse-and-listify-header-block buff end)
-                (free-sresource *header-block-sresource* buff))
-         else (free-sresource *header-block-sresource* buff)
-              (error "Incomplete headers sent by server"))))
+       then (prog1 (parse-and-listify-header-block buff end)
+	      (free-sresource *header-block-sresource* buff))
+       else (free-sresource *header-block-sresource* buff)
+	    (error "Incomplete headers sent by server"))))
 
 
 (defun parse-and-listify-header-block (buff end)
@@ -722,7 +724,7 @@
     (free-sresource *header-index-sresource* ans)
 		   
     headers))
-							   
+
 (defun listify-parsed-header-block (buff)
   ;; the header block buff has been parsed.
   ;; we just extract all headers in conses
@@ -732,8 +734,8 @@
 	(if* val
 	   then (push (cons (aref *header-keyword-array* i) val) res))))
     (nreverse res)))
-
-
+  
+    
 
 (defun initialize-header-block (buf)
   ;; set the parsed header block buf to the empty state
