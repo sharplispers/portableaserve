@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.35+cvs.2004.08.21) unstable; urgency=low
+
+  * Update README.Debian (closes:267234)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat, 21 Aug 2004 11:53:38 -0600
+
 cl-portable-aserve (1.2.35+cvs.2004.08.11) unstable; urgency=low
 
   * Add acl-compat function for lispworks (closes:265041)

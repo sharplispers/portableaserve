@@ -6,21 +6,7 @@ cmucl-source. However, cmucl-source package is not included as a
 dependency for cl-portable-aserve since cl-portable-aserve can be used
 with other CL implementations which would not require cmucl-source.
 
-Tested with CMUCL on sid:
-	
-$ lisp
-* (clc:clc-require 'aserve)
-* (init-aserve-cmu) ;; only if you're using CMUCL
-* (load "aserve:example.cl")
-* (in-package :aserve-example)
-* (start-server :port 2001)
-
-You can now test on http://localhost:2001/
-
-The example.cl file may be found at:
-/usr/share/common-lisp/source/aserve/example.cl
-
-Other example-files may be found in:
+Example files may be found in:
 /usr/share/doc/cl-aserve/examples/
 
 More info about Portable Aserve may be found on
@@ -32,4 +18,4 @@ The webactions module is not yet completely portable. Currently, it
 compiles only on Lispworks and Allegro. Patches will be welcomed
 upstream.
 
- -- Kevin M. Rosenberg <kmr@debian.org>, Mon Aug  2 21:42:08 2004
+ -- Kevin M. Rosenberg <kmr@debian.org>, Sat Aug 21 11:53:11 2004
