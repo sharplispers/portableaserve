@@ -223,26 +223,29 @@
   (when string
     (intern (string-upcase string) (find-package 'keyword))))
 		
-(defun parse-uri (name &key (class 'uri))
+(defun parse-uri (thing &key (class 'uri))
   "Parse an URI string and return a new URI Object initialized with
    the found components"
-	(multiple-value-bind (scheme authority path query fragment)
-            (%meta-parse-uri name)
-          (let* ((pos (position #\: authority))
-                 (host (subseq authority 0 pos))
-                 (port (when (and pos (< (1+ pos) (length authority)))
-                                  (subseq authority (1+ pos)))))
-            (make-instance class
-                           :scheme (string-to-keyword scheme)
-                           :host host
-                           :port (and port (parse-integer port))
-                           :path (and path (plusp (length path))
-                                      (coerce path 'simple-string))
-                           :query (and query (plusp (length query))
-                                       (coerce query 'simple-string))
-                           :fragment (and fragment (plusp (length fragment))
-                                          (coerce fragment 'simple-string))
-			   :string name))))
+  (etypecase thing
+    (uri thing)
+    (string
+     (multiple-value-bind (scheme authority path query fragment)
+	 (%meta-parse-uri thing)
+       (let* ((pos (position #\: authority))
+	      (host (subseq authority 0 pos))
+	      (port (when (and pos (< (1+ pos) (length authority)))
+		      (subseq authority (1+ pos)))))
+	 (make-instance class
+			:scheme (string-to-keyword scheme)
+			:host host
+			:port (and port (parse-integer port))
+			:path (and path (plusp (length path))
+				   (coerce path 'simple-string))
+			:query (and query (plusp (length query))
+				    (coerce query 'simple-string))
+			:fragment (and fragment (plusp (length fragment))
+				       (coerce fragment 'simple-string))
+			:string thing))))))
 
 (defmethod merge-uris (uri base &optional place)
   (declare (ignore place))
