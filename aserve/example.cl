@@ -304,7 +304,7 @@
 (publish :path "/local-secret-auth"
 	 :content-type "text/html"
 	 :authorizer (make-instance 'location-authorizer
-		       :patterns '((:accept "127.0" 8)
+		       :patterns '((:accept "127.0.0.0" 8)
 				   (:accept "tiger.franz.com")
 				   :deny))
 	 :function
