@@ -10,7 +10,7 @@
    "acl-sys-lw"
    "meta"
    "uri"
-   "sys")
+   "acl-sys-lw")
 
   :rules
   ((:in-order-to :compile "acl-excl-lw"
