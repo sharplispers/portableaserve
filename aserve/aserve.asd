@@ -81,11 +81,26 @@ indicate failure."))
   )
 
 #+allegro
+(defclass original-aserve (asdf:component)
+  ((loaded :initform nil :accessor loaded)))
+
+#+allegro
+(defmethod asdf:perform ((op asdf:load-op) (c original-aserve))
+  #+common-lisp-controller (c-l-c:original-require 'aserve)
+  #-common-lisp-controller (require 'aserve)
+  (setf (loaded c) t))
+
+#+allegro
+(defmethod asdf:operation-done-p ((op asdf:load-op) (c original-aserve))
+  (loaded c))
+
+#+allegro
+(defmethod asdf:operation-done-p ((op asdf:compile-op) (c original-aserve))
+  t)
+
+#+allegro
 (defsystem aserve
-    :components nil
-    :perform (load-op :after (op aserve)
-		      #+common-lisp-controller (c-l-c:original-require 'aserve)
-		      #-common-lisp-controller (require 'aserve)))
+    :components ((:original-aserve "dummy")))
 
 ;;; Logical pathname is needed by AllegroServe examples
 #+(or lispworks cmu mcl openmcl clisp sbcl)

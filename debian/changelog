@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2003.08.17) unstable; urgency=low
+
+  * New upstream
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun, 17 Aug 2003 23:45:03 -0600
+
 cl-portable-aserve (1.2.12c+cvs2003.08.09) unstable; urgency=low
 
   * Use CMUCL graystream (closes:203860)
