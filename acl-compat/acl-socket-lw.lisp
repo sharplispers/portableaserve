@@ -93,9 +93,6 @@
            :format-control "~A occured while doing socket IO (~?)"
            :format-arguments (list 'socket-error format-string format-args))))
 
-(defmethod comm::socket-error ((stream binary-socket-stream) error-code format-string &rest format-args)
-  (apply #'socket-error stream error-code :IO format-string format-args))
-
 (defclass socket ()
   ((passive-socket :type fixnum
                    :initarg :passive-socket
@@ -113,6 +110,11 @@
 (defclass input-binary-socket-stream (binary-socket-stream)())
 (defclass output-binary-socket-stream (binary-socket-stream)())
 (defclass bidirectional-binary-socket-stream (input-binary-socket-stream output-binary-socket-stream)())
+
+
+(defmethod comm::socket-error ((stream binary-socket-stream) error-code format-string &rest format-args)
+  (apply #'socket-error stream error-code :IO format-string format-args))
+
 
 (declaim (inline %reader-function-for-sequence))
 (defun %reader-function-for-sequence (sequence)
