@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.16 2004/02/17 12:48:44 rudi Exp $
+;; $Id: client.cl,v 1.17 2004/06/01 09:00:40 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -93,7 +93,7 @@
 (defvar crlf (make-array 2 :element-type 'character
 			 :initial-contents '(#\return #\linefeed)))
 
-(defmacro with-better-scan-macros (&rest body)
+(defmacro with-better-scan-macros (&body body)
   ;; define the macros for scanning characters in a string
   `(macrolet ((collect-to (ch buffer i max &optional downcasep)
 		;; return a string containing up to the given char

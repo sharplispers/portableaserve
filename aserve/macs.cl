@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: macs.cl,v 1.8 2003/12/02 14:20:40 rudi Exp $
+;; $Id: macs.cl,v 1.9 2004/06/01 09:00:40 rudi Exp $
 
 ;; Description:
 ;;   useful internal macros
@@ -200,13 +200,13 @@
 ; else use read-write timeouts
 ; 
 #-(and allegro (version>= 6 1))
-(defmacro with-timeout-local ((time &rest actions) &rest body)
+(defmacro with-timeout-local ((time &rest actions) &body body)
   ;; same as with-timeout 
   `(acl-compat.mp:with-timeout (,time ,@actions) ,@body))   ; ok w-t
 
 
 #+(and allegro (version>= 6 1))
-(defmacro with-timeout-local ((time &rest actions) &rest body)
+(defmacro with-timeout-local ((time &rest actions) &body body)
   (declare (ignore time))
   (let ((g-blocktag (gensym)))
     `(block ,g-blocktag

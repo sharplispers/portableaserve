@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: clpage.cl,v 1.7 2004/04/26 18:18:37 kevinrosenberg Exp $
+;; $Id: clpage.cl,v 1.8 2004/06/01 09:00:38 rudi Exp $
 
 
 (eval-when (compile load eval) (require :aserve))
@@ -253,7 +253,9 @@
   (handler-case 
       (with-open-file (p filename 
 		       :direction :input
-		       :external-format external-format)
+                       ;; KLUDGE: (rudi 2004-05-31): revisit this when
+                       ;; other Lisps support external format
+		       #+allegro :external-format #+allegro external-format)
 	(parse-clp-guts p filename))
       
     (error (c)

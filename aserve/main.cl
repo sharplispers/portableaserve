@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.37 2004/03/16 20:37:42 kevinrosenberg Exp $
+;; $Id: main.cl,v 1.38 2004/06/01 09:00:39 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -148,7 +148,7 @@
 		     (format nil ,@(cdr args)))
 		   *debug-stream*))))
 
-(defmacro if-debug-action (kind &rest body)
+(defmacro if-debug-action (kind &body body)
   ;; only do if the debug value is high enough
   `(progn (if* (member ,kind *debug-current* :test #'eq)
 	     then ,@body)))
@@ -489,7 +489,7 @@
 				    content-type
 				    format
 				    )
-			      &rest body)
+			      &body body)
   ;;
   ;; setup to response to an http request
   ;; do the checks that can shortciruit the request
@@ -539,7 +539,7 @@ Problems with protocol may occur." (ef-name ef)))))
 			   &key headers 
 				(external-format 
 				 '*default-aserve-external-format*))
-			  &rest body)
+			  &body body)
   (declare (ignorable external-format))
   (let ((g-req (gensym))
 	(g-ent (gensym))
