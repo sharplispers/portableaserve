@@ -1,3 +1,25 @@
+2003-12-15  Rudi Schlatte  <rudi@constantly.at>
+
+	NOTE: this checkin has a reasonable chance of breaking (and mcl
+	(not openmcl))
+	
+	* mcl/acl-socket-openmcl.lisp: Remove package definition,
+	implement chunked transfer encoding (accepting a speed loss in the
+	process)
+
+	* mcl/acl-excl.lisp, mcl/acl-mp.lisp, mcl/acl-sys.lisp: remove
+	package definitions
+
+	* uri.lisp: deftype also at load time; openmcl breaks otherwise
+
+	* packages.lisp: mcl doesn't have stream-(read,write)-sequence
+
+	* lw-buffering.lisp: formatting frobs.
+
+	* acl-compat.asd: Merge mcl defsystem with the others.
+
+	* sbcl/acl-socket.lisp: Use acl-compat.socket package name.
+	
 2003-12-02  Rudi Schlatte  <rudi@SLAW40.kfunigraz.ac.at>
 
 	* meta.lisp (enable-meta-syntax): Save current readtable before

@@ -38,24 +38,24 @@
 ;; fundamental-bivalent-xxx-streams can be used to implement buffered
 ;; and unbuffered bivalent streams.  At the moment, we only implement
 ;; buffered ones.
-(defclass fundamental-bivalent-input-stream (fundamental-character-input-stream
-                                             fundamental-binary-input-stream)
+(defclass fundamental-bivalent-input-stream
+    (fundamental-character-input-stream fundamental-binary-input-stream)
   ())
 
-(defclass fundamental-bivalent-output-stream (fundamental-character-output-stream
-                                              fundamental-binary-output-stream)
+(defclass fundamental-bivalent-output-stream
+    (fundamental-character-output-stream fundamental-binary-output-stream)
   ())
 
-(defclass buffered-bivalent-input-stream (buffered-stream-mixin
-                                          fundamental-bivalent-input-stream)
+(defclass buffered-bivalent-input-stream
+    (buffered-stream-mixin fundamental-bivalent-input-stream)
   ())
 
-(defclass buffered-bivalent-output-stream (buffered-stream-mixin
-                                           fundamental-bivalent-output-stream)
+(defclass buffered-bivalent-output-stream
+    (buffered-stream-mixin fundamental-bivalent-output-stream)
   ())
 
-(defclass buffered-bivalent-stream (buffered-bivalent-input-stream
-                                    buffered-bivalent-output-stream)
+(defclass buffered-bivalent-stream
+    (buffered-bivalent-input-stream buffered-bivalent-output-stream)
   ())
 
 (defmacro with-stream-output-buffer ((buffer index limit) stream &body forms)

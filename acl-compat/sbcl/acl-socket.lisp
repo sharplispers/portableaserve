@@ -4,7 +4,7 @@
 ;; Written by Rudi Schlatte, based on the work done by Jochen Schmidt
 ;; for Lispworks and net.lisp in the port library of CLOCC.
 
-(in-package #:acl-socket)
+(in-package #:acl-compat.socket)
 
 (defclass server-socket ()
   ((socket :initarg :socket :reader socket

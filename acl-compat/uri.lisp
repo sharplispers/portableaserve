@@ -110,7 +110,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (meta:enable-meta-syntax))
 
-(eval-when (:compile-toplevel :execute)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 (deftype alpha-char () '(and character (satisfies alpha-char-p)))
 (deftype reserved-char () '(member #\; #\/ #\? #\: #\@ #\& #\= #\+ #\$ #\,))
 (deftype alpha-num () '(and character (satisfies alphanumericp)))

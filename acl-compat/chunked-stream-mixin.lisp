@@ -67,8 +67,9 @@ not yet read into the buffer, or nil if input chunking is disabled")
   (setf (slot-value stream 'chunk-input-avail) (and new-value 0)))
 
 (define-condition excl::socket-chunking-end-of-file (condition)
-  ((excl::format-arguments :initform nil)
-   (excl::format-control :initform "A chunking end of file occured")))
+  ((excl::format-arguments :initform nil :initarg :format-arguments)
+   (excl::format-control :initform "A chunking end of file occured"
+                         :initarg :format-control)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;

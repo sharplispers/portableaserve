@@ -1,14 +1,4 @@
 
-
-(defpackage acl-compat.system
-  (:nicknames :sys)
-  (:use :common-lisp) 
-  (:export
-   "command-line-arguments"
-   "command-line-argument"
-   "reap-os-subprocess"
-   ))
-
 (in-package :acl-compat.system)
 
 
@@ -27,4 +17,5 @@
   (declare (ignore wait))
   nil)
 
+#+nil
 (export '(command-line-arguments command-line-argument reap-os-subprocess))

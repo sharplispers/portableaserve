@@ -106,66 +106,56 @@ lisp-system"))
 
 ;;;; system
 
-
-;standard MCL make-load-form is not ansi compliant because of CLIM
 #+(and mcl (not openmcl)) (require :ansi-make-load-form)
 
-;want to include it with the rest - but I'm afraid ... maybe later
-#+(or mcl openmcl)
 (defsystem acl-compat
-   :components ((:file "nregex")
-                (:unportable-cl-source-file "mcl-timers")
-                (:unportable-cl-source-file "acl-mp" :depends-on ("mcl-timers"))
-                #-openmcl
-                (:unportable-cl-source-file "acl-socket-mcl")
-                #+(and (not openmcl) (not carbon-compat)) 
-                (:unportable-cl-source-file "mcl-stream-fix" :depends-on ("acl-socket-mcl"))
-                #+openmcl 
-                (:unportable-cl-source-file "acl-socket-openmcl")
-                (:unportable-cl-source-file "acl-excl" :depends-on ("nregex"))
-                (:unportable-cl-source-file "acl-sys")
-                (:file "meta")
-                (:file "uri" :depends-on ("meta")))
-   :perform (load-op :after (op acl-compat)
-		     (pushnew :acl-compat cl:*features*)))
-
-
-#+(or lispworks cmu scl sbcl clisp allegro)
-(defsystem acl-compat
-  :components ((:gray-streams "vendor-gray-streams")
-	       (:file "nregex")
-               (:file "packages" :depends-on ("nregex"))
-               #-lispworks (:file "lw-buffering" :depends-on ("packages"))
-	       (:unportable-cl-source-file "acl-mp"
- 		      :depends-on ("packages" "acl-socket"
-                                   ;"acl-mp-package"
-                                   ))
-	       (:unportable-cl-source-file "acl-excl"
-		      :depends-on ("packages" "nregex"))
-               ;; Hack for old versions of cmucl that did not
-               ;; implement Gray stream handling in read-sequence,
-               ;; write-sequence
-	       (:unportable-cl-source-file "acl-socket"
-		   :depends-on ("packages" "acl-excl"
-					   #-(or mcl allegro)
-                                           "chunked-stream-mixin"))
-	       (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
-	       (:file "meta")
-	       (:file "uri" :depends-on ("meta"))
-	       #-(or allegro mcl)
-	       (:legacy-cl-source-file "chunked-stream-mixin"
-		      :depends-on ("packages"
-                                   "acl-excl"
-                                   #-lispworks "lw-buffering"))
-	       #+(and ssl-available (not (or allegro mcl cmu clisp)))
-               (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
-	       #+(and ssl-available (not (or allegro mcl cmu clisp)))
-               (:file "acl-ssl-streams" :depends-on ("packages"))
-               #+nil
-               (:legacy-cl-source-file "md5")
-               #+nil
-	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
-  
+  :components
+  (;; Implementation-specific files
+   (:gray-streams "vendor-gray-streams")
+   ;; nregex and packages
+   (:file "nregex")
+   (:file "packages" :depends-on ("nregex"))
+   ;; Our stream class; support for buffering, chunking and (in the
+   ;; future) unified stream exceptions
+   #-(or lispworks (and mcl (not openmcl)))
+   (:file "lw-buffering" :depends-on ("packages"))
+   #-(or allegro (and mcl (not openmcl)))
+   (:legacy-cl-source-file "chunked-stream-mixin"
+                           :depends-on ("packages" "acl-excl"
+                                                   #-lispworks "lw-buffering"))
+   ;; Multiprocessing
+   #+mcl (:unportable-cl-source-file "mcl-timers")
+   (:unportable-cl-source-file "acl-mp"
+                               :depends-on ("packages" #+mcl "mcl-timers"))
+   ;; Sockets, networking; TODO: de-frob this a bit
+   #-mcl
+   (:unportable-cl-source-file
+    "acl-socket" :depends-on ("packages" "acl-excl"
+                                         #-mcl "chunked-stream-mixin"))
+   #+(and mcl (not openmcl))
+   (:unportable-cl-source-file "acl-socket-mcl" :depends-on ("packages"))
+   #+(and mcl (not openmcl) (not carbon-compat)) 
+   (:unportable-cl-source-file
+    "mcl-stream-fix" :depends-on ("acl-socket-mcl"))
+   #+(and mcl openmcl)
+   (:unportable-cl-source-file
+    "acl-socket-openmcl" :depends-on ("packages" "chunked-stream-mixin"))
+   ;; Diverse macros, utility functions
+   (:unportable-cl-source-file "acl-excl" :depends-on ("packages" "nregex"))
+   (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
+   ;; URI objects, URI parsing
+   (:file "meta")
+   (:file "uri" :depends-on ("meta"))
+   ;; SSL
+   #+(and ssl-available (not (or allegro mcl cmu clisp)))
+   (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
+   #+(and ssl-available (not (or allegro mcl cmu clisp)))
+   (:file "acl-ssl-streams" :depends-on ("packages"))
+   #+nil
+   (:legacy-cl-source-file "md5")
+   #+nil
+   (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
+  ;; Implementation-specific dependencies
   #+sbcl :depends-on
   #+sbcl (:sb-bsd-sockets)
   #+(and cmu common-lisp-controller) :depends-on

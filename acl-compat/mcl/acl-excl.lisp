@@ -52,39 +52,7 @@
 
 (require 'nregex)
 
-(defpackage :acl-compat.excl
-        (:nicknames :excl)
-	(:use :common-lisp :nregex)
-	(:export 
-		"IF*"
-		"*INITIAL-TERMINAL-IO*"
-		"*CL-DEFAULT-SPECIAL-BINDINGS*"
-		"FILESYS-SIZE"
-		"FILESYS-WRITE-DATE"
-		"FILESYS-INODE"
-		"STREAM-INPUT-FN"
-		"MATCH-REGEXP"
-		"COMPILE-REGEXP"
-		"*CURRENT-CASE-MODE*"
-		"INTERN*"
-		"FILESYS-TYPE"
-		"ERRORSET"
-		"ATOMICALLY"
-		"FAST"
-                "WITHOUT-PACKAGE-LOCKS"
-		"SOCKET-ERROR"
-                "RUN-SHELL-COMMAND"
-                "FASL-READ"
-                "FASL-WRITE"
-		
-                "WRITE-VECTOR"
-                "STRING-TO-OCTETS"
-                "SCHEDULE-FINALIZATION"
-                "STREAM-ERROR"
-                "STREAM-ERROR-IDENTIFIER"
-                ))
-
-(in-package :excl)
+(in-package :acl-compat.excl)
 
 (defvar if*-keyword-list '("then" "thenret" "else" "elseif"))
 

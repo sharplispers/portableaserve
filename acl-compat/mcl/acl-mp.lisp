@@ -4,30 +4,7 @@
 ;;; John DeSoi, Ph.D. desoi@users.sourceforge.net
 
 
-
-(defpackage mp
-  (:nicknames :acl-compat.mp :acl-mp)
-  (:use :COMMON-LISP) 
-  (:export
-   "CURRENT-PROCESS"
-   "INTERRRUPT-PROCESS"
-   "MAKE-PROCESS"
-   "MAKE-PROCESS-LOCK"
-   #-openmcl-native-threads
-   "PROCESS-ADD-RUN-REASON"
-   "PROCESS-KILL"
-   "PROCESS-ACTIVE-P"
-   "PROCESS-PROPERTY-LIST"
-   #-openmcl-native-threads
-   "PROCESS-REVOKE-RUN-REASON"
-   "PROCESS-RUN-FUNCTION"
-   "WITH-PROCESS-LOCK"
-   "WITH-TIMEOUT"
-   "WITHOUT-SCHEDULING"
-   ))
-
-
-(in-package :mp)
+(in-package :acl-compat.mp)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
@@ -38,11 +15,9 @@
    ccl:process-allow-schedule
    ccl:process-name
    ccl:process-preset
-   #-openmcl-native-threads
-   ccl:process-run-reasons
+   #-openmcl-native-threads ccl:process-run-reasons
    ccl:process-wait
-   ccl:without-interrupts) 
- :mp)
+   ccl:without-interrupts))
 )
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -55,8 +30,7 @@
    process-preset
    process-run-reasons
    process-wait
-   without-interrupts) 
- :mp)
+   without-interrupts))
 )
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -177,7 +151,7 @@ See the functions process-plist, (setf process-plist).")
   (declare (ignore initial-bindings)) ;! need separate lexical bindings for each process?
   #+openmcl-native-threads
   (declare (ignore run-reasons arrest-reasons))
-  ;(let ((mp:*process-initial-bindings* initial-bindings))
+  ;(let ((acl-mp:*process-initial-bindings* initial-bindings))
   #-openmcl-native-threads
   (ccl:make-process name :run-reasons run-reasons :arrest-reasons arrest-reasons)
   #+openmcl-native-threads
@@ -185,9 +159,9 @@ See the functions process-plist, (setf process-plist).")
 
 (defun process-run-function (name-or-options preset-function &rest preset-arguments)
   (let ((process (ctypecase name-or-options
-                   (string (mp:make-process :name name-or-options))
-                   (list (apply #'mp:make-process name-or-options)))))
-    (apply #'mp:process-preset process preset-function preset-arguments)
+                   (string (acl-mp:make-process :name name-or-options))
+                   (list (apply #'acl-mp:make-process name-or-options)))))
+    (apply #'acl-mp:process-preset process preset-function preset-arguments)
     #+openmcl-native-threads (ccl:process-enable process)
     #-openmcl-native-threads (process-add-run-reason process :enable)
     process))

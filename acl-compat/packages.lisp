@@ -141,7 +141,7 @@
 (defpackage :gray-stream
   (:use #:common-lisp)
   (:import-from #+lispworks :stream #+cmu :lisp #+clisp :gray #+cormanlisp :gray-streams
-                #+(or mcl openmcl) :ccl #+allegro :excl #+sbcl :sb-gray
+                #+mcl :ccl #+allegro :excl #+sbcl :sb-gray
                 #:fundamental-binary-input-stream
                 #:fundamental-binary-output-stream
                 #:fundamental-character-input-stream
@@ -159,10 +159,10 @@
                 #:stream-clear-input
                 #:stream-clear-output
                 #:stream-line-column
-                #-clisp #:stream-read-sequence
+                #-(or clisp openmcl) #:stream-read-sequence
                 #:stream-unread-char
                 #:stream-read-line
-                #-clisp #:stream-write-sequence
+                #-(or clisp openmcl) #:stream-write-sequence
                 #:stream-write-string
                 #+lispworks #:stream-write-buffer
                 #+lispworks #:stream-read-buffer
@@ -219,10 +219,10 @@
    #:stream-clear-input
    #:stream-clear-output
    #:stream-line-column
-   #-clisp #:stream-read-sequence
+   #:stream-read-sequence
    #:stream-unread-char
    #:stream-read-line
-   #-clisp #:stream-write-sequence
+   #:stream-write-sequence
    #:stream-write-string
    #:stream-write-buffer
    #:stream-read-buffer
