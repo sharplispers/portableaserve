@@ -25,8 +25,7 @@
 ;;;; relevant functions.
 ;;;;
 
-#-(or mcl sbcl cmu)
-(in-package :user)
+(in-package :cl-user)
 
 ;;;; CND - 6/3/2001
 (defpackage nregex
