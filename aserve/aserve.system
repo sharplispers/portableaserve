@@ -47,7 +47,17 @@
   ;; Stig: if we're a debian-package we should automagically load acl-compat
   #+(and common-lisp-controller)
   :depends-on
-  #+(and common-lisp-controller) (acl-compat))
-
-
+  #+(and common-lisp-controller) (acl-compat)
+  :finally-do
+  (progn
+    (pushnew :aserve *features*)))
+ 
+(defun init-aserve-cmu ()
+  ;; this isn't strictly necessary, but scheduling feels very coarse
+  ;; without startup-idle-and-top-level-loops, leading to answer delays
+  ;; of about 1s per request.
+  (unless (find-if
+         #'(lambda (proc) (string= (mp:process-name proc) "Top Level Loop"))
+         (mp:all-processes))
+  (mp::startup-idle-and-top-level-loops)))
 
