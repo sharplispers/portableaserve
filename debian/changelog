@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.27+cvs2003.09.10) unstable; urgency=low
+
+  * Update description for cl-htmlgen (closes: 209449)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 10 Sep 2003 00:13:27 -0600
+
 cl-portable-aserve (1.2.27+cvs2003.08.29) unstable; urgency=low
 
   * New upstream 

@@ -23,4 +23,6 @@ Package: cl-htmlgen
 Architecture: all
 Depends: common-lisp-controller (>= 3.56)
 Description: HTML generation library for Common Lisp programs
- A flexible library to generate HTML from Common Lisp programs.
+ cl-htmlgen is Franz's library for generating HTML from Common Lisp programs.
+ It is limited to generating HTML code, so you may want to the cl-lml2
+ for generating XHTML code.
