@@ -39,6 +39,7 @@
 
 (in-package :cl-user)
 
+#+nil
 (defpackage :de.dataheaven.chunked-stream-mixin
   (:use :common-lisp)
   (:export #:chunked-stream-mixin

@@ -88,6 +88,12 @@
    #:wait-for-input-available
    ))
 
+#+(or lispworks cmu)
+(defpackage :de.dataheaven.chunked-stream-mixin
+  (:use :common-lisp)
+  (:export #:chunked-stream-mixin
+           #:output-chunking-p #:input-chunking-p))
+
 ;; general
 (defpackage acl-compat.socket
   (:use #:common-lisp
@@ -120,7 +126,7 @@
 
 
 (defpackage acl-compat.system
-  (:nicknames :sys :system)
+  #+nil (:nicknames :sys :system)
   (:use :common-lisp) 
   (:export
    #:command-line-arguments
