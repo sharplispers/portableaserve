@@ -25,7 +25,8 @@
       ,@bin-path
       ,@bin-extension
       :components ((:file "nregex")
-                   (:file "acl-mp-mcl")
+                   (:file "mcl-timers")
+                   (:file "acl-mp-mcl" :depends-on ("mcl-timers"))
                    #-openmcl (:file "acl-socket-mcl")
                    #+openmcl (:file "acl-socket-openmcl")
                    (:file "acl-excl-mcl"
