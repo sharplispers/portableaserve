@@ -97,8 +97,7 @@ lisp-system"))
 
 (defun lisp-system-shortname ()
   #+allegro :allegro #+lispworks :lispworks #+cmu :cmucl
-  #+(and mcl (not openmcl)) :mcl
-  #+openmcl :openmcl #+clisp :clisp #+scl :scl #+sbcl :sbcl)
+  #+mcl :mcl #+clisp :clisp #+scl :scl #+sbcl :sbcl) ;mcl/openmcl use the same directory
 
 (defmethod component-pathname ((component unportable-cl-source-file))
   (let ((pathname (call-next-method))
@@ -117,15 +116,16 @@ lisp-system"))
 #+(or mcl openmcl)
 (defsystem acl-compat
    :components ((:file "nregex")
-                (:file "mcl-timers")
-                (:file "acl-mp-mcl" :depends-on ("mcl-timers"))
-                #-openmcl (:file "acl-socket-mcl")
+                (:unportable-cl-source-file "mcl-timers")
+                (:unportable-cl-source-file "acl-mp" :depends-on ("mcl-timers"))
+                #-openmcl
+                (:unportable-cl-source-file "acl-socket-mcl")
                 #+(and (not openmcl) (not carbon-compat)) 
-                (:file "mcl-stream-fix" :depends-on ("acl-socket-mcl"))
-                
-                #+openmcl (:file "acl-socket-openmcl")
-                (:file "acl-excl-mcl" :depends-on ("nregex"))
-                (:file "acl-sys-mcl")
+                (:unportable-cl-source-file "mcl-stream-fix" :depends-on ("acl-socket-mcl"))
+                #+openmcl 
+                (:unportable-cl-source-file "acl-socket-openmcl")
+                (:unportable-cl-source-file "acl-excl" :depends-on ("nregex"))
+                (:unportable-cl-source-file "acl-sys")
                 (:file "meta")
                 (:file "uri" :depends-on ("meta")))
    :perform (load-op :after (op acl-compat)
