@@ -69,7 +69,7 @@
    #:with-timeout              ;*
    #:make-process-lock         ;*
    #:with-process-lock         ;*
-
+   #:process-active-p          ; required by webactions
    #:current-process
    #:process-name-to-process
    #:process-wait-with-timeout

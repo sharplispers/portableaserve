@@ -23,6 +23,7 @@
    #:process-run-reasons
    #:process-wait
    #:without-interrupts
+   #:process-active-p
    ))
 
 (in-package :acl-compat-mp)
@@ -48,6 +49,7 @@
    mp:process-preset
    mp:process-run-reasons
    mp:process-wait
+   mp:process-active-p
    excl:without-interrupts)
  :acl-compat-mp)
 

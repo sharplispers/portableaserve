@@ -60,7 +60,8 @@
                     mp:process-arrest-reasons
                     mp:process-whostate
                     mp:without-interrupts
-                    mp:process-wait                    
+                    mp:process-wait
+		    mp::process-active-p
                     ))
 
 (export '(          *current-process*
@@ -76,7 +77,8 @@
                     process-arrest-reasons
                     process-whostate
                     without-interrupts
-                    process-wait                    
+                    process-wait
+	            process-active-p
                     ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

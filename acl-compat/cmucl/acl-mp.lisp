@@ -28,6 +28,7 @@
                     mp:process-wait
                     mp:with-timeout
 		    mp:without-scheduling
+		    mp:process-active-p 
                     ))
 
 (export '(*current-process*
@@ -46,6 +47,7 @@
           process-arrest-reasons
           process-add-arrest-reason
           process-revoke-arrest-reason
+	  process-active-p
           ))
 
 

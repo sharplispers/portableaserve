@@ -257,4 +257,16 @@
 (defun make-process-lock (&key name)
   (sb-thread:make-mutex :name name))
 
+(defun process-active-p (thread-id)
+  "If a native thread exists, it is always active"
+  (and
+   (member thread-id
+	   (let ((offset (* 4 sb-vm::thread-pid-slot)))
+	     (sb-thread::mapcar-threads
+	      #'(lambda (sap) (sb-sys:sap-ref-32 sap offset))))
+	   :test 'eql)
+   t))
+
+
+  t) 
 )                                     ; #+sb-thread
