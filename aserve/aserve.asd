@@ -72,7 +72,4 @@
          (mp:all-processes))
   (mp::startup-idle-and-top-level-loops)))
 
-#+(or lispworks cmu mcl openmcl)
-(when (ignore-errors (find-class 'load-compiled-op))
-  (defmethod perform :after ((op load-compiled-op) (c (eql (find-system 'aserve))))
-    (pushnew :aserve cl:*features*)))
+

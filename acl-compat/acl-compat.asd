@@ -34,12 +34,6 @@
   ;; LispWorks it's already there
   #+lispworks (lw:do-nothing))
 
-#+common-lisp-controller
-(defmethod perform ((operation load-compiled-op) (component gray-streams))
-#+(and cmu (not graystreams) cmucl-not-yet-asdf) (require :cmucl-graystream)
-  ;; Nothing to do, uses ASDF :depends-on
-)
-
 
 ;;;; ignore warnings
 ;;;;
@@ -162,7 +156,4 @@ lisp-system"))
 		    (pushnew :acl-compat cl:*features*))
   )
 
-#+(or lispworks cmu mcl openmcl scl clisp)
-(when (ignore-errors (find-class 'load-compiled-op))
-  (defmethod perform :after ((op load-compiled-op) (c (eql (find-system 'acl-compat))))
-    (pushnew :acl-compat cl:*features*)))
+
