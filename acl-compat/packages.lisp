@@ -127,9 +127,9 @@
    ))
 
 
-#+(or lispworks cmu clisp)
 (defpackage :gray-stream
   (:import-from #+lispworks :stream #+cmu :lisp #+clisp :gray
+                #+(or mcl openmcl) :ccl #+allegro :excl
                 #:fundamental-binary-input-stream
                 #:fundamental-binary-output-stream
                 #:fundamental-character-input-stream

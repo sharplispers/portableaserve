@@ -1,0 +1,7 @@
+2002-12-03  Rudi Schlatte  <rudi@constantly.at>
+
+	* acl-compat.asd: load lw-buffering in every implementation except
+	lispworks
+
+	* packages.lisp: define gray-stream package for every
+	implementation

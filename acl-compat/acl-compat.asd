@@ -110,14 +110,13 @@ lisp-system"))
 	       (:file "nregex")
                (:file "packages" :depends-on ("nregex"))
 	       #+mcl (:file "mcl-timers")
-               #+portable-gray-stream (:file "lw-buffering" :depends-on ("packages"))
+               #-lispworks (:file "lw-buffering" :depends-on ("packages"))
 	       (:unportable-cl-source-file "acl-mp"
  		      :depends-on ("packages" "acl-socket"
                                    ;"acl-mp-package"
 				   #+mcl "mcl-timers"))
 	       (:unportable-cl-source-file "acl-excl"
-		      :depends-on ("packages" "nregex"
-					      #+nil "gray-stream-package"))
+		      :depends-on ("packages" "nregex"))
                ;; Debian cmucl has gray stream support for
                ;; read-/write-sequence, cons.org cmucl has it
                ;; commented out in src/stream.lisp, so we leave the
@@ -137,10 +136,10 @@ lisp-system"))
 	       (:legacy-cl-source-file "chunked-stream-mixin"
 		      :depends-on ("packages"
                                    "acl-excl"
-                                   #+portable-gray-stream "lw-buffering"))
-	       #+(and ssl-available (not (or allegro mcl cmu)))
+                                   #-lispworks "lw-buffering"))
+	       #+(and ssl-available (not (or allegro mcl cmu clisp)))
                (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
-	       #+(and ssl-available (not (or allegro mcl cmu)))
+	       #+(and ssl-available (not (or allegro mcl cmu clisp)))
                (:file "acl-ssl-streams" :depends-on ("packages"))
                #+nil
                (:legacy-cl-source-file "md5")
