@@ -44,8 +44,8 @@
    #+(or lispworks mcl) #:run-shell-command
    #+mcl #:fasl-read
    #+mcl #:fasl-write
-   #+(or cmu scl) #:string-to-octets
-   #+(or cmu scl) #:write-vector
+   #+(or cmu scl lispworks) #:string-to-octets
+   #+(or cmu scl lispworks) #:write-vector
    ))
 
 
