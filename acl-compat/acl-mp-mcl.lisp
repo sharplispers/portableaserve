@@ -60,6 +60,7 @@
 (defmacro without-scheduling (&body forms)
   `(ccl:without-interrupts ,@forms))
 
+#|
 ; more ideas stolen from acl-mp-lw.lisp
 (defun invoke-with-timeout (seconds bodyfn timeoutfn)
   (block timeout
@@ -73,6 +74,20 @@
                                                                              (funcall timeoutfn))))))))
       (unwind-protect (funcall bodyfn)
         (ccl:process-kill timer)))))
+
+|#
+
+
+
+(defun invoke-with-timeout (seconds bodyfn timeoutfn)
+  (block timeout
+    (let* ((timer (ccl::make-timer-request
+                    seconds
+                    #'(lambda () (return-from timeout (funcall timeoutfn))))))
+      (ccl::enqueue-timer-request timer)
+      (unwind-protect (funcall bodyfn)
+	(ccl::dequeue-timer-request timer)))))
+
 
 (defmacro with-timeout ((seconds &body timeout-forms) &body body)
   "Execute BODY; if execution takes more than SECONDS seconds, terminate and evaluate TIMEOUT-FORMS."
