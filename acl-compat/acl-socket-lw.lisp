@@ -121,6 +121,7 @@
 	   (ash (third ll) 8) (fourth ll))))))
 
 (defun ipaddr-to-hostname (ipaddr &key ignore-cache)
+  (declare (ignore ignore-cache))
   (multiple-value-bind (name)
       (comm:get-host-entry (ipaddr-to-dotted ipaddr) :fields '(:name))
     name))
@@ -139,6 +140,7 @@
 
 (defun remote-port (socket-stream)
   (multiple-value-bind (host port)
+      (declare (ignore host))
       (comm:socket-stream-peer-address socket-stream)
     port))
 
@@ -149,6 +151,7 @@
   (if (typep socket-stream 'socket::server-socket)
       (port socket-stream)
     (multiple-value-bind (host port)
+	(declare (ignore host))
         (comm:socket-stream-address socket-stream)
       port)))
 
