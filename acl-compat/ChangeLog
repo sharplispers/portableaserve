@@ -1,5 +1,7 @@
 2003-04-30  Rudi Schlatte  <rudi@constantly.at>
 
+	* cmucl/acl-mp.lisp: Use acl-compat.mp package name.
+
 	* acl-compat.asd et al: The Great Renaming: begin move of
 	implementation-dependent files into subdirectories
 

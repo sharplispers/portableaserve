@@ -5,7 +5,7 @@
 ;; Written by Rudi Schlatte, based on the work done by Jochen Schmidt
 ;; for Lispworks.
 
-(in-package :acl-compat-mp)
+(in-package :acl-compat.mp)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Import equivalent parts from the CMU MP package ;;
