@@ -143,14 +143,18 @@ lisp-system"))
           ;;      :depends-on ("vendor-gray-streams"))
 	       (:legacy-cl-source-file "chunked-stream-mixin"
 		      :depends-on ("packages" "acl-excl" #+nil "gray-stream-package"))
+
+               (:file "acl-ssl" :depends-on ("acl-ssl-streams"))
+               (:file "acl-ssl-streams" :depends-on ("packages"))
+
                #+nil
                (:legacy-cl-source-file "md5")
                #+nil
 	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
-  #+(and cmu common-lisp-controller (not gray-streams) (not cmucl-not-yet-asdf))
+  #+(or (and cmu common-lisp-controller (not gray-streams) (not cmucl-not-yet-asdf)) lispworks)
   :depends-on
-  #+(and cmu common-lisp-controller (not gray-streams) (not cmucl-not-yet-asdf))
-  (:cmucl-graystream)
+  ( #+(and cmu common-lisp-controller (not gray-streams) (not cmucl-not-yet-asdf))
+    :cmucl-graystream #+lispworks :cl-ssl)
 
   :perform (load-op :after (op acl-compat)
 		    (pushnew :acl-compat cl:*features*))
