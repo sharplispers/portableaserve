@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.27+cvs2003.09.19) unstable; urgency=low
+
+  * New upstream, fix clisp compilation (closes:210759)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Fri, 19 Sep 2003 09:41:22 -0600
+
 cl-portable-aserve (1.2.27+cvs2003.09.13) unstable; urgency=low
 
   * Add depends for cl-htmlgen (closes:210756)
