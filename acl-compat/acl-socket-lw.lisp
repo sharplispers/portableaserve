@@ -1,12 +1,16 @@
 ;; This package is designed for LispWorks.  It implements the
 ;; ACL-style socket interface on top of LispWorks.
 
+(require :com.ljosa.chunked "chunked")
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require "comm"))
 
-(defpackage socket
-  (:use comm cl)
+(defpackage acl-socket
+  (:use common-lisp comm stream com.ljosa.chunked excl)
+  (:nicknames socket)
   #+cl-ssl(:import-from :ssl "MAKE-SSL-CLIENT-STREAM" "MAKE-SSL-SERVER-STREAM")
+  (:shadow socket-stream)
   (:export make-socket accept-connection
    ipaddr-to-dotted dotted-to-ipaddr ipaddr-to-hostname lookup-hostname
    remote-host remote-port local-host local-port socket-control))
@@ -16,7 +20,7 @@
 (ssl-internal::initialize-ssl-library)
 )
 
-(in-package socket)
+(in-package acl-socket)
 
 (defclass server-socket ()
   ((element-type :type (member signed-byte unsigned-byte base-char)
@@ -27,6 +31,9 @@
 	 :reader port)
    (passive-socket :initarg :passive-socket
 	   :reader passive-socket)))
+
+(defclass chunked-socket-stream (chunked-mixin comm:socket-stream)
+  ())
 
 (defmethod fd ((server-socket server-socket))
   42)
@@ -40,10 +47,10 @@
   (unless wait
     (cerror "Proceed anyway, and risk blocking." ()
 	    "Nonclocking accept-connection not implemented."))
-  (make-instance 'comm:socket-stream
-		 :socket (comm::get-fd-from-socket (passive-socket server-socket))
-		 :direction :io
-		 :element-type (element-type server-socket)))
+  (make-instance 'chunked-socket-stream
+                 :socket (comm::get-fd-from-socket (passive-socket server-socket))
+                 :direction :io
+                 :element-type (element-type server-socket)))
 
 (defun %new-passive-socket (local-port)
   (multiple-value-bind (socket error-location error-code)
@@ -70,9 +77,17 @@
 		      :passive-socket (%new-passive-socket local-port)
 		      :element-type element-type))
       (:active
-       (comm:open-tcp-stream remote-host remote-port
-			     :direction :io
-			     :element-type element-type)))))
+       (let ((stream (comm:open-tcp-stream remote-host remote-port
+					   :direction :io
+					   :element-type element-type)))
+	 (unless stream
+	   ;; Pretend to know what the problem is.  We really need to dig
+	   ;; for the real cause at some point.
+	   (error 'socket-error :stream nil :code 111
+		  :identifier :connection-refused
+		  :action "creating a local socket and connecting to a remote host"))
+	 (change-class stream 'chunked-socket-stream))))))
+
 
 (defmethod close ((server-socket server-socket) &key abort)
   (declare (ignore abort))
@@ -148,8 +163,12 @@
       (declare (ignore host))
       port)))
 
-(defun socket-control (stream &key output-chunking output-chunking-eof input-chunking)
-  (declare (ignore stream output-chunking output-chunking-eof input-chunking))
-  (warn "SOCKET-CONTROL function not implemented."))
+(defun socket-control (stream &key (output-chunking nil oc-p) output-chunking-eof (input-chunking nil ic-p))
+  (when oc-p
+    (setf (output-chunking stream) output-chunking))
+  (when output-chunking-eof
+    (close-chunk stream))
+  (when ic-p
+    (setf (input-chunking stream) input-chunking)))
 
 (provide 'acl-socket)
