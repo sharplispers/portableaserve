@@ -12,11 +12,32 @@
 
 (defclass gray-streams (component) ())
 
+    ;; Debian cmucl distribution
+    #+(and common-lisp-controller (not gray-streams))
+    (require :cmucl-graystream)
+    ;; vanilla cmucl
+    #+(and (not common-lisp-controller) (not gray-streams))
+    (progn (load "library:subsystems/gray-streams-library")
+           (pushnew :gray-streams *features*))
+
 (defmethod perform ((operation compile-op) (component gray-streams))
-  #+cmu (require :cmucl-graystream))
+  ;; Debian cmucl distribution
+  #+(and cmu common-lisp-controller (not gray-streams))
+  (require :cmucl-graystream)
+  ;; vanilla cmucl
+  #+(and cmu (not common-lisp-controller) (not gray-streams))
+  (progn (load "library:subsystems/gray-streams-library")
+         (pushnew :gray-streams *features*)))
+
 
 (defmethod perform ((operation load-op) (component gray-streams))
-  #+cmu (require :cmucl-graystream))
+  ;; Debian cmucl distribution
+  #+(and cmu common-lisp-controller (not gray-streams))
+  (require :cmucl-graystream)
+  ;; vanilla cmucl
+  #+(and cmu (not common-lisp-controller) (not gray-streams))
+  (progn (load "library:subsystems/gray-streams-library")
+         (pushnew :gray-streams *features*)))
 
 ;;;; ignore warnings
 ;;;;
