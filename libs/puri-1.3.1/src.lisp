@@ -22,10 +22,11 @@
 ;; Original version from ACL 6.1:
 ;; uri.cl,v 2.3.6.4.2.1 2001/08/09 17:42:39 layer
 ;;
-;; $Id: src.lisp,v 1.1 2004/02/08 15:44:10 rudi Exp $
+;; $Id: src.lisp,v 1.2 2004/03/17 01:21:54 kevinrosenberg Exp $
 
 (defpackage #:puri
   (:use #:cl)
+  #-allegro (:nicknames #:net.uri)
   (:export
    #:uri				; the type and a function
    #:uri-p
