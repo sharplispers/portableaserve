@@ -48,9 +48,6 @@
 ;;;; Comments, suggestions and bug reports to the author,
 ;;;; Christopher Double, at: chris@double.co.nz
 
-
-(require 'nregex)
-
 (defpackage :excl
 	(:use :common-lisp :nregex :ext)
 	(:export

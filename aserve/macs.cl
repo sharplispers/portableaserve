@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: macs.cl,v 1.4 2002/06/09 11:35:01 rudi Exp $
+;; $Id: macs.cl,v 1.5 2002/06/24 12:32:14 rudi Exp $
 
 ;; Description:
 ;;   useful internal macros
@@ -33,6 +33,10 @@
 ;;- http://www.franz.com/~jkf/coding_standards.html
 ;;-
 
+;; This would cause bogus "Warning: system URI doesn't seem to be
+;; defined...".  Besides, defsystem takes care that the uri package is
+;; loaded before aserve itself   --rudi 2002-06-24
+#+allegro
 (eval-when (compile load eval)
  (require :uri))
 
