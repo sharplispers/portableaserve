@@ -138,8 +138,13 @@
     (setf (process-id process) nil))
   (setf *all-processes* (delete process *all-processes*)))
 
-(defun/sb-thread make-process-lock (&key name)   ; *x
+#+sb-thread
+(defun make-process-lock (&key name)
   (sb-thread:make-mutex :name name))
+#-sb-thread
+(defun make-process-lock (&key name)
+  (declare (ignore name))
+  nil)
 
 (defun/sb-thread process-lock (lock &optional lock-value whostate timeout)
   (declare (ignore whostate timeout))
