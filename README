@@ -6,6 +6,7 @@ in the subdirectories of this archive
  ./acl-compat/            Several ACL compatibility hacks
  ./aserve/                The AServe source
  ./debian/                Debian package files
+ ./contrib/               Additional useful (?) code contributed by users
  ./logical-hostnames.lisp Some logical-pathname-translations needed by defsys
  ./README                 This file
  ./README.cmucl           Additional documentation for CMU Common Lisp

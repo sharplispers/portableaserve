@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.6 2002/06/09 11:35:01 rudi Exp $
+;; $Id: client.cl,v 1.7 2002/07/07 10:15:07 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -180,7 +180,8 @@
 			&rest args
 			&key 
 			(method  :get)
-			(protocol  :http/1.1)
+			;; HTTP/1.1 requires chunked encoding
+			(protocol  #-cmu :http/1.1 #+cmu :http/1.0)
 			(accept "*/*")
 			content
 			content-type
@@ -339,7 +340,9 @@
 
 (defun make-http-client-request (uri &key 
 				     (method  :get)  ; :get, :post, ....
-				     (protocol  :http/1.1)
+				 ;; HTTP/1.1 requires chunked encoding
+				     (protocol  #-cmu :http/1.1
+						#+cmu :http/1.0)
 				     keep-alive 
 				     (accept "*/*") 
 				     cookies  ; nil or a cookie-jar

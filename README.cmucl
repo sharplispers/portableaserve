@@ -4,36 +4,72 @@ Hey emacs, this is -*- text -*-
 CMU Common Lisp-specific requirements
 
 
-1. mk-defsystem
+
+0. Executive summary
 
 
-   In order to compile Portable AllegroServe, you'll need Mark
-   Kantrowitz's defsystem, version 3.2.  This is installed along with
-   new-ish Debian cmucl packages, but not included with the standard
-   cmucl distribution from cons.org.
+   To begin, just load INSTALL.lisp.  If you experience problems or
+   want to get rid of some annoying warnings, read on.
 
-   If you don't know if you have mk-defsystem installed, see if
-   (find-package "MK") or (member :mk-defsystem *features*) return
-   something affirmative.  Defsystem is part of clocc, the Common Lisp
-   open code collection (http://clocc.sourceforge.net), a download URL
-   is <URL:http://telia.dl.sourceforge.net/clocc/defsyste-3.2i.tgz>.
-   To install it, simply evaluate (load "defsystem.lisp").
+
+
+1. asdf (Another System Definition Facility)
+
+
+   asdf is Dan Barlow's CLOSsy defsystem facility.  A defsystem is the
+   Lisp equivalent of make; i.e. we can tell it to compile / load a
+   system, and it knows what files to operate on in what order.  For
+   further information about asdf, start at
+   <URL:http://ww.telent.net/cliki/asdf>.
+
+   Since asdf is not (yet?) included with Common Lisp implementations,
+   we have placed it in the contrib/ directory.  The maintainers will
+   try to keep the included version synched with upstream.  Please
+   write to portableaserve-discuss@lists.sourceforge.net if you notice
+   our version has grown old!
+
+   If you want to get rid of the (harmless) warnings during
+   INSTALL.lisp, load asdf in your Lisp initialisation file
+   ~/.cmucl-init.  If you do that, you might also want to add a
+   location for ASDF systems to the variable ASDF:*CENTRAL-REGISTRY*,
+   for example
+
+(push "/home/rudi/lisp/systems/" asdf:*central-registry*)
+
+   Then link all the asd files to that path, with something like:
+
+$ ln -sf /home/rudi/lisp/portableaserve/acl-compat/acl-compat.asd ~/systems/
+$ ln -sf /home/rudi/lisp/portableaserve/aserve/aserve.asd ~/systems/
+$ ln -sf /home/rudi/lisp/portableaserve/aserve/htmlgen/htmlgen.asd ~/systems/
+
+   After all that hassle, what's in it for you?  Well, from then on,
+   you can just evaluate
+
+(asdf:operate 'asdf:load-op :aserve)
+
+   to load AllegroServe, and systems of your own can depend on aserve
+   if they use it, so that it gets loaded automatically when needed.
+   In that case, have a look at the multiprocessing workarounds in
+   INSTALL.lisp or the function cl-user::init-aserve-cmu (defined in
+   aserve.asd); one of these is needed, or you will be unhappy with
+   the request answer times you get :)
+
 
 
 2. Gray streams
 
 
    Portable Allegroserve needs Gray stream support in the image.  The
-   file INSTALL.lisp should load the required files automatically, if
-   they are not yet present in the Lisp image.  If you experience
-   problems, please report them to the portableaserve mailing list; be
-   sure to include your version of cmucl, where you obtained it, where
-   its files are placed in your system, etc.  Failing to cleanly load
-   INSTALL.lisp is considered a bug; don't hesitate to report it as
-   such.
+   file acl-compat.asd should load the required files automatically,
+   if gray streams are not yet present in the Lisp image.  If you
+   experience problems, please report them to the portableaserve
+   mailing list; be sure to include your version of cmucl, where you
+   obtained it, where its files are placed in your system, etc.
+   Failing to cleanly load acl-compat.asd is considered a bug; don't
+   hesitate to report it as such.
 
 
 Have fun,
 
 Rudi Schlatte
-rschlatte@ist.tu-graz.ac.at
+rudi@constantly.at

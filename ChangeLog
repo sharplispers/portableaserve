@@ -1,3 +1,18 @@
+2002-07-07  Rudi Schlatte  <rudi@constantly.at>
+
+* cmucl version now uses asdf instead of mk-defsystem:
+
+** Added directory contrib, contrib/asdf.lisp
+
+** Added acl-compat/acl-compat.asd, aserve/aserve.asd,
+   aserve/htmlgen/htmlgen.asd (thanks to David Lichteblau for the asd
+   files)
+
+** Updated README.cmucl, README
+
+* Changed client.cl to use http/1.0 (Remember to revert this when chunking
+  is implemented!) (Thanks to David Lichteblau for bug report & patch)
+
 Changes in Portable AllegroServe 1.2.5a (2001-08-30)
 - Chunking implemented for Lispworks.
 - Fixed problem in Lispworks port with accepting too many connections

@@ -27,21 +27,46 @@
 )
 
 
+#+(and cmu (not asdf))
+(let ((asdf-pathname
+       (merge-pathnames (make-pathname
+                         :directory '(:relative "contrib")
+                         :name "asdf"
+                         :case :local)
+                        *load-truename*)))
+  (warn "~
+Loading asdf from ~A ~
+~:_(you might want to load asdf at startup ~
+~:_and set up asdf:*central-registry* to point to your systems)" asdf-pathname)
+  (load asdf-pathname))
+
 #+cmu
 (progn
-  ;; Avoid setting path to example files to
-  ;; /usr/share/doc/cl-aserve/... later on in aserve-cmu.system.  (The
-  ;; feature will be removed again at the end of the load process)
-  (pushnew :kludge-no-cclan *features*)
-  ;; Load Gray-streams support
-  (eval-when (:compile-toplevel :load-toplevel :execute)
-    ;; Debian cmucl distribution
-    #+(and common-lisp-controller (not gray-streams))
-    (require :cmucl-graystream)
-    ;; vanilla cmucl
-    #+(and (not common-lisp-controller) (not gray-streams))
-    (progn (load "library:subsystems/gray-streams-library")
-           (pushnew :gray-streams *features*)))
+  (flet ((find-or-load-system (system path)
+           (let ((path (merge-pathnames path *load-truename*)))
+             (unless (asdf:find-system system nil)
+               (warn "~
+Cannot find ASDF system definition for ~A ~
+~:_in asdf:*central-registry*, ~
+~:_loading from file ~A. ~
+~:_Hint: \"ln -sf ~A /path/to/your/systems\" ~
+~:_to avoid this warning in the future."
+                     system path (namestring path))
+               (load path)))))
+    (find-or-load-system :acl-compat
+                         (make-pathname
+                          :directory '(:relative "acl-compat")
+                          :name "acl-compat" :type "asd" :case :local))
+    (find-or-load-system :htmlgen
+                         (make-pathname
+                          :directory '(:relative "aserve" "htmlgen")
+                          :name "htmlgen" :type "asd" :case :local))
+    (find-or-load-system :aserve
+                         (make-pathname
+                          :directory '(:relative "aserve")
+                          :name "aserve" :type "asd" :case :local)))
+  ;; Compile and load the ASERVE system
+  (asdf:operate 'asdf:load-op :aserve)
 
   ;; Startup multiprocessing.
   ;;
@@ -65,23 +90,6 @@
   #+mp
   (setf mp::*idle-process* mp::*initial-process*)
 
-  ;; Load logical host definitions
-  (load (merge-pathnames "logical-hostnames.lisp" *load-truename*))
-
-  ;; Load definition of ACL Compatibility system
-  (load "acl-compat:acl-compat-cmu.system")
-
-  ;; Compile and load ACL Compatibility system
-  (mk:oos "ACL-COMPAT" :load :compile-during-load t)
-
-  ;; Load definition of Aserve system
-  (load "aserve:aserve-cmu.system")
-
-  ;; Compile and load the ASERVE system
-  (mk:oos "ASERVE" :load :compile-during-load t)
-  
-  ;; Remove the kludge from *features* we added at the start.
-  (setf *features* (delete :kludge-no-cclan *features*))
   )
 
 

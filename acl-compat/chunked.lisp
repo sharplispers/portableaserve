@@ -26,7 +26,7 @@
 
 (defmethod shared-initialize :after ((stream chunked-mixin) slots-for-initform
 				     &rest initargs)
-  (declare (ignore initargs))
+  (declare (ignore initargs slots-for-initform))
   (with-slots (output-buffer) stream
     (setf output-buffer (make-array (list *buffer-size*)
 				    :element-type 'unsigned-byte
