@@ -18,6 +18,7 @@
               #+cmu #:ext
               #+clisp #:ext
               )
+        #+lispworks (:import-from :common-lisp #:fixnump)
 	(:export
          #:if*
          #:*initial-terminal-io*
