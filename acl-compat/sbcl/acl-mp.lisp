@@ -59,8 +59,8 @@
 (defmacro with-timeout ((seconds &body timeout-forms) &body body)
   (let ((c (gensym "TIMEOUT-")))
     `(handler-case
-      (sb-unix::with-timeout ,seconds (progn ,@body))
-      (sb-kernel::timeout (,c) ,@timeout-forms))))
+      (sb-ext:with-timeout ,seconds (progn ,@body))
+      (sb-ext:timeout (,c) ,@timeout-forms))))
 
 
 #+sb-thread
