@@ -51,9 +51,10 @@
 ;;;; Christopher Double, at: chris@double.co.nz
 
 (require 'nregex)
-
+#+nil
 (defpackage :excl
 	(:use :common-lisp :nregex)
+        (:import-from :common-lisp "FIXNUMP")
 	(:export 
 		"IF*"
 		"*INITIAL-TERMINAL-IO*"
@@ -72,6 +73,7 @@
                 "WITHOUT-PACKAGE-LOCKS"
 		"SOCKET-ERROR"
                 "RUN-SHELL-COMMAND"
+                "FIXNUMP"
 		))
 
 (in-package :excl)
