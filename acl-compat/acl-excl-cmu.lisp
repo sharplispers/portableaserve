@@ -208,7 +208,7 @@ program-controlled interception of a break."
     (values mb-vector octets-copied)))
 
 
-(defun write-vector (sequence stream &key start end endian-swap)
+(defun write-vector (sequence stream &key (start 0) end endian-swap)
   (declare (ignore endian-swap))
   (check-type sequence (or string (array (unsigned-byte 8) 1)
                            (array (signed-byte 8) 1)))

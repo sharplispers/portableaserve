@@ -1,3 +1,10 @@
+2002-12-13  Rudi Schlatte  <rudi@constantly.at>
+
+	* lw-buffering.lisp (stream-write-sequence): Make publish-multi
+	work (provide default value for start arg).
+
+	* acl-excl-cmu.lisp (write-vector): ditto.
+
 2002-12-03  Rudi Schlatte  <rudi@constantly.at>
 
 	* acl-compat.asd: load lw-buffering in every implementation except

@@ -229,7 +229,7 @@
   (write-elements stream string start end #'stream-write-char))
 
 (defmethod stream-write-sequence ((stream buffered-stream-mixin) sequence
-                                  &optional start end)
+                                  &optional (start 0) end)
   (write-elements stream sequence start end (%writer-function-for-sequence sequence)))
 
 (defmethod stream-element-type ((stream fundamental-bivalent-output-stream))
