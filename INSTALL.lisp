@@ -29,6 +29,10 @@
 
 #+cmu
 (progn
+  ;; Avoid setting path to example files to
+  ;; /usr/share/doc/cl-aserve/... later on in aserve.system.  (The
+  ;; feature will be removed again at the end of the load process)
+  (pushnew :kludge-no-cclan *features*)
   ;; Load Gray-streams support
   (eval-when (:compile-toplevel :load-toplevel :execute)
     ;; Debian cmucl distribution
@@ -76,6 +80,8 @@
   ;; Compile and load the ASERVE system
   (mk:oos "ASERVE" :load :compile-during-load t)
   
+  ;; Remove the kludge from *features* we added at the start.
+  (setf *features* (delete :kludge-no-cclan *features*))
   )
 
 

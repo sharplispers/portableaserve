@@ -14,8 +14,10 @@ CMU Common Lisp-specific requirements
 
    If you don't know if you have mk-defsystem installed, see if
    (find-package "MK") or (member :mk-defsystem *features*) return
-   something affirmative.  If not, get it from
-   http://clocc.sourceforge.net, then evaluate (load "defsystem.lisp")
+   something affirmative.  Defsystem is part of clocc, the Common Lisp
+   open code collection (http://clocc.sourceforge.net), a download URL
+   is <URL:http://telia.dl.sourceforge.net/clocc/defsyste-3.2i.tgz>.
+   To install it, simply evaluate (load "defsystem.lisp").
 
 
 2. Gray streams
@@ -27,65 +29,8 @@ CMU Common Lisp-specific requirements
    problems, please report them to the portableaserve mailing list; be
    sure to include your version of cmucl, where you obtained it, where
    its files are placed in your system, etc.  Failing to cleanly load
-   INSTALL.lisp is a bug; don't hesitate to report it as such (but see
-   also the next point).
-
-
-3. Taming common-lisp-controller (for Debian cmucl)
-
-
-   Portable AllegroServe has been adapted for inclusion into cCLan,
-   the nifty CPAN-like DWIM-enabled automagic package installation
-   system.  This assumes a certain directory layout (see
-   http://cclan.sourceforge.net/ for details).  If you want to hack
-   portableaserve in a local directory (e.g. because you got it from
-   CVS at sourceforge), use the gross hack of evaluating 
-
-(pushnew :kludge-no-cclan *features*)
-
-   before loading INSTALL.lisp.  This prevents the logical pathnames
-   being redirected to where cCLan expects Lisp source files to be
-   (instead of where you have them).
-
-   Alternatively, you can also tell common-lisp-controller where you
-   installed aserve.  To do this, evaluate the following two forms
-   BEFORE attempting to load INSTALL.lisp (but see also next point):
-
-(c-l-c:add-translation :cl-library "/home/rudi/lisp/portableaserve/"
-   (make-pathname :directory '(:relative "ACL-COMPAT" :wild-inferiors)
-                  :type :wild
-                  :case :common))
-
-(c-l-c:add-translation :cl-library "/home/rudi/lisp/portableaserve/"
-   (make-pathname :directory '(:relative "ASERVE" :wild-inferiors)
-                  :type :wild
-                  :case :common))
-
-
-4. Getting the examples to run 
-
-
-(This section only applies to Debian systems, and only if you run
-aserve out of your local source tree and did not push :kludge-no-cclan
-onto *features*)
-
-   The graphics and other files served by ASERVE:example.cl are still
-   expected under /usr/share/doc/cl-aserve/examples/.  This path is
-   not under the regime of common-lisp-controller, hence, the
-   c-l-c:add-translation method detailed in the previous step does not
-   work.  Thus, example.cl complains during load:
-
-File-error in function OPEN:
-   Error opening #.(logical-pathname "ASERVE:EXAMPLES;FRESH.JPG"), No such file or directory.
-
-   If you are unwilling to employ the :kludge-no-cclan hack, you could
-   evaluate
-
-(setf (logical-pathname-translations "aserve") 
-   (cdr (logical-pathname-translations "aserve")))
-
-   before loading example.cl, or comment out the first line of the
-   logical pathname translation form in aserve.system.
+   INSTALL.lisp is considered a bug; don't hesitate to report it as
+   such.
 
 
 Have fun,
