@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.11 2002/01/03 13:17:29 rudi Exp $
+;; $Id: main.cl,v 1.12 2002/01/11 16:21:38 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -146,7 +146,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 12 :a))
+(defparameter *aserve-version* '(1 2 12 :b))
 
 #+allegro
 (eval-when (eval load)
@@ -1257,17 +1257,18 @@ by keyword symbols and not by strings"
 	       `((*wserver*  . ',*wserver*)
 		 #+ignore (*debug-io* . ',(wserver-terminal-io *wserver*))
 		 ,@excl:*cl-default-special-bindings*))
-	 #'http-accept-thread)
+	 #'http-accept-thread
+         *wserver*)
 
 	#-allegro
 	(mp:process-run-function (format nil "aserve-accept-~d" (incf *thread-index*))
-				 nil #'http-accept-thread)))
+				 nil #'http-accept-thread *wserver*)))
 
 (defun make-worker-thread ()
   (mp:without-scheduling
    (let* ((name (format nil "~d-aserve-worker" (incf *thread-index*)))
 	  (proc #-allegro
-		(mp:process-run-function name nil #'http-worker-thread)
+		(mp:process-run-function name nil #'http-worker-thread *wserver*)
 		#+allegro
 		(mp:make-process :name name
 				 :initial-bindings
@@ -1277,7 +1278,7 @@ by keyword symbols and not by strings"
 				   ,@excl:*cl-default-special-bindings*)
 				 )))
      #+allegro
-     (mp:process-preset proc #'http-worker-thread)
+     (mp:process-preset proc #'http-worker-thread *wserver*)
      #-allegro
      (setf (mp:process-run-reasons proc) nil)
 
@@ -1289,9 +1290,10 @@ by keyword symbols and not by strings"
      )))
 
 
-(defun http-worker-thread ()
+(defun http-worker-thread (server)
   ;; made runnable when there is an socket on which work is to be done
   (let ((*print-level* 5)
+        (*wserver* server)
         (*worker-request* nil)
 	(*default-aserve-external-format* 
 	 (wserver-external-format *wserver*))
@@ -1327,13 +1329,13 @@ by keyword symbols and not by strings"
     
       )))
 
-(defun http-accept-thread ()
+(defun http-accept-thread (server)
   ;; loop doing accepts and processing them
   ;; ignore sporatic errors but stop if we get a few consecutive ones
   ;; since that means things probably aren't going to get better.
   (let* ((error-count 0)
 	 (workers nil)
-	 (server *wserver*)
+	 (*wserver* server)
 	 (main-socket (wserver-socket server))
 	 (ipaddrs (wserver-ipaddrs server)))
     (unwind-protect
