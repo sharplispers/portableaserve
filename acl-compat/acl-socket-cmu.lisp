@@ -7,9 +7,10 @@
 (defpackage acl-socket
   (:use "MP" "COMMON-LISP")
   #+cl-ssl (:import-from :ssl "MAKE-SSL-CLIENT-STREAM" "MAKE-SSL-SERVER-STREAM")
-  (:export socket make-socket accept-connection
-   ipaddr-to-dotted dotted-to-ipaddr ipaddr-to-hostname lookup-hostname
-   remote-host remote-port local-host local-port socket-control #+cl-ssl make-ssl-client-stream #+cl-ssl make-ssl-server-stream)
+  (:export #:socket #:make-socket #:accept-connection
+   #:ipaddr-to-dotted #:dotted-to-ipaddr #:ipaddr-to-hostname #:lookup-hostname
+   #:remote-host #:remote-port #:local-host #:local-port #:socket-control
+   #+cl-ssl #:make-ssl-client-stream #+cl-ssl #:make-ssl-server-stream)
   (:nicknames socket))
 
 (in-package socket)
@@ -158,7 +159,7 @@ streams and handled by their close methods."
 (defgeneric get-fd (stream))
 
 (defmethod get-fd ((stream excl::lisp-stream-mixin))
-  (get-fd (excl::lisp-stream stream)))
+  (system:fd-stream-fd (excl::lisp-stream stream)))
 
 (defmethod get-fd ((stream system:lisp-stream))
   (system:fd-stream-fd stream))

@@ -49,7 +49,7 @@
 ;;;; Christopher Double, at: chris@double.co.nz
 
 (defpackage :excl
-	(:use :common-lisp :nregex :ext)
+	(:use #:common-lisp #:nregex #:ext)
 	(:export
          #:if*
          #:*initial-terminal-io*
