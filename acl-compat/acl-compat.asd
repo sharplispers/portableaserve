@@ -93,7 +93,8 @@ are marked by a -system postfix but we could later change that to a directory pe
 lisp-system"))
 
 (defun lisp-system-shortname ()
-  #+acl :acl #+lispworks :lw #+cmu :cmu #+mcl :mcl #+scl :scl)
+  #+acl :acl #+lispworks :lw #+cmu :cmu #+mcl :mcl #+openmcl :openmcl
+  #+scl :scl)
 
 (defmethod component-pathname ((component unportable-cl-source-file))
   (let ((pathname (call-next-method)))
