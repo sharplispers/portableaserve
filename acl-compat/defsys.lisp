@@ -4,9 +4,9 @@
   (:default-pathname "ACL-COMPAT:")
   :members
   ("nregex"
+   "acl-excl-lw"
    "acl-mp-lw"
    "acl-socket-lw"
-   "acl-excl-lw"
    "acl-sys-lw"
    "meta"
    "uri"

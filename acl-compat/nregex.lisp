@@ -391,10 +391,12 @@
 	       ;;
 	       ;; If we have a multi-character literal then we must
 	       ;; check to see if the next character (if there is one)
-	       ;; is an astrisk or a plus.  If so then we must not use this
+	       ;; is an astrisk or a plus or a question mark.  If so then we must not use this
 	       ;; character in the big literal.
 	       (progn 
-		 (if (or (eql term #\*) (eql term #\+))
+		 (if (or (eql term #\*)
+                         (eql term #\+)
+                         (eql term #\?))
 		     (setf lit (subseq lit 0 (1- (length lit)))))
 		 (add-exp `((if (< length (+ index ,(length lit)))
 				(return-from compare nil))

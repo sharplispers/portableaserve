@@ -171,7 +171,7 @@
   (let ((colon-pos (position #\: value)))
     (if colon-pos
         (setf (uri-host uri) (subseq value 0 colon-pos)
-              (uri-port uri) (subseq value (1+ colon-pos)))
+              (uri-port uri) (parse-integer (subseq value (1+ colon-pos))))
       value)))
 
 (defun render-uri (uri stream)
@@ -214,7 +214,7 @@
             (make-instance class
                            :scheme (string-to-keyword scheme)
                            :host host
-                           :port port
+                           :port (and port (parse-integer port))
                            :path (and path (plusp (length path))
                                       (coerce path 'simple-string))
                            :query (and query (plusp (length query))
@@ -395,17 +395,26 @@
   (setf (uri-path uri)
         (%render-parsed-path value)))
 
-(defun copy-uri (uri &key place scheme host port path query fragment plist string)
-  (when place
+(defun copy-uri (uri &key 
+                     (place nil placep)
+                     (scheme nil schemep) 
+                     (host nil hostp)
+                     (port nil portp)
+                     (path nil pathp)
+                     (query nil queryp)
+                     (fragment nil fragmentp)
+                     (plist nil plistp)
+                     (string nil stringp))
+  (when placep
     (error "PLACE keyword of COPY-URI not implemented."))
   (make-instance 'uri
-		 :scheme (or scheme (uri-scheme uri))
-		 :host (or host (uri-host uri))
-		 :port (or port (uri-port uri))
-		 :path (or path (uri-path uri))
-		 :query (or query (uri-query uri))
-		 :fragment (or fragment (uri-fragment uri))
-		 :plist (or plist (uri-plist uri))
-		 :string (or string (uri-string uri))))
+		 :scheme (if schemep scheme (uri-scheme uri))
+		 :host (if hostp host (uri-host uri))
+		 :port (if portp port (uri-port uri))
+		 :path (if pathp path (uri-path uri))
+		 :query (if queryp query (uri-query uri))
+		 :fragment (if fragmentp fragment (uri-fragment uri))
+		 :plist (if plistp plist (uri-plist uri))
+		 :string (if stringp string (uri-string uri))))
 
 (provide 'uri)
