@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: t-webactions.cl,v 1.1 2003/12/02 14:36:33 rudi Exp $
+;; $Id: t-webactions.cl,v 1.2 2004/04/26 18:18:38 kevinrosenberg Exp $
 
 ;; Description:
 ;;   test webactions in aserve
@@ -31,11 +31,19 @@
 ;;- http://www.franz.com/~jkf/coding_standards.html
 ;;-
 
+#+allegro
 (eval-when (compile load eval)
   (require :tester))
 
+;;; Get Kevin Rosenberg's port of Franz tester at
+;;; http://files.b9.com/ptester/
+#-allegro
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (asdf:oos 'asdf:load-op :ptester)
+  (rename-package (find-package :ptester) :ptester '(:util.test)))
+
 (defpackage :net.aserve.testwa
-  (:use :common-lisp :excl :net.html.generator :net.aserve 
+  (:use :common-lisp :acl-compat.excl :net.html.generator :net.aserve 
 	:net.aserve.client
 	:util.test)
   )

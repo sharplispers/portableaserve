@@ -18,6 +18,7 @@
       "clpcode/http"
       "clpcode/time"))
 
+(defvar +fasl-type+ (pathname-type (compile-file-pathname "foo.lisp")))
 
 (with-compilation-unit nil
   (dolist (file *webactions-files*)
@@ -28,15 +29,17 @@
 		 (merge-pathnames (format nil "~a~a.cl" 
 					  *webactions-root* file))))
       (:load nil))
-    (load (format nil "~a~a.fasl" *webactions-root* file))))
+    (load (format nil "~a~a.~a" *webactions-root* file +fasl-type+))))
 
     
 (defun make-webactions.fasl ()
-  (wa-copy-files-to *webactions-files* "webactions.fasl" 
+  (wa-copy-files-to *webactions-files*
+		    (concatenate 'string "webactions." +fasl-type+)
 		    :root *webactions-root*)
   ; in place for require
   (sys:copy-file (concatenate 'string
-	       *webactions-root* "webactions.fasl")
+	       *webactions-root* "webactions."
+	       +fasl-type+)
 		 "code/webactions.fasl"
 		 :overwrite t)
 	       
@@ -57,7 +60,7 @@
 	(setq file (concatenate 'string root file))
 	(if* (and (null (pathname-type file))
 		  (not (probe-file file)))
-	   then (setq file (concatenate 'string file  ".fasl")))
+	   then (setq file (concatenate 'string file  "." +fasl-type+)))
 	(with-open-file (in file :element-type '(unsigned-byte 8))
 	  (loop
 	    (let ((count (read-sequence buffer in)))

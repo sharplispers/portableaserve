@@ -1,3 +1,8 @@
+2004-04-26  Kevin Rosenberg <kevin@rosenberg.net>
+        * aserve/webactions: Commit patch, with modifications, from
+	Ivan Toshkov
+	* aserve/load.cl: Add implemenatation of compile-file-if-needed
+
 2004-02-16  Rudi Schlatte  <rudi@constantly.at>
 
 	* libs/cl-ppcre/: Import Edi Weitz's cl-ppcre library.

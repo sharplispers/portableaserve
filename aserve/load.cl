@@ -1,6 +1,6 @@
 ;; load in aserve
 ;;
-;; $Id: load.cl,v 1.4 2003/12/02 14:20:40 rudi Exp $
+;; $Id: load.cl,v 1.5 2004/04/26 18:18:37 kevinrosenberg Exp $
 ;;
 
 ;
@@ -114,7 +114,33 @@
       "webactions/test/sitea/file3.clp"))
       
 
-    
+#-allegro
+(defun >-num (x y)
+  "Return T if x and y are numbers and x > y"
+  (and (numberp x) (numberp y) (> x y)))
+
+#-allegro
+(defun newer-file-p (file1 file2)
+  "Is file1 newer (written later than) file2?"
+  (>-num (if (probe-file file1) (file-write-date file1))
+	 (if (probe-file file2) (file-write-date file2))))
+
+#-allegro
+(defun compile-file-if-needed (src-path &rest args)
+  "Compiles a file if needed, returns path. For CLISP, needs to be
+passed a non-logical pathname"
+  (unless dest-path
+    (setq dest-path (compile-file-pathname src-path))
+    (setq dest-path
+	  (make-pathname :defaults dest-path
+			 :directory (append-binary-directory
+				     (pathname-directory dest-path)))))
+  (when (or (not (probe-file dest-path))
+	    (newer-file-p src-path dest-path))
+    (ensure-directories-exist dest-path)
+    (compile-file src-path :output-file dest-path))
+  dest-path)
+  
 ;; end experimental
 
 (eval-when (compile eval load)

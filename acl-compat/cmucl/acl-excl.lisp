@@ -29,3 +29,12 @@
 (defmacro without-package-locks (&body forms)
   `(progn ,@forms))
 
+(defun filesys-inode (path)
+  (multiple-value-bind (found ign inode)
+      (unix:unix-lstat path)
+    (if found
+        inode
+        (error "path ~s does not exist" path))))
+
+(defun cl-internal-real-time ()
+  (round (/ (get-internal-real-time) internal-time-units-per-second)))

@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: clpage.cl,v 1.6 2004/03/16 20:38:09 kevinrosenberg Exp $
+;; $Id: clpage.cl,v 1.7 2004/04/26 18:18:37 kevinrosenberg Exp $
 
 
 (eval-when (compile load eval) (require :aserve))
@@ -225,7 +225,8 @@
   (handler-case 
       (with-open-file (p (file ent)
 		       :direction :input
-		       :external-format (clp-entity-external-format ent))
+		       #+allegro :external-format
+		       #+allegro (clp-entity-external-format ent))
 	(setf (clp-entity-file-write-date ent)
 	  (file-write-date (file ent)))
 	(let* ((objects (parse-clp-guts p (file ent)))
