@@ -1,5 +1,7 @@
 2003-08-30  Rudi Schlatte  <rudi@62-99-252-74.C-GMITTE.Xdsl-line.inode.at>
 
+	* cmucl/acl-socket.lisp (make-socket): set reuse-address option.
+
 	* lw-buffering.lisp (stream-fill-buffer): Implement b/nb semantics
 	for cmucl as well.  client mode should now neither hang trying to
 	read closed streams nor give spurious errors for slow servers.
