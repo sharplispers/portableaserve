@@ -1,0 +1,18 @@
+Source: cl-portable-aserve
+Section: web
+Priority: optional
+Maintainer: Stig E Sandoe <stig@users.sourceforge.net>
+Standards-Version: 3.1.1
+Build-Depends: debhelper
+
+Package: cl-aserve
+Architecture: any
+Depends: cmucl (>= 2.5.2), common-lisp-controller (>= 2.4), cl-acl-compat
+Description: Portable Aserve
+ Aserve done in a portable fashion
+
+Package: cl-acl-compat
+Architecture: all
+Depends: cmucl (>= 2.5.2), common-lisp-controller (>= 2.4)
+Description: Compatibility layer for Allegro Common Lisp
+ A thin compatibility-layer that emulates ACL.

@@ -1,0 +1,96 @@
+#!/usr/bin/make -f
+# MAde with the aid of dh_make, by Craig Small
+# Sample debian/rules that uses debhelper. GNU copyright 1997 by Joey Hess.
+# Some lines taken from debmake, by Cristoph Lameter.
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+DESTDIR         := `pwd`/debian/tmp
+COMPATDESTDIR	:= `pwd`/debian/cl-acl-compat
+
+INSTALL         := install
+INSTALLFLAGS    := -g root -o root -m 0644
+INSTALLDIRFLAGS := -g root -o root -m 0755
+
+ASERVEDEST	:= $(DESTDIR)/usr/share/common-lisp/repositories/aserve
+HTGENDEST	:= $(DESTDIR)/usr/share/common-lisp/repositories/aserve/htmlgen
+COMPATDEST	:= $(COMPATDESTDIR)/usr/share/common-lisp/repositories/acl-compat
+
+ASERVEDOC	:= $(DESTDIR)/usr/share/doc/cl-aserve
+WEBDEST		:= $(ASERVEDOC)/html
+COMPATDOC	:= $(COMPATDESTDIR)/usr/share/doc/cl-acl-compat
+
+ASERVESRC	:= \
+	aserve/*.cl \
+	aserve/*.system
+
+#HTGENSRC	:= \
+#	aserve/htmlgen/*.cl
+
+COMPATSRC = \
+	acl-compat/*.lisp \
+	acl-compat/*.system
+
+build: 
+	dh_testdir
+#	make 
+	touch build
+
+clean:
+	dh_testdir
+	rm -f build
+
+	# Add here commands to clean up after the build process.
+#	-$(MAKE) clean
+
+	dh_clean
+
+# Build architecture-independent files here.
+binary-indep: build
+# We have nothing to do by default.
+
+# Build architecture-dependent files here.
+binary-arch: build
+#	dh_testversion
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+
+	# Add here commands to install the files into debian/tmp
+	$(INSTALL) $(INSTALLFLAGS) $(ASERVESRC) $(ASERVEDEST)
+#	$(INSTALL) $(INSTALLFLAGS) $(HTGENSRC) $(HTGENDEST)
+	$(INSTALL) $(INSTALLFLAGS) aserve/htmlgen/htmlgen.cl $(ASERVEDEST)
+
+	$(INSTALL) $(INSTALLFLAGS) aserve/ChangeLog $(ASERVEDOC)/changelog
+	$(INSTALL) $(INSTALLFLAGS) aserve/doc/*.html $(WEBDEST)
+
+	# Vanilla stuff
+	$(INSTALL) $(INSTALLFLAGS) $(COMPATSRC) $(COMPATDEST)
+	$(INSTALL) $(INSTALLFLAGS) debian/README.Debian $(COMPATDOC)
+
+	dh_installdocs
+#	dh_installexamples
+	dh_installmenu
+	dh_installcron
+#	dh_installmanpages
+#	dh_undocumented
+	dh_installchangelogs
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_makeshlibs
+	dh_md5sums
+	dh_builddeb
+
+source diff:                                                                  
+	@echo >&2 'source and diff are obsolete - use dpkg-source -b'; false
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary
+

@@ -1,0 +1,6 @@
+tmp
+*.debhelper
+cl-acl-compat
+files
+*substvars
+
