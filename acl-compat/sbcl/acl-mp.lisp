@@ -205,7 +205,8 @@
                                     bindings)
                           (apply function arguments))
                       (apply function arguments)))))
-    (when (process-id process) (sb-thread:destroy-thread process))
+    (when (process-id process)
+      (sb-thread:destroy-thread (process-id process)))
     ;; XXX handle run-reasons in some way?  Should a process continue
     ;; running if all run reasons are taken away before
     ;; restart-process is called?  (process-revoke-run-reason handles
