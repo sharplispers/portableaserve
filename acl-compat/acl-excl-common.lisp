@@ -42,6 +42,9 @@
 
 (defvar if*-keyword-list '("then" "thenret" "else" "elseif"))
 
+;this is not used in aserve, but is needed to use the franz xmlutils package with acl-compat
+(defvar *current-case-mode* :case-insensitive-upper)
+
 (defmacro if* (&rest args)
    (do ((xx (reverse args) (cdr xx))
 	(state :init)
