@@ -193,26 +193,25 @@
 
 (defun render-uri (uri stream)
   "Print an URI-Object in normal URI-notation"
-  (format stream "~A"
-          (with-output-to-string (new-stream)
-            (with-slots (scheme host port path query fragment) uri
-              (when scheme 
-                (format new-stream "~A:" (string-downcase (symbol-name scheme))))
-              (when host
-                (format new-stream "//~A" host))
-              (when (and host port)
-                (format new-stream ":~A" port))
-              (when path
-                      (format new-stream "~A" path))
-              (when query
-                (format new-stream "?~A" query))
-              (when fragment
-                (format new-stream "#~A" fragment))))))
+  (with-slots (scheme host port path query fragment) uri
+    (when scheme 
+      (format stream "~A:" (string-downcase (symbol-name scheme))))
+    (when host
+      (format stream "//~A" host))
+    (when (and host port)
+      (format stream ":~A" port))
+    (when path
+      (format stream "~A" path))
+    (when query
+      (format stream "?~A" query))
+    (when fragment
+      (format stream "#~A" fragment))))
 
 (defmethod print-object ((uri uri) stream)
-	(if *print-escape*
-		(format stream "#<~a ~a>" 'uri (render-uri uri nil))
-		(render-uri uri stream)))
+  (if *print-escape*
+      (print-unreadable-object (uri stream :type t :identity nil)
+         (render-uri uri stream))
+    (render-uri uri stream)))
 
 (defun string-to-keyword (string)
   "Convert a string to an appropriate keyword"

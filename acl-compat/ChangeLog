@@ -1,3 +1,8 @@
+2003-04-03  Rudi Schlatte  <rudi@constantly.at>
+
+	* uri.lisp (render-uri, print-object): Further frob printing of
+	URIs, inspired by patch of Harley Gorrell
+
 2003-04-02  Rudi Schlatte  <rudi@constantly.at>
 
 	* uri.lisp (render-uri): Fix printing URIs in the presence of #\~
