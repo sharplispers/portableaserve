@@ -2,6 +2,11 @@
 
 (in-package :CL-USER)
 
+;; Stig: we're a debian-package if clc is present
+#+common-lisp-controller
+(setf (logical-pathname-translations "acl-compat")
+      '(("**;*.*.*" "cl-library:;acl-compat;**;*.*.*")))
+
 (mk:defsystem "ACL-COMPAT"
     :source-pathname "acl-compat:"
 ;    :source-extension "lisp"
@@ -15,6 +20,11 @@
                  (:file "acl-sys-cmu")
                  (:file "meta")
                  (:file "uri"
-                        :depends-on ("meta"))))
+                        :depends-on ("meta")))
+    ;; Stig: if we're CMU and a debian-package, we need graystreams
+    #+(and cmu common-lisp-controller)
+    :depends-on
+    #+(and cmu common-lisp-controller) (cmucl-graystream))
+
 
     
