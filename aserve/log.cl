@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: log.cl,v 1.4 2002/06/09 11:35:01 rudi Exp $
+;; $Id: log.cl,v 1.5 2002/10/24 13:26:56 rudi Exp $
 
 ;; Description:
 ;;   iserve's logging
@@ -99,14 +99,14 @@
 
 (defun log-timed-out-request-read (socket)
   (logmess (format nil "No request read from address ~a" 
-		   (socket::ipaddr-to-dotted (socket::remote-host socket)))))
+		   (acl-socket:ipaddr-to-dotted (acl-socket:remote-host socket)))))
 
 
 
 (defmethod log-request ((req http-request))
   ;; after the request has been processed, write out log line
   (if* *enable-logging*
-     then (let* ((ipaddr (socket:remote-host (request-socket req)))
+     then (let* ((ipaddr (acl-socket:remote-host (request-socket req)))
 		 (time   (request-reply-date req))
 		 (code   (let ((obj (request-reply-code req)))
 			   (if* obj
@@ -127,7 +127,7 @@
 	    (macrolet ((do-log ()
 			 '(progn (format stream
 				  "~a - - [~a] ~s ~s ~s~%"
-				  (socket:ipaddr-to-dotted ipaddr)
+				  (acl-socket:ipaddr-to-dotted ipaddr)
 				  (maybe-universal-time-to-date time)
 				  (request-raw-request req)
 				  code

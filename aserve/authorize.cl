@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: authorize.cl,v 1.2 2002/06/09 11:35:01 rudi Exp $
+;; $Id: authorize.cl,v 1.3 2002/10/24 13:26:56 rudi Exp $
 
 ;; Description:
 ;;   classes and functions for authorizing access to entities
@@ -125,7 +125,7 @@
 (defmethod authorize ((auth location-authorizer)
 		      (req http-request)
 		      (ent entity))
-  (let ((request-ipaddress (socket:remote-host (request-socket req))))
+  (let ((request-ipaddress (acl-socket:remote-host (request-socket req))))
     (dolist (pattern (location-authorizer-patterns auth))
       (if* (atom pattern)
 	 then (case pattern
@@ -144,12 +144,12 @@
 		
 		(if* (stringp ipaddress)
 		   then ; check for dotted ip address first
-			(let ((newaddr (socket:dotted-to-ipaddr ipaddress
+			(let ((newaddr (acl-socket:dotted-to-ipaddr ipaddress
 								:errorp nil)))
 			  (if* (null newaddr)
 			     then ; success!
 				  (ignore-errors
-				   (setq newaddr (socket:lookup-hostname ipaddress))))
+				   (setq newaddr (acl-socket:lookup-hostname ipaddress))))
 			  
 			  (if* newaddr
 			     then (setf (cadr pattern) 

@@ -282,7 +282,7 @@
 	 :content-type "text/html"
 	 :function
 	 #'(lambda (req ent)
-	     (let ((net-address (ash (socket:remote-host
+	     (let ((net-address (ash (acl-socket:remote-host
 				      (request-socket req))
 				     -24)))
 	       (if* (equal net-address 127)

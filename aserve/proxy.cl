@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.7 2002/06/09 11:35:00 rudi Exp $
+;; $Id: proxy.cl,v 1.8 2002/10/24 13:26:56 rudi Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -311,7 +311,7 @@
 			     (:body "This url isn't a valid proxy request "
 				    (:princ-safe (net.uri:render-uri uri nil)))))))
        else ; see if it's a local request
-	    (let ((ipaddr (ignore-errors (socket:lookup-hostname host))))
+	    (let ((ipaddr (ignore-errors (acl-socket:lookup-hostname host))))
 	      (if* (null ipaddr)
 		 then (with-http-response (req ent :response
 					       *response-not-found*)
@@ -328,7 +328,7 @@
 			(member ipaddr
 				(wserver-ipaddrs *wserver*))
 			(eq port 
-			    (socket:local-port (wserver-socket *wserver*)))
+			    (acl-socket:local-port (wserver-socket *wserver*)))
 			)
 		 then ; it's us, make it into into a local request
 		      ; and look  it up again
@@ -634,7 +634,7 @@ cached connection = ~s~%" cond cached-connection))
 	  
 	    ; a shutdown would make sense here but it seems to confuse
 	    ; the aol servers
-	    ;(socket:shutdown sock :direction :output)
+	    ;(acl-socket:shutdown sock :direction :output)
 
 	    (let (protocol response comment header-start given-content-length
 		  body-buffers body-length)
@@ -1020,10 +1020,10 @@ cached connection = ~s~%" cond cached-connection))
     ; get here if there is no match
 
     (incf *connections-made*)
-;    (socket:with-pending-connect
+;    (acl-socket:with-pending-connect
 	(acl-mp:with-timeout (*connection-timed-out-wait*   ; ok w-t
 			  (error "connection timed out"))
-	  (socket:make-socket :remote-host host
+	  (acl-socket:make-socket :remote-host host
 			      :remote-port port
 			      :format :bivalent
 			      :type *socket-stream-type*

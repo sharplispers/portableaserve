@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.20 2002/06/11 14:03:15 rudi Exp $
+;; $Id: main.cl,v 1.21 2002/10/24 13:26:56 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -174,6 +174,8 @@
 #+mcl
 (eval-when (:compile-toplevel :load-toplevel) ;mcl still gives a compiler warning if we don't have this
   (shadowing-import 'ccl::fixnump) )
+#+clisp
+(shadowing-import 'sys::fixnump)
 
 (provide :aserve)
 
@@ -344,6 +346,8 @@
   (alien:def-alien-routine ("signal" unix-signal) c-call:void (sig integer) (hdl integer))
 )
 
+#+(and clisp unix)
+(defun getpid () (unix:getpid))
 
 ;; more specials
 (defvar *max-socket-fd* 0) ; the maximum fd returned by accept-connection
@@ -545,7 +549,7 @@
     (format stream "port ~a" 
 	    (let ((sock (wserver-socket wserver)))
 	      (if* sock 
-		 then (socket:local-port sock)
+		 then (acl-socket:local-port sock)
 		 else "-no socket-")))))
      
 
@@ -1082,7 +1086,7 @@ by keyword symbols and not by strings"
 	  
 	  (setq accept-hook 
 	    #'(lambda (socket)
-		(funcall 'socket::make-ssl-server-stream socket
+		(funcall 'acl-socket::make-ssl-server-stream socket
 			 :certificate ssl)))
 	  (setq chunking nil) ; doesn't work well through ssl
 	  (if* (not port-p)
@@ -1143,7 +1147,7 @@ by keyword symbols and not by strings"
   
 
   
-  (let* ((main-socket (socket:make-socket :connect :passive
+  (let* ((main-socket (acl-socket:make-socket :connect :passive
 					  :local-port port
 					  :local-host host
 					  :reuse-address t
@@ -1252,9 +1256,9 @@ by keyword symbols and not by strings"
     (unwind-protect
 	(loop
 	  (restart-case
-	      (let ((sock (socket:accept-connection main-socket))
+	      (let ((sock (acl-socket:accept-connection main-socket))
 		    (localhost))
-		(if* (not (member (setq localhost (socket:local-host sock))
+		(if* (not (member (setq localhost (acl-socket:local-host sock))
 				  ipaddrs))
 		   then ; new ip address by which this machine is known
 			(push localhost ipaddrs)
@@ -1270,7 +1274,7 @@ by keyword symbols and not by strings"
 		(socket:set-socket-options sock :nodelay t)
 		
 		#+io-timeout
-		(socket:socket-control 
+		(acl-socket:socket-control 
 		 sock 
 		 :read-timeout (wserver-io-timeout *wserver*)
 		 :write-timeout (wserver-io-timeout *wserver*))
@@ -1397,7 +1401,7 @@ by keyword symbols and not by strings"
 
 	(loop
 	  (handler-case
-	      (let ((sock (socket:accept-connection main-socket))
+	      (let ((sock (acl-socket:accept-connection main-socket))
 		    (localhost))
 		
 		; optional.. useful if we find that sockets aren't being
@@ -1408,14 +1412,14 @@ by keyword symbols and not by strings"
 			 #'check-for-open-socket-before-gc))
 		
 		; track all the ipaddrs by which we're reachable
-		(if* (not (member (setq localhost (socket:local-host sock))
+		(if* (not (member (setq localhost (acl-socket:local-host sock))
 				  ipaddrs))
 		   then ; new ip address by which this machine is known
 			(push localhost ipaddrs)
 			(setf (wserver-ipaddrs *wserver*) ipaddrs))
 		
 		#+io-timeout
-		(socket:socket-control 
+		(acl-socket:socket-control 
 		 sock 
 		 :read-timeout (wserver-io-timeout *wserver*)
 		 :write-timeout (wserver-io-timeout *wserver*))
@@ -1561,7 +1565,7 @@ by keyword symbols and not by strings"
   ;; do a force-output but don't get hung up if we get blocked on output
   ;; this happens enough with sockets that it's a real concern
   ; 30 seconds is enough time to wait
-  (with-timeout-local (30) 
+  (with-timeout-local (30)
     (force-output stream)))
 
   

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.7 2002/07/07 10:15:07 rudi Exp $
+;; $Id: client.cl,v 1.8 2002/10/24 13:26:56 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -398,14 +398,14 @@
 		 then (error "proxy arg should have form \"foo.com\" ~
 or \"foo.com:8000\", not ~s" proxy))
 	      
-	      (setq sock (socket:make-socket :remote-host phost
+	      (setq sock (acl-socket:make-socket :remote-host phost
 					     :remote-port pport
 					     :format :bivalent
 					     :type net.aserve::*socket-stream-type*
 					     :nodelay t
 					     )))
        else (setq sock 
-	      (socket:make-socket :remote-host host
+	      (acl-socket:make-socket :remote-host host
 				  :remote-port port
 				  :format :bivalent
 				  :type 
@@ -415,7 +415,7 @@ or \"foo.com:8000\", not ~s" proxy))
 				  ))
 	    (if* ssl
 	       then (setq sock
-		      (funcall 'socket::make-ssl-client-stream sock)))
+		      (funcall 'acl-socket::make-ssl-client-stream sock)))
 	    )
 
     #+(and allegro (version>= 6 0))
@@ -639,7 +639,7 @@ or \"foo.com:8000\", not ~s" proxy))
 				     creq :transfer-encoding))
 	     then ; data will come back in chunked style
 		  (setf (client-request-bytes-left creq) :chunked)
-		  (socket:socket-control (client-request-socket creq)
+		  (acl-socket:socket-control (client-request-socket creq)
 					 :input-chunking t)
 	   elseif (setq val (client-response-header-value
 			     creq :content-length))
