@@ -64,7 +64,7 @@
 ; method should really check to see that it has a good value.
 ;
 ; Second reason for this: ccl:ipaddr-to-dotted gives the wrong result.
-
+#+ignore
 (defun ccl:ipaddr-to-dotted (ipaddr &key values)
   (if (null ipaddr)
     (if values (values 0 0 0 0) "0.0.0.0")

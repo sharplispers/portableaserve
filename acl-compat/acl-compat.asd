@@ -10,14 +10,9 @@
 
 ;;;; load gray stream support
 
-;; Awaiting cmucl-graystreams to move to ASDF
-
-#+common-lisp-controller (pushnew :cmucl-not-yet-asdf cl:*features*)
-
 (defclass gray-streams (component) ())
 
 (defmethod perform ((operation compile-op) (component gray-streams))
-#+(and cmu (not graystreams) cmucl-not-yet-asdf) (require :cmucl-graystream)
   ;; vanilla cmucl
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
@@ -26,7 +21,6 @@
   #+lispworks (lw:do-nothing))
 
 (defmethod perform ((operation load-op) (component gray-streams))
-  #+(and cmu (not graystreams) cmucl-not-yet-asdf) (require :cmucl-graystream)
   ;; vanilla cmucl
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
@@ -34,6 +28,14 @@
   ;; LispWorks it's already there
   #+lispworks (lw:do-nothing))
 
+(defmethod asdf::input-files ((operation load-op) (component gray-streams))
+  nil)
+
+(defmethod asdf::output-files ((operation load-op) (component gray-streams))
+  nil)
+
+(defmethod asdf::operation-done-p ((operaton compile-op) (component gray-streams))
+  t)
 
 ;;;; ignore warnings
 ;;;;
@@ -87,9 +89,8 @@ are marked by a -system postfix but we could later change that to a directory pe
 lisp-system"))
 
 (defun lisp-system-shortname ()
-  #+acl :acl #+lispworks :lw #+cmu :cmu #+mcl :mcl #+openmcl :openmcl
-  #+clisp :clisp
-  #+scl :scl)
+  #+acl :acl #+lispworks :lw #+cmu :cmu #+(and mcl (not openmcl)) :mcl 
+  #+openmcl :openmcl #+clisp :clisp #+scl :scl)
 
 (defmethod component-pathname ((component unportable-cl-source-file))
   (let ((pathname (call-next-method)))
@@ -113,12 +114,11 @@ lisp-system"))
 	       (:unportable-cl-source-file "acl-mp"
  		      :depends-on ("packages"
                                    ;"acl-mp-package"
-				   #-mcl "acl-socket"
-				   #+(and mcl openmcl) "acl-socket-openmcl"
-				   #+(and mcl (not openmcl)) "acl-socket-mcl"
+				   "acl-socket"
 				   #+mcl "mcl-timers"))
 	       (:unportable-cl-source-file "acl-excl"
-		      :depends-on ("packages" #+nil "gray-stream-package" "nregex"))
+		      :depends-on ("packages" "nregex"
+					      #+nil "gray-stream-package"))
                ;; Debian cmucl has gray stream support for
                ;; read-/write-sequence, cons.org cmucl has it
                ;; commented out in src/stream.lisp, so we leave the
@@ -126,35 +126,34 @@ lisp-system"))
                ;; cmucl-imp, tho)
 	       #+(and cmu (not common-lisp-controller))
                (:file "cmu-read-sequence")
-	       #+(and mcl (not openmcl)) (:file "acl-socket-mcl"
-                                                :depends-on ("packages"))
-	       #+(and mcl openmcl) (:file "acl-socket-openmcl"
-                                                :depends-on ("packages"))
-	       #-mcl (:unportable-cl-source-file "acl-socket"
-		      :depends-on ("packages" "acl-excl" "chunked-stream-mixin"
+	       (:unportable-cl-source-file "acl-socket"
+		   :depends-on ("packages" "acl-excl"
+					   #-mcl "chunked-stream-mixin"
                                    #+(and cmu (not common-lisp-controller))
                                    "cmu-read-sequence"))
 	       (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
 	       (:file "meta")
-	       #+openmcl (:file "ansi-loop")
-	       (:file "uri"
-		      :depends-on ("meta" #+openmcl "ansi-loop"))
+	       (:file "uri" :depends-on ("meta"))
           ;;     (:file "gray-stream-package"
           ;;      :depends-on ("vendor-gray-streams"))
+	       #-mcl
 	       (:legacy-cl-source-file "chunked-stream-mixin"
 		      :depends-on ("packages" "acl-excl" #+nil "gray-stream-package"))
 
+	       #-mcl
                (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
+	       #-mcl
                (:file "acl-ssl-streams" :depends-on ("packages"))
 
                #+nil
                (:legacy-cl-source-file "md5")
                #+nil
 	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
-  #+(or (and cmu common-lisp-controller (not gray-streams) (not cmucl-not-yet-asdf)) lispworks)
+  #+(or (and cmu common-lisp-controller (not gray-streams)) lispworks)
   :depends-on
-  ( #+(and cmu common-lisp-controller (not gray-streams) (not cmucl-not-yet-asdf))
-    :cmucl-graystream #+lispworks :cl-ssl)
+  #+(or (and cmu common-lisp-controller (not gray-streams)) lispworks)
+  ( #+(and cmu common-lisp-controller (not gray-streams)) :cmucl-graystream
+     #+lispworks :cl-ssl)
 
   :perform (load-op :after (op acl-compat)
 		    (pushnew :acl-compat cl:*features*))
