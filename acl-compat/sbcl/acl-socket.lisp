@@ -93,8 +93,10 @@ streams and handled by their close methods."
   (declare (ignore abort))
   (socket-close (socket server)))
 
+#+ignore
 (declaim (ftype (function ((unsigned-byte 32) &key (:values t))
-                          (values simple-string))
+                          (or (values fixnum fixnum fixnum fixnum)
+			      (values simple-string)))
 		ipaddr-to-dotted))
 (defun ipaddr-to-dotted (ipaddr &key values)
   "Convert from 32-bit integer to dotted string."
@@ -127,7 +129,7 @@ streams and handled by their close methods."
     (get-token (concatenate 'string string " ") 0 nil)))
 
 (declaim (ftype (function (string &key (:errorp t))
-                          (values (unsigned-byte 32)))
+                          (or null (unsigned-byte 32)))
 		dotted-to-ipaddr))
 (defun dotted-to-ipaddr (dotted &key (errorp t))
   "Convert from dotted string to 32-bit integer."
@@ -136,10 +138,10 @@ streams and handled by their close methods."
       (let ((ll (string-tokens (substitute #\Space #\. dotted))))
 	(+ (ash (first ll) 24) (ash (second ll) 16)
 	   (ash (third ll) 8) (fourth ll)))
-    (ignore-errors
-      (let ((ll (string-tokens (substitute #\Space #\. dotted))))
-	(+ (ash (first ll) 24) (ash (second ll) 16)
-	   (ash (third ll) 8) (fourth ll))))))
+    (ignore-error
+	(let ((ll (string-tokens (substitute #\Space #\. dotted))))
+	  (+ (ash (first ll) 24) (ash (second ll) 16)
+	     (ash (third ll) 8) (fourth ll))))))
 
 (defun ipaddr-to-hostname (ipaddr &key ignore-cache)
   (when ignore-cache
