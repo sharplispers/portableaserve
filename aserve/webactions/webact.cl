@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: webact.cl,v 1.8 2004/03/16 20:38:10 kevinrosenberg Exp $
+;; $Id: webact.cl,v 1.9 2004/04/27 20:09:39 kevinrosenberg Exp $
 
 
 (in-package :net.aserve)
@@ -466,7 +466,7 @@
     
     #+allegro
     (if* sys:*tilde-expand-namestrings*
-       then (setq realname (acl-compat.excl::tilde-expand-unix-namestring realname)))
+       then (setq realname (excl::tilde-expand-unix-namestring realname)))
     
     (values realname postfix)))
 
