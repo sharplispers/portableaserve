@@ -8,69 +8,6 @@
 
 (in-package :acl-compat.mp)
 
-#-sb-thread
-(progn
-
-(defparameter *current-process* nil)
-
-(defparameter *all-processes* nil)
-
-(macrolet ((def (name args)
-             `(defun ,name ,args
-                (declare (ignore ,@(remove-if
-                                    (lambda (x)
-                                      (member x '(&optional &rest &key &allow-other-keys &aux)))
-                                    (mapcar (lambda (x) (if (consp x) (car x) x))
-                                            args))))
-                (error "~A: Calling a multiprocessing function on a single-threaded sbcl build"
-                       ',name))))
-  (def process-interrupt (process function))
-  (defun process-name (process)         ; *x
-    (declare (ignore process))
-    "the only process")
-  (def process-wait-function (process))
-  (def process-whostate (process))
-  (def process-wait (process))          ; *x
-  (def process-allow-schedule ())       ; *x
-  (def process-property-list (process)) ; *x
-  (def (setf process-property-list) (new-value process))
-  (def process-run-reasons (process))   ; *x
-  (def (setf process-run-reasons) (new-value process))
-  (def process-revoke-run-reason (process object)) ; *x
-  (def process-add-run-reason (process object)) ; *x
-  (def process-run-function (name-or-options preset-function
-                             &rest preset-arguments)) ; *x
-  (def process-preset (process preset-function &rest arguments)) ; *x
-  (def process-initial-bindings (process))
-  (def (setf process-initial-bindings) (bindings process))
-  (def make-process (&key (name "Anonymous") reset-action run-reasons
-                           arrest-reasons (priority 0) quantum resume-hook
-                           suspend-hook initial-bindings run-immediately)) ; *x
-  (def process-kill (process))          ; *x
-  (def make-process-lock (&key name))   ; *x
-
-  (def process-lock (lock &optional lock-value whostate timeout))
-  (def process-unlock (lock &optional lock-value))) 
-
-
-(defmacro with-process-lock ((lock &key norecursive timeout whostate) &body forms)
-  (declare (ignore lock norecursive timeout whostate))
-  `(progn ,@forms))                     ; *x
-
-(defmacro without-scheduling (&body forms)
-  `(progn ,@forms))                     ; *
-)                                       ; #-sb-thread
-
-;;; Same implementation for multi- and uni-thread
-(defmacro with-timeout ((seconds &body timeout-forms) &body body)
-  (let ((c (gensym "TIMEOUT-")))
-    `(handler-case
-      (sb-ext:with-timeout ,seconds (progn ,@body))
-      (sb-ext:timeout (,c) (declare (ignore ,c)) ,@timeout-forms))))
-
-
-#+sb-thread
-(progn
 (defstruct (process
             (:constructor %make-process)
             (:predicate processp))
@@ -80,38 +17,22 @@
   function                              ; function wot will be run
   arguments                             ; arguments to the function
   id                                    ; pid of unix thread or nil
-  %queue                        ; lock for process structure mutators
+  %queue                                ; lock for process structure mutators
   run-reasons                           ; primitive mailbox for IPC
   %block-queue                          ; queue for condition-wait
   initial-bindings                      ; special variable bindings
-  property-list
-  )
+  property-list)
 
-(defvar *current-process*
-  ;; We don't fill in the process id, so the process compiling this
-  ;; (the REPL, in most cases) can't be killed by accident. (loop for
-  ;; p in (all-processes) do (kill-process p)), anyone?
-  (%make-process :name "initial process" :function nil))
-
-(defvar *all-processes* (list *current-process*))
-
-(defvar *conditional-store-queue* (sb-thread:make-waitqueue))
-
-(defmacro with-process-lock ((place &key timeout whostate norecursive)
-			     &body body)
-  (declare (ignore norecursive))
-  (let ((old-whostate (gensym "OLD-WHOSTATE")))
-    `(sb-thread:with-recursive-lock (,place)
-      (let (,old-whostate)
-	(unwind-protect
-	     (progn
-	       (when ,whostate
-		 (setf ,old-whostate (process-whostate *current-process*))
-		 (setf (process-whostate *current-process*) ,whostate))
-	       ,@body)
-	  (setf (process-whostate *current-process*) ,old-whostate))))))
-
-
+#-sb-thread
+(defun make-process (&key (name "Anonymous") reset-action run-reasons
+                           arrest-reasons (priority 0) quantum resume-hook
+                           suspend-hook initial-bindings run-immediately)
+   (declare (ignore reset-action arrest-reasons priority quantum resume-hook
+		    suspend-hook run-immediately))
+   (%make-process :name "the only process"
+		  :run-reasons run-reasons
+		  :initial-bindings initial-bindings))
+#+sb-thread
 (defun make-process  (&key (name "Anonymous") reset-action run-reasons
                            arrest-reasons (priority 0) quantum resume-hook
                            suspend-hook initial-bindings run-immediately)
@@ -125,12 +46,156 @@
     (push p *all-processes*)
     p))
 
-(defun restart-process (process)
+(defparameter *current-process* 
+  #-sb-thread 
+  (%make-process)
+  #+sb-thread
+  ;; We don't fill in the process id, so the process compiling this
+  ;; (the REPL, in most cases) can't be killed by accident. (loop for
+  ;; p in (all-processes) do (kill-process p)), anyone?
+  (%make-process :name "initial process" :function nil))
+
+(defparameter *all-processes* 
+  (list *current-process*))
+
+#+sb-thread
+(defvar *conditional-store-queue* (sb-thread:make-waitqueue))
+
+(defmacro defun/sb-thread (name args &body body)
+  `(defun ,name ,args
+     #-sb-thread
+     (declare (ignore ,@(remove-if
+			 (lambda (x)
+			   (member x '(&optional &rest &key &allow-other-keys &aux)))
+			 (mapcar (lambda (x) (if (consp x) (car x) x))
+				 args))))
+     #-sb-thread
+     (error "~A: Calling a multiprocessing function on a single-threaded sbcl build"
+	    ',name)
+     #+sb-thread
+     ,@body))
+
+(defun/sb-thread process-interrupt (process function)
+  (declare (ignore process function))
+  (error "Sorry Dave, I'm afraid I can't do that"))
+
+(defun/sb-thread process-wait-function (process)
+  (declare (ignore process))) ;; TODO: why no such function was in +sb-thread part?
+
+(defun/sb-thread process-wait (reason predicate &rest arguments)
+  (declare (type function predicate))
+  (let ((old-state (process-whostate *current-process*)))
+    (unwind-protect
+        (progn
+          (setf old-state (process-whostate *current-process*)
+                (process-whostate *current-process*) reason)
+          (loop 
+           (let ((it (apply predicate arguments)))
+             (when it (return it)))
+           (process-allow-schedule)))
+      (setf (process-whostate *current-process*) old-state))))
+
+(defun/sb-thread process-allow-schedule (&optional process)
+  (declare (ignore process))
+  (sleep .01))
+
+(defun/sb-thread process-revoke-run-reason (process object)
+  (sb-thread:with-recursive-lock ((process-%queue process))
+				 (prog1
+				     (setf (process-run-reasons process)
+					   (delete object (process-run-reasons process)))
+				   (when (and (process-id process) (not (process-run-reasons process)))
+				     (disable-process process)))))
+
+(defun/sb-thread process-add-run-reason (process object)
+  (sb-thread:with-recursive-lock ((process-%queue process))
+				 (prog1
+				     (push object (process-run-reasons process))
+				   (if (process-id process)
+				       (enable-process process)
+				     (restart-process process)))))
+
+(defun/sb-thread process-run-function (name-or-options preset-function  &rest preset-arguments) ; *x
+  (let* ((make-process-args (etypecase name-or-options
+                              (list name-or-options)
+                              (string (list :name name-or-options))))
+         (process (apply #'make-process make-process-args)))
+    (apply #'process-preset process preset-function preset-arguments)
+    (when (process-run-reasons process) (restart-process process))
+    process))
+
+
+(defun/sb-thread process-preset (process function &rest arguments) ; *x
+  (setf (process-function process) function
+        (process-arguments process) arguments)
+  (when (process-id process) (restart-process process)))
+
+
+(defun/sb-thread process-kill (process)          ; *x
+  (when (process-id process)
+    (sb-thread:destroy-thread (process-id process))
+    (setf (process-id process) nil))
+  (setf *all-processes* (delete process *all-processes*)))
+
+(defun/sb-thread make-process-lock (&key name)   ; *x
+  (sb-thread:make-mutex :name name))
+
+(defun/sb-thread process-lock (lock &optional lock-value whostate timeout)
+  (declare (ignore whostate timeout))
+  (sb-thread:get-mutex lock lock-value))
+
+(defun/sb-thread process-unlock (lock &optional lock-value)
+  (declare (ignore lock-value))
+  (sb-thread:release-mutex lock))
+
+
+#-sb-thread
+(defmacro with-process-lock ((lock &key norecursive timeout whostate) &body forms)
+  (declare (ignore lock norecursive timeout whostate))
+  `(progn ,@forms))                     ; *x
+#+sb-thread
+(defmacro with-process-lock ((place &key timeout whostate norecursive)
+			     &body body)
+  (declare (ignore norecursive timeout))
+  (let ((old-whostate (gensym "OLD-WHOSTATE")))
+    `(sb-thread:with-recursive-lock (,place)
+      (let (,old-whostate)
+	(unwind-protect
+	     (progn
+	       (when ,whostate
+		 (setf ,old-whostate (process-whostate *current-process*))
+		 (setf (process-whostate *current-process*) ,whostate))
+	       ,@body)
+	  (setf (process-whostate *current-process*) ,old-whostate))))))
+
+
+#-sb-thread
+(defmacro without-scheduling (&body forms)
+  `(progn ,@forms))                     ; *
+
+;;; FIXME but, of course, we can't.  Fix whoever wants to use it,
+;;; instead
+#+sb-thread
+(defmacro without-scheduling (&body body)
+  `(progn ,@body))
+
+
+
+;;; Same implementation for multi- and uni-thread
+(defmacro with-timeout ((seconds &body timeout-forms) &body body)
+  (let ((c (gensym "TIMEOUT-")))
+    `(handler-case
+      (sb-ext::with-timeout ,seconds (progn ,@body))
+      (sb-ext::timeout (,c) (declare (ignore ,c)) ,@timeout-forms))))
+
+
+(defun/sb-thread restart-process (process)
   (labels ((boing ()
                   (let ((*current-process* process)
                         (bindings (process-initial-bindings process))
                         (function (process-function process))
                         (arguments (process-arguments process)))
+		    (declare (type function function))
                     (if bindings
                         (progv
                             (mapcar #'car bindings)
@@ -148,67 +213,15 @@
     (when (setf (process-id process) (sb-thread:make-thread #'boing))
       process)))
 
-(defun process-preset (process function &rest arguments)
-  "Set function of process and restart it if it was already running"
-  (setf (process-function process) function
-        (process-arguments process) arguments)
-  (when (process-id process) (restart-process process)))
-
-(defun process-run-function (name-or-options preset-function
-                                             &rest preset-arguments)
-  (let* ((make-process-args (etypecase name-or-options
-                              (list name-or-options)
-                              (string (list :name name-or-options))))
-         (process (apply #'make-process make-process-args)))
-    (apply #'process-preset process preset-function preset-arguments)
-    (when (process-run-reasons process) (restart-process process))
-    process))
-
-(defun process-kill (process)
-  (when (process-id process)
-    (sb-thread:destroy-thread (process-id process))
-    (setf (process-id process) nil))
-  (setf *all-processes* (delete process *all-processes*)))
-
 (defun current-process ()
   *current-process*)
 
 (defun all-processes ()
   *all-processes*)
 
-(defun process-wait (reason predicate &rest arguments)
-  (let ((old-state (process-whostate *current-process*)))
-    (unwind-protect
-        (progn
-          (setf old-state (process-whostate *current-process*)
-                (process-whostate *current-process*) reason)
-          (loop 
-           (let ((it (apply predicate arguments)))
-             (when it (return it)))
-           (process-allow-schedule)))
-      (setf (process-whostate *current-process*) old-state))))
 
-(defun process-allow-schedule ()
-  (sleep .01))
-
-(defun process-revoke-run-reason (process object)
-  (sb-thread:with-recursive-lock ((process-%queue process))
-     (prog1
-         (setf (process-run-reasons process)
-               (delete object (process-run-reasons process)))
-       (when (and (process-id process) (not (process-run-reasons process)))
-         (disable-process process)))))
-
-(defun process-add-run-reason (process object)
-  (sb-thread:with-recursive-lock ((process-%queue process))
-     (prog1
-         (push object (process-run-reasons process))
-       (if (process-id process)
-           (enable-process process)
-         (restart-process process)))))
-
-
-(defun process-wait-with-timeout (reason timeout predicate)
+(defun/sb-thread process-wait-with-timeout (reason timeout predicate)
+  (declare (type function predicate))
   (let ((old-state (process-whostate *current-process*))
         (end-time (+ (get-universal-time) timeout)))
     (unwind-protect
@@ -222,11 +235,9 @@
            (sleep .01)))
       (setf (process-whostate *current-process*) old-state))))
 
-(defun process-interrupt (process function)
-  (declare (ignore process function))
-  (error "Sorry Dave, I'm afraid I can't do that"))
 
-(defun disable-process (process)
+
+(defun/sb-thread disable-process (process)
   ;; TODO: set process-whostate
   ;; Can't figure out how to safely block a thread from a different one
   ;; and handle all the locking nastiness.  So punt for now.
@@ -240,36 +251,33 @@
                                   (process-%queue process)))
       (error "Can't safely disable-process from another thread")))
 
-(defun enable-process (process)
+(defun/sb-thread enable-process (process)
   ;; TODO: set process-whostate
   (sb-thread:condition-notify (process-%block-queue process)))
 
-;;; FIXME but, of course, we can't.  Fix whoever wants to use it,
-;;; instead
-(defmacro without-scheduling (&body body)
-  `(progn ,@body))
 
 ;;; TODO: integrate with McCLIM / system-wide queue for such things
+#-sb-thread
+(defmacro atomic-incf (place)
+  `(incf ,place))
+#+sb-thread
 (defmacro atomic-incf (place)
   `(sb-thread::with-spinlock (*conditional-store-queue*)
                              (incf ,place)))
-
+#-sb-thread
+(defmacro atomic-decf (place)
+  `(decf ,place))
+#+sb-thread
 (defmacro atomic-decf (place)
   `(sb-thread::with-spinlock (*conditional-store-queue*)
                              (decf ,place)))
 
-(defun make-process-lock (&key name)
-  (sb-thread:make-mutex :name name))
 
-(defun process-lock (lock &optional lock-value whostate timeout)
-  (declare (ignore whostate timeout))
-  (sb-thread:get-mutex lock lock-value))
-
-(defun process-unlock (lock &optional lock-value)
-  (declare (ignore lock-value))
-  (sb-thread:release-mutex lock))
-
-
+#-sb-thread
+(defun process-active-p (thread-id)
+  (declare (ignore thread-id))
+  t)
+#+sb-thread
 (defun process-active-p (thread-id)
   "If a native thread exists, it is always active"
   (and
@@ -280,4 +288,4 @@
 	   :test 'eql)
    t))
 
-)                                     ; #+sb-thread
+
