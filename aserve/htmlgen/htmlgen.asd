@@ -9,4 +9,4 @@
 
 (defsystem htmlgen
   :components ((:acl-file "htmlgen"))
-  :depends-on (acl-compat))
+  #-allegro :depends-on #-allegro (acl-compat))
