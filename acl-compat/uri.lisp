@@ -342,7 +342,7 @@
   (enough-uri (uri uri) (uri base)))
 
 (defmethod enough-uri ((uri uri) (base uri))
-  (with-slots (scheme host port path query fragment) uri
+  (with-slots (host port path) uri
       (if (or (string-not-equal host (uri-host base)) (not (equal port (uri-port base))))
           uri
         (make-instance  'uri 
