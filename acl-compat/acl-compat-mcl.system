@@ -2,20 +2,37 @@
 
 (in-package :CL-USER)
 
-(mk:defsystem "ACL-COMPAT"
-  :source-pathname "acl-compat:"
-  :binary-pathname (make-pathname :directory (append (pathname-directory *load-truename*) (list "bin" "mcl")))
-  :components ((:file "nregex")
-               (:file "acl-mp-mcl")
-               (:file "acl-socket-mcl")
-               (:file "acl-excl-mcl"
-                      :depends-on ("nregex"))
-               (:file "acl-sys-mcl")
-               (:file "meta")
-               (:file "uri-mcl"
-                      :depends-on ("meta"))
-               (:file "parse-time") ;need to verify it is really OK to use this - says public domain but ask
-               
-               ))
+;standard MCL make-load-form is not ansi compliant because of CLIM
+#-openmcl
+(require :ansi-make-load-form)
 
-    
+
+;There is a bug in OpenMCL where we can't create directories.
+;So we only put the :binary-pathname if the bin/OpenMCL directory is there.
+
+(let* ((dir (make-pathname :directory (append (pathname-directory *load-truename*) 
+                                             (list "bin" (lisp-implementation-type)))))
+       (bin-path (list :binary-pathname dir))
+       (bin-extension nil))
+  
+  #+openmcl (unless (probe-file dir) (setf bin-path nil))
+  #+openmcl (setf bin-extension (list :binary-extension "dfsl")) 
+  
+  (eval
+
+   `(mk:defsystem "ACL-COMPAT"
+      :source-pathname #p"acl-compat:"
+      ,@bin-path
+      ,@bin-extension
+      :components ((:file "nregex")
+                   (:file "acl-mp-mcl")
+                   #-openmcl (:file "acl-socket-mcl")
+                   #+openmcl (:file "acl-socket-openmcl")
+                   (:file "acl-excl-mcl"
+                          :depends-on ("nregex"))
+                   (:file "acl-sys-mcl")
+                   (:file "meta")
+                   #+openmcl (:file "ansi-loop")
+                   (:file "uri" :depends-on ("meta" #+openmcl "ansi-loop"))
+                   ))
+   ))
