@@ -156,6 +156,9 @@ streams and handled by their close methods."
 (defmethod get-fd ((stream system:lisp-stream))
   (system:fd-stream-fd stream))
 
+(defmethod get-fd ((stream server-socket))
+  (fd stream))
+
 (defun remote-host (socket-stream)
   (ext:get-peer-host-and-port (get-fd socket-stream)))
 

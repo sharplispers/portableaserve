@@ -1,3 +1,7 @@
+2004-02-02  Rudi Schlatte  <rudi@62-99-252-74.C-GMITTE.Xdsl-line.inode.at>
+
+	* cmucl/acl-socket.lisp (get-fd): Added method for server-socket.
+
 2004-01-28  Rudi Schlatte  <rudi@constantly.at>
 
 	* packages.lisp: excl -> acl-compat.excl
