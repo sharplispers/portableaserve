@@ -61,8 +61,10 @@
    #:without-scheduling        ;*
    #:process-allow-schedule    ;*
    #:make-process              ;*
-   #:process-revoke-run-reason ;*
    #:process-add-run-reason    ;*
+   #:process-revoke-run-reason ;*
+   #:process-add-arrest-reason    ;*
+   #:process-revoke-arrest-reason ;*
    #:process-allow-schedule    ;*
    #:with-timeout              ;*
    #:make-process-lock         ;*

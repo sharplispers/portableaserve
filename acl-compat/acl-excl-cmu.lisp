@@ -2,8 +2,8 @@
 ;;;; ACL-COMPAT - EXCL
 ;;;;
 ;;;; This is a modified version of Chris Doubles ACL excl wrapper library
-;;;; As stated in the changelogs of his original this file includes the 
-;;;; IF* macro placed in the public domain by John Foderaro. 
+;;;; As stated in the changelogs of his original this file includes the
+;;;; IF* macro placed in the public domain by John Foderaro.
 ;;;; See: http://www.franz.com/~jkf/ifstar.txt
 ;;;;
 ;;;; Further modified by Rudi Schlatte for cmucl, taking Jochen
@@ -14,7 +14,7 @@
 ;;;; ACL excl wrapper library for Corman Lisp - Version 1.1
 ;;;;
 ;;;; Copyright (C) 2000 Christopher Double. All Rights Reserved.
-;;;; 
+;;;;
 ;;;; License
 ;;;; =======
 ;;;; This software is provided 'as-is', without any express or implied
@@ -33,42 +33,51 @@
 ;;;; 2. Altered source versions must be plainly marked as such, and must
 ;;;;    not be misrepresented as being the original software.
 ;;;;
-;;;; 3. This notice may not be removed or altered from any source 
+;;;; 3. This notice may not be removed or altered from any source
 ;;;;    distribution.
 ;;;;
 ;;;; Notes
 ;;;; =====
 ;;;; A simple implementation of some of the EXCL package from Allegro
 ;;;; Common Lisp. Intended to be used for porting various ACL packages,
-;;;; like AllegroServe. 
+;;;; like AllegroServe.
 ;;;;
 ;;;; More recent versions of this software may be available at:
 ;;;;   http://www.double.co.nz/cl
 ;;;;
-;;;; Comments, suggestions and bug reports to the author, 
+;;;; Comments, suggestions and bug reports to the author,
 ;;;; Christopher Double, at: chris@double.co.nz
+
 
 (require 'nregex)
 
 (defpackage :excl
-	(:use :common-lisp :nregex)
-	(:export 
-		"IF*"
-		"*INITIAL-TERMINAL-IO*"
-		"*CL-DEFAULT-SPECIAL-BINDINGS*"
-		"FILESYS-SIZE"
-		"FILESYS-WRITE-DATE"
-		"STREAM-INPUT-FN"
-		"MATCH-REGEXP"
-		"COMPILE-REGEXP"
-		"*CURRENT-CASE-MODE*"
-		"INTERN*"
-		"FILESYS-TYPE"
-		"ERRORSET"
-		"ATOMICALLY"
-		"FAST"
-                "WITHOUT-PACKAGE-LOCKS"
-		))
+	(:use :common-lisp :nregex :ext)
+	(:export
+         #:if*
+         #:*initial-terminal-io*
+         #:*cl-default-special-bindings*
+         #:filesys-size
+         #:filesys-write-date
+         #:stream-input-fn
+         #:match-regexp
+         #:compile-regexp
+         #:*current-case-mode*
+         #:intern*
+         #:filesys-type
+         #:errorset
+         #:atomically
+         #:fast
+         #:without-package-locks
+
+         ;; TODO: find better place for bivalent stream classes
+         #:bivalent-input-stream
+         #:bivalent-output-stream
+         #:bivalent-stream
+         #:make-bivalent-input-stream
+         #:make-bivalent-output-stream
+         #:make-bivalent-stream
+         ))
 
 (in-package :excl)
 
@@ -136,7 +145,7 @@
 
 (defun stream-input-fn (stream)
   stream)
-	
+
 (defun match-regexp (pattern string &key (return :string))
   (let ((res (cond ((stringp pattern)
 		    (regex pattern string))
@@ -196,6 +205,166 @@ program-controlled interception of a break."
 
 (defmacro without-package-locks (&body forms)
   `(progn ,@forms))
+
+
+;;; Bivalent Gray streams
+
+
+(defclass lisp-stream-mixin ()
+  ;; For bivalent streams, lisp-stream must be a stream of type
+  ;; unsigned-byte
+  ((lisp-stream :initarg :lisp-stream
+		:accessor lisp-stream)))
+
+(defclass bivalent-input-stream (lisp-stream-mixin
+                                 fundamental-character-input-stream
+                                 fundamental-binary-input-stream))
+
+(defclass bivalent-output-stream (lisp-stream-mixin
+                                  fundamental-character-output-stream
+                                  fundamental-binary-output-stream))
+
+(defclass bivalent-stream (bivalent-input-stream bivalent-output-stream))
+
+
+(defun make-bivalent-input-stream (lisp-stream)
+  (declare (type system:lisp-stream lisp-stream))
+  (make-instance 'bivalent-input-stream :lisp-stream lisp-stream))
+
+(defun make-bivalent-output-stream (lisp-stream)
+  (declare (type system:lisp-stream lisp-stream))
+  (make-instance 'bivalent-output-stream :lisp-stream lisp-stream))
+
+(defun make-bivalent-stream (lisp-stream)
+  (declare (type system:lisp-stream lisp-stream))
+  (make-instance 'bivalent-stream :lisp-stream lisp-stream))
+
+
+(defmethod open-stream-p ((stream lisp-stream-mixin))
+  (common-lisp::open-stream-p (lisp-stream stream)))
+
+(defmethod close ((stream lisp-stream-mixin) &key abort)
+  (close (lisp-stream stream) :abort abort))
+
+(defmethod input-stream-p ((stream lisp-stream-mixin))
+  (input-stream-p (lisp-stream stream)))
+
+(defmethod output-stream-p ((stream lisp-stream-mixin))
+  (output-stream-p (lisp-stream stream)))
+
+(defmethod stream-element-type ((stream bivalent-input-stream))
+  '(or character (unsigned-byte 8)))
+
+(defmethod stream-read-char ((stream bivalent-input-stream))
+  (code-char (read-byte (lisp-stream stream) nil :eof)))
+
+(defmethod stream-read-byte ((stream bivalent-input-stream))
+  (read-byte (lisp-stream stream) nil :eof))
+
+;; stream-unread-char
+
+;; stream-read-char-no-hang
+
+;; stream-peek-char
+
+(defmethod stream-listen ((stream bivalent-input-stream))
+  (listen (lisp-stream stream)))
+
+(defmethod stream-clear-input ((stream bivalent-input-stream))
+  (clear-input (lisp-stream stream)))
+
+(defmethod stream-read-sequence ((stream bivalent-input-stream)
+                                 (seq vector) &optional start end)
+  (unless start (setf start 0))
+  (unless end (setf end (length seq)))
+  (assert (<= end (length seq)))
+  (if (subtypep (array-element-type seq) 'character)
+      (loop for i from start below end
+            do (setf (aref seq i) (code-char (read-byte stream))))
+      (read-sequence seq (lisp-stream stream)
+                     :start start :end end))
+  seq)
+
+(defmethod stream-read-sequence ((stream bivalent-input-stream)
+                                 (seq cons) &optional (start 0) end)
+  (unless end (setf end (length seq)))
+  (let  ((seq (nthcdr start seq)))
+    (loop for head across seq
+          for i below (- end start)
+          while seq
+          do (setf (car seq) (read-byte stream))))
+  seq)
+
+(defmethod stream-read-sequence ((stream bivalent-input-stream)
+                                 (seq null) &optional (start 0) end)
+  (declare (ignore start end))
+  seq)
+
+(defmethod stream-element-type ((stream bivalent-output-stream))
+  '(or character (unsigned-byte 8)))
+
+(defmethod stream-write-char ((stream bivalent-output-stream) character)
+  (write-byte (char-code character) (lisp-stream stream)))
+
+(defmethod stream-write-byte ((stream bivalent-output-stream) byte)
+  (write-byte byte (lisp-stream stream)))
+
+(defmethod stream-line-column ((stream bivalent-output-stream))
+  nil)
+
+(defmethod stream-finish-output ((stream bivalent-output-stream))
+  (finish-output (lisp-stream stream)))
+
+(defmethod stream-force-output ((stream bivalent-output-stream))
+  (force-output (lisp-stream stream)))
+
+(defmethod stream-clear-output ((stream bivalent-output-stream))
+  (clear-output (lisp-stream stream)))
+
+(defmethod stream-write-sequence ((stream bivalent-output-stream)
+                                  (seq vector) &optional (start 0) end)
+  (let ((length (length seq)))
+    (unless end (setf end length))
+    (assert (<= end length)))
+  (when (< end start)
+    (cerror "Continue with switched start and end ~s <-> ~s"
+            "Stream-write-sequence: start (~S) and end (~S) exchanged."
+            start end seq)
+    (rotatef start end))
+  (cond
+    ((subtypep (array-element-type seq) 'character)
+     (loop for i from start below end
+            do (stream-write-char stream (aref seq i))))
+    ((subtypep (array-element-type seq) 'integer)
+     (loop for i from start below end
+           do (stream-write-byte stream (aref seq i)))))
+  seq)
+
+(defmethod stream-write-sequence ((stream bivalent-output-stream)
+                                  (seq cons) &optional (start 0) end)
+  (let ((length (length seq)))
+    (unless end (setf end length))
+    (assert (<= end length)))
+  (when (< end start)
+    (cerror "Continue with switched start and end ~s <-> ~s"
+            "Stream-write-sequence: start (~S) and end (~S) exchanged."
+            start end seq)
+    (rotatef start end))
+  (let ((seq (nthcdr start seq)))
+    (loop for element in seq
+          for i below (- end start)
+          while seq
+          do (etypecase element
+               (character (stream-write-char stream element))
+               (integer (stream-write-byte stream element)))))
+  seq)
+
+(defmethod stream-write-sequence ((stream bivalent-output-stream)
+                                  (seq null) &optional (start 0) end)
+  (declare (ignore start end))
+  seq)
+
+;;; End bivalent Gray streams
 
 
 (provide 'acl-excl)

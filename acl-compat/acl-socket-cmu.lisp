@@ -26,13 +26,20 @@
 (defclass server-socket (socket)
   ((element-type :type (member signed-byte unsigned-byte base-char)
 		 :initarg :element-type
-		 :reader element-type)
+		 :reader element-type
+                 :initform (error "No value supplied for element-type"))
    (port :type fixnum
 	 :initarg :port
-	 :reader port)))
+	 :reader port
+         :initform (error "No value supplied for port"))
+   (stream-type :type (member :text :binary :bivalent)
+                :initarg :stream-type
+                :reader stream-type
+                :initform (error "No value supplied for stream-type"))))
 
 #+cl-ssl
-(defmethod make-ssl-server-stream ((lisp-stream system:lisp-stream) &rest options)
+(defmethod make-ssl-server-stream ((lisp-stream system:lisp-stream)
+                                   &rest options)
   (apply #'make-ssl-server-stream (system:fd-stream-fd lisp-stream) options))
 
 (defmethod print-object ((socket server-socket) stream)
@@ -50,14 +57,18 @@ client wanted to initiate a connection and wait is nil."
   ;; api pipe fitting: wait t ==> timeout nil
   (when (mp:process-wait-until-fd-usable (fd server-socket) :input
                                          (if wait nil 0))
-          (sys:make-fd-stream (ext:accept-tcp-connection (fd server-socket))
-                              :input t :output t
-                              :element-type (element-type server-socket)
-                              :auto-close t)))
+    (let ((stream (sys:make-fd-stream
+                   (ext:accept-tcp-connection (fd server-socket))
+                   :input t :output t
+                   :element-type (element-type server-socket)
+                   :auto-close t)))
+      (if (eq (stream-type server-socket) :bivalent)
+          (excl:make-bivalent-stream stream)
+          stream))))
 
 (defun make-socket (&key (remote-host "localhost")
 			 local-port
-			 remote-port 
+			 remote-port
 			 (connect :active)
 			 (format :text)
 			 &allow-other-keys)
@@ -75,16 +86,21 @@ to read about the missing parts."
 			(:text 'base-char)
 			(:binary 'signed-byte)
                         (:bivalent 'unsigned-byte))))
-    (ecase connect 
+    (ecase connect
       (:passive
          (make-instance 'server-socket
 		        :port local-port
                         :fd (ext:create-inet-listener local-port)
-                        :element-type element-type))
+                        :element-type element-type
+                        :stream-type format))
       (:active
-       (sys:make-fd-stream (ext:connect-to-inet-socket remote-host remote-port)
-                           :input t :output t :element-type element-type)))))
-       
+       (let ((stream (sys:make-fd-stream
+                      (ext:connect-to-inet-socket remote-host remote-port)
+                      :input t :output t :element-type element-type)))
+         (if (eq :bivalent format)
+             (excl:make-bivalent-stream stream)
+             stream))))))
+
 (defmethod close ((server server-socket) &key abort)
   "Kill a passive (listening) socket.  (Active sockets are actually
 streams and handled by their close methods."
@@ -122,7 +138,7 @@ streams and handled by their close methods."
       (let ((ll (string-tokens (substitute #\Space #\. dotted))))
 	(+ (ash (first ll) 24) (ash (second ll) 16)
 	   (ash (third ll) 8) (fourth ll)))
-    (ignore-errors 
+    (ignore-errors
       (let ((ll (string-tokens (substitute #\Space #\. dotted))))
 	(+ (ash (first ll) 24) (ash (second ll) 16)
 	   (ash (third ll) 8) (fourth ll))))))
@@ -139,29 +155,33 @@ streams and handled by their close methods."
       (car (ext:host-entry-addr-list (ext:lookup-host-entry host)))
       (dotted-to-ipaddr (ipaddr-to-dotted host))))
 
+(defgeneric get-fd (stream))
+
+(defmethod get-fd ((stream excl::lisp-stream-mixin))
+  (get-fd (excl::lisp-stream stream)))
+
+(defmethod get-fd ((stream system:lisp-stream))
+  (system:fd-stream-fd stream))
+
 (defun remote-host (socket-stream)
-  (let ((fd (sys:fd-stream-fd socket-stream)))
-    (ext:get-peer-host-and-port fd)))
+  (ext:get-peer-host-and-port (get-fd socket-stream)))
 
 (defun remote-port (socket-stream)
-  (let ((fd (sys:fd-stream-fd socket-stream)))
     (multiple-value-bind (host port)
-        (ext:get-peer-host-and-port fd)
+        (ext:get-peer-host-and-port (get-fd socket-stream))
       (declare (ignore host))
-      port)))
+      port))
 
 (defun local-host (socket-stream)
-  (let ((fd (sys:fd-stream-fd socket-stream)))
-    (ext:get-socket-host-and-port fd)))
+  (ext:get-socket-host-and-port (get-fd socket-stream)))
 
 (defun local-port (socket-stream)
   (if (typep socket-stream 'socket::server-socket)
       (port socket-stream)
-      (let ((fd (sys:fd-stream-fd socket-stream)))
-        (multiple-value-bind (host port)
-            (ext:get-socket-host-and-port fd)
-          (declare (ignore host))
-          port))))
+      (multiple-value-bind (host port)
+          (ext:get-socket-host-and-port (get-fd socket-stream))
+        (declare (ignore host))
+        port)))
 
 (defun socket-control (stream &key output-chunking output-chunking-eof input-chunking)
   (declare (ignore stream))

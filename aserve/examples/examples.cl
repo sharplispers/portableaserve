@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: examples.cl,v 1.2 2002/06/09 11:34:59 rudi Exp $
+;; $Id: examples.cl,v 1.3 2002/06/17 12:55:36 rudi Exp $
 
 ;; Description:
 ;;   Allegro iServe examples
@@ -78,7 +78,6 @@
 			 ((:a :href "pic") "Sample jpeg") :br
 			 ((:a :href "pic-redirect") "Redirect to previous picture") :br
 			 ((:a :href "pic-gen") "generated jpeg") "- hit reload to switch images" :br
-                         #+allegro
 			 ((:a :href "pic-multi") "test of publish-multi") " - click more than once on this link" :br
 			 ((:a :href "cookietest") "test cookies") :br
 			 ((:a :href "secret") "Test manual authorization")
@@ -286,7 +285,6 @@
 ;; It doesn't show that we can include the contents of files
 ;; The :function case doesn't make use of the old cached value to
 ;; decide if it wants to return the old value or create a new one.
-#+allegro
 (publish-multi :path "/pic-multi"
 	       :content-type "text/html"
 	       :items  (list 
