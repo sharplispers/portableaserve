@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: htmlgen.cl,v 1.3 2002/06/10 17:15:14 rudi Exp $
+;; $Id: htmlgen.cl,v 1.4 2002/07/26 13:39:58 desoi Exp $
 
 ;; Description:
 ;;   html generator
@@ -505,7 +505,7 @@
 			  body)))
   
   #'(lambda (ent cmd args form subst stream)
-      (declare (ignore args ent subst))
+      (declare (ignore args ent subst stream))
       (assert (eql 2 (length form)))
       (if* (eq cmd :full)
 	 then (write-html-string (format nil "~a" (cadr form)))
@@ -566,7 +566,7 @@
 	      (write-html-string "-->" *html-stream*)))
   
   #'(lambda (ent cmd args form stream)
-      (declare (ignore ent cmd args))
+      (declare (ignore ent cmd args stream))
       (write-html-string (format nil "<!--~a-->" (cadr form)))))
 
       
