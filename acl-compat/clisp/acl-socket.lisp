@@ -20,11 +20,12 @@
    (clisp-socket-server :initarg :clisp-socket-server
                         :reader clisp-socket-server)))
 
-(defmethod print-object ((socket server-socket) stream)
-  (print-unreadable-object (socket stream :type t :identity nil)
+(defmethod print-object ((server-socket server-socket) stream)
+  (print-unreadable-object (server-socket stream :type t :identity nil)
     (format stream "@port ~d" (port server-socket))))
 
 
+(defgeneric accept-connection (server-socket &key wait))
 (defmethod accept-connection ((server-socket server-socket)
 			      &key (wait t))
   "Return a bidirectional stream connected to socket, or nil if no
@@ -40,7 +41,7 @@ client wanted to initiate a connection and wait is nil."
                                    (unsigned-byte '(unsigned-byte 8))
                                    (base-char 'character)))))
       (if (eq (stream-type server-socket) :bivalent)
-          (excl:make-bivalent-stream stream)
+          (make-bivalent-stream stream)
           stream))))
 
 
@@ -66,14 +67,18 @@ if connect is :passive."
                         :clisp-socket-server (socket-server local-port)
                         :stream-type format))
       (:active
-       (socket-connect remote-port remote-host
-                       :element-type (ecase format
-                                       (:text 'character)
-                                       (:binary '(signed-byte 8))
-                                       (:bivalent '(unsigned-byte 8))))))))
+       (let ((stream (socket-connect
+                      remote-port remote-host
+                      :element-type (ecase format
+                                      (:text 'character)
+                                      (:binary '(signed-byte 8))
+                                      (:bivalent '(unsigned-byte 8))))))
+         (if (eq format :bivalent)
+             (make-bivalent-stream stream)
+             stream))))))
 
 
-(defmethod close ((server server-socket) &key abort)
+(defmethod close ((server-socket server-socket) &key abort)
   "Kill a passive (listening) socket.  (Active sockets are actually
 streams and handled by their close methods."
   (declare (ignore abort))
@@ -129,8 +134,8 @@ streams and handled by their close methods."
 
 (defgeneric get-clisp-stream (stream))
 
-(defmethod get-clisp-stream ((stream excl::lisp-stream-mixin))
-  (excl::lisp-stream stream))
+(defmethod get-clisp-stream ((stream gray-stream::native-lisp-stream-mixin))
+  (gray-stream::native-lisp-stream stream))
 
 (defmethod get-clisp-stream ((stream t))
   (the stream stream))
@@ -149,8 +154,29 @@ streams and handled by their close methods."
 (defun local-port (socket-stream)
   (nth-value 1 (socket-stream-local (get-clisp-stream socket-stream) t)))
 
-(defun socket-control (stream &key output-chunking output-chunking-eof input-chunking)
-  (declare (ignore stream output-chunking output-chunking-eof input-chunking))
-  (warn "SOCKET-CONTROL function not implemented."))
+;; Now, throw chunking in the mix
+
+(defclass chunked-stream (de.dataheaven.chunked-stream-mixin::chunked-stream-mixin
+                          gray-stream::buffered-bivalent-stream)
+  ((plist :initarg :plist :accessor stream-plist)))
+
+
+(defun make-bivalent-stream (lisp-stream &key plist)
+  (make-instance 'chunked-stream :lisp-stream lisp-stream :plist plist))
+
+
+(defun socket-control (stream &key (output-chunking nil oc-p) output-chunking-eof (input-chunking nil ic-p))
+  (when oc-p
+    (when output-chunking
+      (de.dataheaven.chunked-stream-mixin::initialize-output-chunking stream))
+    (setf (de.dataheaven.chunked-stream-mixin::output-chunking-p stream)
+          output-chunking))
+  (when output-chunking-eof
+    (de.dataheaven.chunked-stream-mixin::disable-output-chunking stream))
+  (when ic-p
+    (when input-chunking
+      (de.dataheaven.chunked-stream-mixin::initialize-input-chunking stream))
+    (setf (de.dataheaven.chunked-stream-mixin::input-chunking-p stream)
+          input-chunking)))
 
 (provide 'acl-socket)

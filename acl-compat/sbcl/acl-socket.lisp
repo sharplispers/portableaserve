@@ -1,5 +1,5 @@
-;; This package is designed for cmucl.  It implements the
-;; ACL-style socket interface on top of cmucl.
+;; This package is designed for sbcl.  It implements the
+;; ACL-style socket interface on top of sbcl.
 ;;
 ;; Written by Rudi Schlatte, based on the work done by Jochen Schmidt
 ;; for Lispworks and net.lisp in the port library of CLOCC.
@@ -160,16 +160,16 @@ streams and handled by their close methods."
     (if (and (typep socket-stream 'chunked-stream)
              (setf socket (getf (stream-plist socket-stream) :socket)))
         (vector-to-ipaddr (socket-peername socket))
-      (progn (warn "Could not get remote host for ~S" socket-stream)
-             0))))
+        (progn (warn "Could not get remote host for ~S" socket-stream)
+               0))))
 
 (defun remote-port (socket-stream)
   (let (socket)
     (if (and (typep socket-stream 'chunked-stream)
              (setq socket (getf (stream-plist socket-stream) :socket)))
         (nth-value 1 (socket-peername socket))
-      (progn (warn "Could not get remote port for ~S" socket-stream)
-             0))))
+        (progn (warn "Could not get remote port for ~S" socket-stream)
+               0))))
 
 (defun local-host (thing)
   (typecase thing

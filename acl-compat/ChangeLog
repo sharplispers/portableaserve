@@ -1,7 +1,12 @@
+
 2003-09-19  Rudi Schlatte  <rudi@constantly.at>
 
 	* sbcl/acl-mp.lisp: Merged threading patch from Brian Downing
 	(posted to portableaserve-discuss 2003-09-12)
+
+	* clisp/acl-excl.lisp, clisp/acl-socket.lisp: Eliminate compile
+	failures, activate chunked support for clisp (forwarded by Kevin
+	M. Rosenberg from Debian)
 
 2003-08-31  Rudi Schlatte  <rudi@constantly.at>
 
