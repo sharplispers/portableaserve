@@ -196,8 +196,7 @@
   (let* ((len (length sequence))
          (start (or start 0))
          (end (or end len)))
-    (assert (and (typep start 'integer) (typep end 'integer)
-                 (<= 0 start end len)))
+    (assert (<= 0 start end len))
     (etypecase sequence
       (simple-vector (loop for i from start below end
                            do (funcall writer-fn stream (svref sequence i))))
@@ -207,19 +206,16 @@
                   for c in (nthcdr start sequence)
                   do (funcall writer-fn stream c))))))
 
-(defgeneric stream-write-buffer (stream buffer start end &optional wait))
-(defmethod stream-write-buffer ((stream buffered-stream-mixin) buffer start end &optional wait)
+(defgeneric stream-write-buffer (stream buffer start end))
+(defmethod stream-write-buffer ((stream buffered-stream-mixin) buffer start end)
   (let ((lisp-stream (native-lisp-stream stream)))
-    (write-sequence buffer lisp-stream :start start :end end)
-    (if wait
-        (finish-output lisp-stream)
-        (force-output lisp-stream))))
+    (write-sequence buffer lisp-stream :start start :end end)))
 
-(defgeneric stream-flush-buffer (stream &optional wait))
-(defmethod stream-flush-buffer ((stream buffered-stream-mixin) &optional wait)
+(defgeneric stream-flush-buffer (stream))
+(defmethod stream-flush-buffer ((stream buffered-stream-mixin))
   (with-stream-output-buffer (buffer index limit) stream
     (when (plusp index)
-      (stream-write-buffer stream buffer 0 index wait)
+      (stream-write-buffer stream buffer 0 index)
       (setf index 0))))
 
 (defmethod stream-write-byte ((stream buffered-bivalent-output-stream) byte)
@@ -246,10 +242,12 @@
   nil)
 
 (defmethod stream-finish-output ((stream buffered-bivalent-output-stream))
-  (stream-flush-buffer stream t))
+  (stream-flush-buffer stream)
+  (finish-output (native-lisp-stream stream)))
 
 (defmethod stream-force-output ((stream buffered-bivalent-output-stream))
-  (stream-flush-buffer stream nil))
+  (stream-flush-buffer stream)
+  (force-output (native-lisp-stream stream)))
 
 (defmethod stream-clear-output ((stream buffered-bivalent-output-stream))
   (with-stream-output-buffer (buffer index limit) stream

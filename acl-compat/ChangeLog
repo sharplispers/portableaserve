@@ -1,3 +1,14 @@
+
+2003-03-24  Rudi Schlatte  <rudi@constantly.at>
+
+	* lw-buffering.lisp (stream-write-buffer, stream-flush-buffer):
+	Eliminate "wait" parameter to regain api-compatibility with lispworks
+	(stream-finish-output, stream-force-output): Call (finish|force)-output
+	here instead of using "wait" parameter of stream-flush-buffer
+
+	* chunked-stream-mixin.lisp: some documentation added, formatting,
+	eliminate use of "wait" parameter on stream-write-buffer etc.
+
 2003-02-28  Rudi Schlatte  <rudi@constantly.at>
 
 	* acl-socket-sbcl.lisp: 
