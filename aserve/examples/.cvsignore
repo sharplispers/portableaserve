@@ -1,0 +1,7 @@
+*.wfasl
+*.ufsl
+*.fasl
+*.fas
+*.lib
+*.x86f
+*.err
