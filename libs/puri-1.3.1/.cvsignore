@@ -13,4 +13,5 @@
 *.faslm16
 *.faslma
 *.faslm8
-
+{arch}
+.arch-ids

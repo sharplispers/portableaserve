@@ -3,4 +3,5 @@ tmp
 cl-acl-compat
 files
 *substvars
-
+{arch}
+.arch-ids
