@@ -150,9 +150,9 @@ lisp-system"))
    (:file "meta")
    (:file "uri" :depends-on ("meta"))
    ;; SSL
-   #+(and ssl-available (not (or allegro mcl cmu clisp)))
+   #+(and ssl-available (not (or allegro mcl clisp)))
    (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
-   #+(and ssl-available (not (or allegro mcl cmu clisp)))
+   #+(and ssl-available (not (or allegro mcl clisp)))
    (:file "acl-ssl-streams" :depends-on ("packages"))
    #+nil
    (:legacy-cl-source-file "md5")
@@ -163,8 +163,8 @@ lisp-system"))
   #+sbcl (:sb-bsd-sockets :sb-posix)
   #+(and cmu common-lisp-controller) :depends-on
   #+(and cmu common-lisp-controller) (:cmucl-graystream)
-  #+(and lispworks ssl-available) :depends-on
-  #+(and lispworks ssl-available) (:cl-ssl)
+  #+(and (or cmu lispworks) ssl-available) :depends-on
+  #+(and (or cmu lispworks) ssl-available) (:cl-ssl)
   
   :perform (load-op :after (op acl-compat)
 		    (pushnew :acl-compat cl:*features*))

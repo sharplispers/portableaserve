@@ -162,7 +162,7 @@
 ;;
 
 #+cmu
-(defmethod gray-stream:stream-read-sequence ((sequence sequence) (socket-stream character-ssl-stream) &optional start end)
+(defmethod gray-stream:stream-read-sequence ((socket-stream character-ssl-stream) (sequence sequence) &optional start end)
   (let* ((len (length sequence))
          (chars (- (min (or end len) len) start)))
     (loop for i upfrom start
@@ -173,7 +173,7 @@
     (+ start chars)))
 
 #+cmu
-(defmethod gray-stream:stream-read-sequence ((sequence sequence) (socket-stream binary-ssl-stream) &optional start end)
+(defmethod gray-stream:stream-read-sequence ((socket-stream binary-ssl-stream) (sequence sequence) &optional start end)
   (let* ((len (length sequence))
          (chars (- (min (or end len) len) start)))
     (loop for i upfrom start
@@ -230,9 +230,9 @@
     (ssl-internal:close-ssl-socket ssl-socket)))
 |#
 
-#-cormanlisp
+#+lispworks
 (declaim (inline %reader-function-for-sequence))
-#-cormanlisp
+#+lispworks
 (defun %reader-function-for-sequence (sequence)
   (typecase sequence
     (string #'read-char)
@@ -240,9 +240,9 @@
     ((array signed-byte (*)) #'read-byte)
     (otherwise #'read-byte)))
 
-#-cormanlisp
+#+lispworks
 (declaim (inline %writer-function-for-sequence))
-#-cormanlisp
+#+lispworks
 (defun %writer-function-for-sequence (sequence)
   (typecase sequence
     (string #'write-char)
@@ -251,11 +251,11 @@
     (otherwise #'write-byte)))
 
 ;; Bivalent socket support for READ-SEQUENCE / WRITE-SEQUENCE
-#-cormanlisp
+#+lispworks
 (defmethod gray-stream:stream-read-sequence ((stream ssl-stream-mixin) sequence start end)
   (stream::read-elements stream sequence start end (%reader-function-for-sequence sequence)))
 
-#-cormanlisp
+#+lispworks
 (defmethod gray-stream:stream-write-sequence ((stream ssl-stream-mixin) sequence start end)
   (stream::write-elements stream sequence start end (typecase sequence
                                                       (string t)
@@ -263,28 +263,28 @@
                                                       ((array signed-byte (*)) nil)
                                                       (otherwise nil))))
 
-#-cormanlisp
+#+lispworks
 (in-package :acl-socket)
 
-#-cormanlisp
+#+lispworks
 (defmethod remote-host ((socket ssl::ssl-stream-mixin))
   (comm:get-socket-peer-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket))))
 
-#-cormanlisp
+#+lispworks
 (defmethod remote-port ((socket ssl::ssl-stream-mixin))
   (multiple-value-bind (host port)
       (comm:get-socket-peer-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket)))
     (declare (ignore host))
     port))
 
-#-cormanlisp
+#+lispworks
 (defmethod local-host ((socket ssl::ssl-stream-mixin))
   (multiple-value-bind (host port)
       (comm:get-socket-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket)))
     (declare (ignore port))
     host))
 
-#-cormanlisp
+#+lispworks
 (defmethod local-port ((socket ssl::ssl-stream-mixin))
   (multiple-value-bind (host port)
       (comm:get-socket-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket)))
