@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.10 2002/12/03 14:44:37 rudi Exp $
+;; $Id: publish.cl,v 1.11 2002/12/26 20:24:13 rudi Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -1778,7 +1778,7 @@
 				      (contents
 				       (make-array size 
 						   :element-type 
-						   '(unsigned-byte 8))))
+						   (stream-element-type p))))
 				 (read-sequence contents p)
 				 (incf total-size size)
 				 (setf (multi-item-cache item) contents)

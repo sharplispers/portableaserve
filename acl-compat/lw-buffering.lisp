@@ -194,8 +194,10 @@
 
 (defun write-elements (stream sequence start end writer-fn)
   (let* ((len (length sequence))
-         (start (min start (1- len)))
-         (end (min end len)))
+         (start (or start 0))
+         (end (or end len)))
+    (assert (and (typep start 'integer) (typep end 'integer)
+                 (<= 0 start end len)))
     (etypecase sequence
       (simple-vector (loop for i from start below end
                            do (funcall writer-fn stream (svref sequence i))))
@@ -230,7 +232,7 @@
 (defmethod stream-write-char ((stream buffered-bivalent-output-stream) character)
   (stream-write-byte stream (char-code character)))
 
-(defmethod stream-write-string ((stream buffered-bivalent-output-stream) string &optional start end)
+(defmethod stream-write-string ((stream buffered-bivalent-output-stream) string &optional (start 0) end)
   (write-elements stream string start end #'stream-write-char))
 
 (defmethod stream-write-sequence ((stream buffered-stream-mixin) sequence

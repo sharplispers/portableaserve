@@ -1,5 +1,8 @@
 2002-12-26  Rudi Schlatte  <rudi@constantly.at>
 
+	* lw-buffering.lisp (write-elements): end argument value can be
+	nil (fix contributed by Simon Andras 2002-12-24)
+
 	* meta.lisp: Switch to new-style eval-when times
 
 	* lw-buffering.lisp: Switch to new-style eval-when times
