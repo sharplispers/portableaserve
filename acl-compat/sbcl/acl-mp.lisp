@@ -76,6 +76,7 @@
   id                                    ; pid of unix thread or nil
   %queue                        ; lock for process structure mutators
   run-reasons                           ; primitive mailbox for IPC
+  %block-queue                          ; queue for condition-wait
   initial-bindings                      ; special variable bindings
   property-list
   )
@@ -113,7 +114,8 @@
   (let ((p (%make-process :name name
                           :run-reasons run-reasons
                           :initial-bindings initial-bindings
-                          :%queue (sb-thread:make-mutex :name (format nil "Internal lock for ~A" name)))))
+                          :%queue (sb-thread:make-mutex :name (format nil "Internal lock for ~A" name))
+                          :%block-queue (sb-thread:make-waitqueue :name (format nil "Blocking queue for ~A" name)))))
     (push p *all-processes*)
     p))
 
@@ -220,11 +222,21 @@
 
 (defun disable-process (process)
   ;; TODO: set process-whostate
-  (sb-thread::suspend-thread (process-id process)))
+  ;; Can't figure out how to safely block a thread from a different one
+  ;; and handle all the locking nastiness.  So punt for now.
+  (if (eql (sb-thread:current-thread-id) (process-id process))
+      ;; Keep waiting until we have a reason to run.  GC and other
+      ;; things can break a wait prematurely.  Don't know if this is
+      ;; expected or not.
+      (do ()
+          ((process-run-reasons process) nil)
+        (sb-thread:condition-wait (process-%block-queue process)
+                                  (process-%queue process)))
+      (error "Can't safely disable-process from another thread")))
 
 (defun enable-process (process)
   ;; TODO: set process-whostate
-  (sb-thread::resume-thread (process-id process)))
+  (sb-thread:condition-notify (process-%block-queue process)))
 
 ;;; FIXME but, of course, we can't.  Fix whoever wants to use it,
 ;;; instead

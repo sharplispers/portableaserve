@@ -1,3 +1,8 @@
+2003-09-19  Rudi Schlatte  <rudi@constantly.at>
+
+	* sbcl/acl-mp.lisp: Merged threading patch from Brian Downing
+	(posted to portableaserve-discuss 2003-09-12)
+
 2003-08-31  Rudi Schlatte  <rudi@constantly.at>
 
 	* acl-compat.asd: Remove old cmu-read-sequence cruft, bug is fixed
