@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.10 2001/12/28 15:55:27 neonsquare Exp $
+;; $Id: main.cl,v 1.11 2002/01/03 13:17:29 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -325,7 +325,7 @@
   (alien:def-alien-routine "getpid" integer)
   (alien:def-alien-routine ("fork" unix-fork) integer)
   (alien:def-alien-routine ("kill" unix-kill) integer (pid integer) (sig integer))
-  (alien:def-alien-routine ("signal" unix-signal) void (sig integer) (hdl integer))
+  (alien:def-alien-routine ("signal" unix-signal) c-call:void (sig integer) (hdl integer))
 )
 
 
