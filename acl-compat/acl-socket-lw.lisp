@@ -140,7 +140,6 @@
 
 (defun remote-port (socket-stream)
   (multiple-value-bind (host port)
-      (declare (ignore host))
       (comm:socket-stream-peer-address socket-stream)
     port))
 
@@ -151,7 +150,6 @@
   (if (typep socket-stream 'socket::server-socket)
       (port socket-stream)
     (multiple-value-bind (host port)
-	(declare (ignore host))
         (comm:socket-stream-address socket-stream)
       port)))
 
