@@ -90,7 +90,9 @@
 
 (defvar *conditional-store-queue* (sb-thread:make-waitqueue))
 
-(defmacro with-process-lock ((place &optional timeout whostate) &body body)
+(defmacro with-process-lock ((place &key timeout whostate norecursive)
+			     &body body)
+  (declare (ignore norecursive))
   (let ((old-whostate (gensym "OLD-WHOSTATE")))
     `(sb-thread:with-recursive-lock (,place)
       (let (,old-whostate)
