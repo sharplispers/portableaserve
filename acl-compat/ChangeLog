@@ -1,3 +1,9 @@
+2003-05-03  Rudi Schlatte  <rudi@constantly.at>
+
+	* chunked-stream-mixin.lisp (gray-stream:stream-fill-buffer): Make
+	input-chunking work, refactor somewhat to make all slot changes in
+	one place.
+
 2003-05-02  Rudi Schlatte  <rudi@constantly.at>
 
 	* acl-compat.asd (acl-compat): Current cmucl versions handle Gray
