@@ -191,10 +191,13 @@ program-controlled interception of a break."
   ((stream :initarg :stream
            :reader stream-error-stream)
    (action :initarg :action
+           :initform nil
            :reader stream-error-action)
    (code :initarg :code
+         :initform nil
          :reader stream-error-code)
    (identifier :initarg :identifier
+               :initform nil
                :reader stream-error-identifier))
   (:report (lambda (condition stream)
              (format stream "A stream error occured (action=~A identifier=~A code=~A stream=~S)."
