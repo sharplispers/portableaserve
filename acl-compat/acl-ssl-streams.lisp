@@ -257,7 +257,6 @@
 
 #-cormanlisp
 (defmethod gray-stream:stream-write-sequence ((stream ssl-stream-mixin) sequence start end)
-  (break "in s-w-s")
   (stream::write-elements stream sequence start end nil))
 
 #-cormanlisp
