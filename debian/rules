@@ -23,7 +23,7 @@ clc-compat	:= $(clc-source)/$(name-compat)
 
 src-aserve	:= aserve/*.cl aserve/*.asd
 src-html	:= aserve/htmlgen/*.cl aserve/htmlgen/*.asd
-src-compat	:= acl-compat/*.lisp acl-compat/*.asd
+src-compat	:= acl-compat/*.lisp acl-compat/*.asd acl-compat/allegro acl-compat/clisp acl-compat/cmucl acl-compat/lispworks acl-compat/openmcl acl-compat/sbcl 
 
 doc-base	:= usr/share/doc
 
