@@ -1,10 +1,11 @@
 ;;; OpenMCL layer for ACL sockets.
 ;;; Most everything is already there, just needs to be in the socket package.
 ;;;
-;;; John DeSoi, Ph.D. desoi@mac.com
+;;; John DeSoi, Ph.D. desoi@users.sourceforget.net
 
 
-(defpackage socket
+(defpackage :acl-compat.socket
+  (:nicknames :socket :acl-socket)
   (:use :common-lisp)
   (:export #:make-socket 
            #:accept-connection
@@ -63,7 +64,7 @@
 
 (defun ipaddr-to-dotted (ipaddr &key values)
   (unless (null ipaddr)
-    (ccl:ipaddr-to-dotted ipaddr values)))
+    (ccl:ipaddr-to-dotted ipaddr :values values)))
 
 (defun socket-control (stream &key output-chunking output-chunking-eof input-chunking)
   (declare (ignore stream))

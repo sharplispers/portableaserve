@@ -51,6 +51,7 @@
 		#:uri-fragment
 		#:uri-plist
 		#:uri-authority
+		#:uri-string
 		#:render-uri
 		#:parse-uri
 		#:merge-uris

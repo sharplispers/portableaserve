@@ -1,12 +1,12 @@
 ;;; This file implements the process functions for AllegroServe in MCL.
 ;;; Based on the the work done for cmucl and Lispworks.
 ;;;
-;;; John DeSoi, Ph.D. desoi@mac.com
+;;; John DeSoi, Ph.D. desoi@users.sourceforge.net
 
 
 
 (defpackage mp
-  (:nicknames :acl-compat-mp :acl-mp)
+  (:nicknames :acl-compat.mp :acl-mp)
   (:use :COMMON-LISP) 
   (:export
    "CURRENT-PROCESS"

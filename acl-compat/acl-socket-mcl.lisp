@@ -1,10 +1,11 @@
 ;;; MCL layer for ACL sockets.
 ;;; Based on acl-socket-cmu.lisp and acl-socket-lw.lisp.
 ;;;
-;;; John DeSoi, Ph.D. desoi@mac.com
+;;; John DeSoi, Ph.D. jdesoi@planetc.com
 
 
-(defpackage socket
+(defpackage :acl-compat.socket
+  (:nicknames :socket :acl-socket)
   (:use :common-lisp)
   (:export #:make-socket 
            #:accept-connection
@@ -50,22 +51,24 @@
 ;;; There is a bug in MCL (4.3.1 tested) where read-sequence and
 ;;; write-sequence fail with binary tcp streams. These two methods 
 ;;; provide a work-around.
-
+#-carbon-compat ;should be fixed starting with first carbon version (4.3.5)
 (defmethod ccl:stream-write-sequence ((s opentransport-binary-tcp-stream)
                                       (sequence ccl::simple-unsigned-byte-vector)
                                       &key (start 0) end)
   (ccl::stream-write-vector s sequence start (or end (length sequence)))
   s)
 
-; original suggestion was to call ccl::stream-read-bytes-to-vector but that has a bug too
+
+
+#-carbon-compat ;should be fixed starting with first carbon version (4.3.5)
 (defmethod ccl:stream-read-sequence ((s opentransport-binary-tcp-stream)
-                                     (sequence ccl::simple-unsigned-byte-vector) 
-                                     &key (start 0) (end (length sequence)))
-  (ccl::io-buffer-read-bytes-to-vector (ccl::stream-io-buffer s) sequence (- end start) start)
+                                         (sequence ccl::simple-unsigned-byte-vector) 
+                                         &key (start 0) (end (length sequence)))
+  (ccl::stream-read-bytes-to-vector s sequence (- end start) start)
   end)
+  
 
-
-
+ 
 (defmethod port ((stream opentransport-tcp-stream))
   (stream-local-port stream) )
 
@@ -106,7 +109,7 @@
    (element-type
     :documentation "Stream element type."
     :initarg :element-type
-    :initform 'unsigned-byte)
+    :initform '(unsigned-byte 8))
    (count
     :documentation "Number of listening streams to monitor."
     :initform *passive-socket-listener-count*)
@@ -114,7 +117,7 @@
     :documentation "Array of listen streams."
     :initform nil)
    (index
-    :documentation "Index of the last listen stream to checked."
+    :documentation "Index of the last listen stream checked."
     :initform *passive-socket-listener-count*)
    (connect-index
     :documentation "Index of a connected stream, next for processing."
@@ -135,13 +138,21 @@
 (defmethod ccl:stream-close ((listener passive-socket))
   (with-slots (streams count) listener
     (dotimes (i count)
-      (close (elt streams i)))) )
+      (close (elt streams i)))
+    (setf count 0)))
 
 
 (defmethod new-listen-stream ((listener passive-socket))
   (with-slots (port element-type) listener
     (open-tcp-stream nil port ;use nil host to get a passive connection
                           :element-type element-type) ) )
+
+
+(defmethod local-host ((listener passive-socket))
+  (with-slots (streams count) listener
+    (when (> count 0)
+      (local-host (elt streams 0)))))
+              
 
 
 ; See if one of the streams is established
@@ -175,12 +186,11 @@
 
 
 (defun make-socket (&key (remote-host "localhost")
-			 local-port
-			 remote-port 
-			 (connect :active)
-			 (format :text)
-			 &allow-other-keys)
-  (check-type remote-host string)
+			   local-port
+			   remote-port 
+			   (connect :active)
+			   (format :text)
+			   &allow-other-keys)
   (let ((element-type (ecase format
 			(:text 'base-char)
 			(:binary 'signed-byte)
@@ -189,8 +199,12 @@
       (:passive
        (make-instance 'passive-socket :port local-port :element-type element-type :direction :io))
       (:active
-       (open-tcp-stream remote-host remote-port
-                             :element-type element-type)))))
+       (let ((host (if (integerp remote-host) ;aparently the acl version also accepts an integer
+                     (ipaddr-to-dotted remote-host)
+                     remote-host)))
+         (check-type host string)
+         (open-tcp-stream host remote-port
+                          :element-type element-type))))))
 
 
 
@@ -251,3 +265,6 @@
 
 
 (provide 'acl-socket)
+
+
+

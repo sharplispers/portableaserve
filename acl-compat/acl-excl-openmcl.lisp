@@ -52,7 +52,8 @@
 
 (require 'nregex)
 
-(defpackage :excl
+(defpackage :acl-compat.excl
+        (:nicknames :excl)
 	(:use :common-lisp :nregex)
 	(:export 
 		"IF*"

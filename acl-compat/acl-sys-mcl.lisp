@@ -1,6 +1,6 @@
 
 
-(defpackage system
+(defpackage acl-compat.system
   (:nicknames :sys)
   (:use :common-lisp) 
   (:export
@@ -9,7 +9,7 @@
    "reap-os-subprocess"
    ))
 
-(in-package :system)
+(in-package :acl-compat.system)
 
 
 ; none of this stuff now; maybe with OS X
