@@ -6,7 +6,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require "comm"))
 
-
+#+nil
 (defpackage acl-socket
   (:use common-lisp #+de.dataheaven.chunked de.dataheaven.chunked-stream-mixin excl)
   (:nicknames socket)
@@ -106,7 +106,7 @@
 	 :initarg :port
 	 :reader local-port)))
 
-(defclass binary-socket-stream (chunked-stream-mixin comm:socket-stream) ())
+(defclass binary-socket-stream (de.dataheaven.chunked-stream-mixin:chunked-stream-mixin comm:socket-stream) ())
 (defclass input-binary-socket-stream (binary-socket-stream)())
 (defclass output-binary-socket-stream (binary-socket-stream)())
 (defclass bidirectional-binary-socket-stream (input-binary-socket-stream output-binary-socket-stream)())
@@ -279,12 +279,12 @@
   (when oc-p
     (when output-chunking
       (de.dataheaven.chunked-stream-mixin::initialize-output-chunking stream))
-    (setf (output-chunking-p stream) output-chunking))
+    (setf (de.dataheaven.chunked-stream-mixin:output-chunking-p stream) output-chunking))
   (when output-chunking-eof
     (de.dataheaven.chunked-stream-mixin::disable-output-chunking stream))
   (when ic-p
     (when input-chunking
       (de.dataheaven.chunked-stream-mixin::initialize-input-chunking stream))
-    (setf (input-chunking-p stream) input-chunking)))
+    (setf (de.dataheaven.chunked-stream-mixin:input-chunking-p stream) input-chunking)))
 
 (provide 'acl-socket)
