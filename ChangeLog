@@ -1,6 +1,9 @@
 2002-07-19  Rudi Schlatte  <rudi@constantly.at>
 
-	* contrib/session.lisp (Module): New file, contributed by
+	* contrib/lsp.lisp (Module): Lisp Server Pages, contributed by
+	John Wiseman via http://lemonodor.com/archives/000128.html
+
+	* contrib/session.lisp (Module): Session support, contributed by
 	Brendan Burns to Franz's opensource list
 
 2002-07-07  Rudi Schlatte  <rudi@constantly.at>
