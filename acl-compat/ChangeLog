@@ -1,4 +1,7 @@
-2003-11-27  Rudi Schlatte  <rudi@62-99-252-74.C-GMITTE.Xdsl-line.inode.at>
+2003-11-27  Rudi Schlatte  <rudi@constantly.at>
+
+	* lw-buffering.lisp (stream-fill-buffer): Remove cmucl-specific
+	read-n-bytes call because it does block after all :(
 
 	* chunked-stream-mixin.lisp (gray-stream:stream-fill-buffer): Fix
 	for Lispworks client mode contributed by Edi Weitz to

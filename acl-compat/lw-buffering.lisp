@@ -117,22 +117,12 @@
   (with-stream-input-buffer (buffer index limit) stream
     (let* ((the-stream (native-lisp-stream stream))
            (read-bytes
-            #+cmu (progn
-                    (mp:process-wait-until-fd-usable
-                     (sys:fd-stream-fd the-stream) :input)
-                    ;; At this point, there's either data to be read
-                    ;; or an end-of-file.  Either way, read-n-bytes
-                    ;; has a return value valid for our purpose (only
-                    ;; read 0 bytes when the stream is closed)
-                    (system:read-n-bytes the-stream buffer 0 limit nil))
-           ;; TODO: Replace with implementation-specific non-blocking
-           ;; read-sequence call
-           #-cmu (loop with byte
-                       for n-read from 0 below limit
-                       while (and (if (< 0 n-read) (listen the-stream) t)
-                                  (setf byte (read-byte the-stream nil nil)))
-                       do (setf (aref buffer n-read) byte)
-                       count t)))
+            (loop with byte
+               for n-read from 0 below limit
+               while (and (if (< 0 n-read) (listen the-stream) t)
+                          (setf byte (read-byte the-stream nil nil)))
+               do (setf (aref buffer n-read) byte)
+               count t)))
       (if (zerop read-bytes)
           nil
           (setf index 0
