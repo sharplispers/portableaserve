@@ -3,15 +3,17 @@
 (defsystem "ACL-COMPAT"
   (:default-pathname "ACL-COMPAT:")
   :members
-  ("nregex"
+  ("acl-compat-common-lisp-lw"
+   "nregex"
    "acl-excl-lw"
    "acl-mp-package"
    "acl-mp-lw"
+   "gray-stream-package"
    "acl-socket-lw"
    "acl-sys-lw"
    "meta"
    "uri"
-   "chunked")
+   "chunked-stream-mixin")
 
   :rules
   ((:in-order-to :compile "acl-excl-lw"
@@ -22,15 +24,18 @@
     (:requires (:load "nregex")))
 
    (:in-order-to :compile "acl-mp-lw"
-    (:caused-by (:compile "acl-mp-package"))
-    (:requires (:load "acl-mp-package")))
+    (:caused-by (:compile "acl-mp-package" "acl-socket-lw"))
+    (:requires (:load "acl-mp-package" "acl-socket-lw")))
 
    (:in-order-to :compile "acl-socket-lw"
-    (:requires (:load "chunked")))
+    (:requires (:load "chunked-stream-mixin")))
 
-   (:in-order-to :compile "chunked"
-    (:requires (:load "acl-excl-lw")))
+   (:in-order-to :compile "chunked-stream-mixin"
+    (:requires (:load "acl-excl-lw" "gray-stream-package")))
  
   (:in-order-to :compile "uri"
     (:caused-by (:compile "meta"))
      (:requires (:load "meta")))))
+
+(eval-when (:load-toplevel :execute)
+  (pushnew :acl-compat *features*))

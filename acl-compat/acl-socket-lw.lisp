@@ -1,19 +1,20 @@
 ;; This package is designed for LispWorks.  It implements the
 ;; ACL-style socket interface on top of LispWorks.
 
-(require :com.ljosa.chunked "chunked")
+;(require :com.ljosa.chunked "chunked")
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require "comm"))
 
+
 (defpackage acl-socket
-  (:use common-lisp comm stream com.ljosa.chunked excl)
+  (:use common-lisp #+de.dataheaven.chunked de.dataheaven.chunked-stream-mixin excl)
   (:nicknames socket)
   #+cl-ssl(:import-from :ssl "MAKE-SSL-CLIENT-STREAM" "MAKE-SSL-SERVER-STREAM")
-  (:shadow socket-stream)
+  (:shadow socket-stream stream-error)
   (:export socket make-socket accept-connection
    ipaddr-to-dotted dotted-to-ipaddr ipaddr-to-hostname lookup-hostname
-   remote-host remote-port local-host local-port socket-control))
+   remote-host remote-port local-host local-port socket-control socket-os-fd))
 
 #+cl-ssl
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -22,48 +23,160 @@
 
 (in-package acl-socket)
 
-(defclass server-socket ()
+(define-condition stream-error (error)
+  ((excl::stream :initarg :stream
+           :reader stream-error-stream)
+   (excl::action :initarg :action
+           :reader stream-error-action)
+   (excl::code :initarg :code
+         :reader stream-error-code)
+   (excl::identifier :initarg :identifier
+               :reader stream-error-identifier))
+  (:report (lambda (condition stream)
+             (format stream "~A (action=~A id=~A code=~A stream=~S)."
+                     (lw:get-unix-error (stream-error-code condition))
+                     (stream-error-action condition)
+                     (stream-error-identifier condition)
+                     (stream-error-code condition)
+                     (stream-error-stream condition)))))
+
+(define-condition socket-error (stream-error)
+  ()
+  (:report (lambda (condition stream)
+             (format stream "~A (action=~A id=~A code=~A stream=~S)."
+                     (lw:get-unix-error (stream-error-code condition))
+                     (stream-error-action condition)
+                     (stream-error-identifier condition)
+                     (stream-error-code condition)
+                     (stream-error-stream condition)))))
+
+#+unix
+(defun %socket-error-identifier (code)
+  (case code
+    (32 :x-broken-pipe)
+    (98 :address-in-use)
+    (99 :address-not-available)
+    (100 :network-down)
+    (102 :network-reset)
+    (103 :connection-aborted)
+    (104 :connection-reset)
+    (105 :no-buffer-space)
+    (108 :shutdown)
+    (110 :connection-timed-out)
+    (111 :connection-refused)
+    (112 :host-down)
+    (113 :host-unreachable)
+    (otherwise :unknown)))
+
+#+win32
+(defun %socket-error-identifier (code)
+  (case code
+    (10048 :address-in-use)
+    (10049 :address-not-available)
+    (10050 :network-down)
+    (10052 :network-reset)
+    (10053 :connection-aborted)
+    (10054 :connection-reset)
+    (10055 :no-buffer-space)
+    (10058 :shutdown)
+    (10060 :connection-timed-out)
+    (10061 :connection-refused)
+    (10064 :host-down)
+    (10065 :host-unreachable)
+    (otherwise :unknown)))
+
+(defun socket-error (stream error-code action format-string &rest format-args)
+  (let ((code (if (numberp error-code) error-code (lw:errno-value))))
+    (error 'socket-error :stream stream :code code
+           :identifier (if (keywordp error-code)
+                           error-code
+                         (%socket-error-identifier error-code))
+           :action action
+           :format-control "~A occured while doing socket IO (~?)"
+           :format-arguments (list 'socket-error format-string format-args))))
+
+(defmethod comm::socket-error ((stream binary-socket-stream) error-code format-string &rest format-args)
+  (apply #'socket-error stream error-code :IO format-string format-args))
+
+(defclass socket ()
+  ((passive-socket :type fixnum
+                   :initarg :passive-socket
+                   :reader socket-os-fd)))
+
+(defclass passive-socket (socket)
   ((element-type :type (member signed-byte unsigned-byte base-char)
 		 :initarg :element-type
 		 :reader element-type)
    (port :type fixnum
 	 :initarg :port
-	 :reader port)
-   (passive-socket :initarg :passive-socket
-	   :reader passive-socket)))
+	 :reader local-port)))
 
-(defclass chunked-socket-stream (chunked-mixin comm:socket-stream)
-  ())
+(defclass binary-socket-stream (chunked-stream-mixin comm:socket-stream) ())
+(defclass input-binary-socket-stream (binary-socket-stream)())
+(defclass output-binary-socket-stream (binary-socket-stream)())
+(defclass bidirectional-binary-socket-stream (input-binary-socket-stream output-binary-socket-stream)())
 
-(defmethod fd ((server-socket server-socket))
-  42)
+(declaim (inline %reader-function-for-sequence))
+(defun %reader-function-for-sequence (sequence)
+  (typecase sequence
+    (string #'read-char)
+    ((array unsigned-byte (*)) #'read-byte)
+    ((array signed-byte (*)) #'read-byte)
+    (otherwise #'read-byte)))
 
-(defmethod print-object ((server-socket server-socket) stream)
-  (print-unreadable-object (server-socket stream :type t :identity nil)
-    (format stream "@~d on port ~d" (fd server-socket) (port server-socket))))
+;; Bivalent socket support for READ-SEQUENCE
+(defmethod gray-stream:stream-read-sequence ((stream input-binary-socket-stream) sequence start end)
+  (stream::read-elements stream sequence start end (%reader-function-for-sequence sequence)))
 
-(defmethod accept-connection ((server-socket server-socket)
+;; ACL Gray-Streams Enhancment Generic Functions 
+
+(defmethod stream-input-fn ((stream input-binary-socket-stream))
+  (comm:socket-stream-socket stream))
+
+(defmethod stream-output-fn ((stream output-binary-socket-stream))
+  (comm:socket-stream-socket stream))
+
+(defmethod socket-os-fd ((socket comm:socket-stream))
+  (comm:socket-stream-socket socket))
+
+(defmethod print-object ((passive-socket passive-socket) stream)
+  (print-unreadable-object (passive-socket stream :type t :identity nil)
+    (format stream "@~d on port ~d" (socket-os-fd passive-socket) (local-port passive-socket))))
+
+(defmethod stream-input-available ((stream fixnum))
+  (system::check-input stream))
+
+(defmethod stream-input-available ((stream stream::os-file-handle-stream))
+  (stream-input-available (stream::os-file-handle-stream-file-handle stream)))
+
+(defmethod stream-input-available ((stream comm:socket-stream))
+  (or (comm::socket-listen (comm:socket-stream-socket stream))
+      (listen stream)))
+
+(defmethod stream-input-available ((stream socket::passive-socket))
+  (comm::socket-listen (socket::socket-os-fd stream)))
+
+
+(defmethod accept-connection ((passive-socket passive-socket)
 			      &key (wait t))
-  (unless wait
-    (cerror "Proceed anyway, and risk blocking." ()
-	    "Nonclocking accept-connection not implemented."))
-  (make-instance 'chunked-socket-stream
-                 :socket (comm::get-fd-from-socket (passive-socket server-socket))
-                 :direction :io
-                 :element-type (element-type server-socket)))
+  (if (or wait (stream-input-available passive-socket))
+      (make-instance 'bidirectional-binary-socket-stream
+                     :socket (comm::get-fd-from-socket (socket-os-fd passive-socket))
+                     :direction :io
+                     :element-type (element-type passive-socket))))
 
 (defun %new-passive-socket (local-port)
   (multiple-value-bind (socket error-location error-code)
       (comm::create-tcp-socket-for-service local-port)
     (cond (socket socket)
-	  (t (error "Passive socket creation failed: ~A (~A)" error-location
-		    error-code)))))
+	  (t (error 'socket-error :action error-location :code error-code :identifier :unknown)))))
 
 (defun make-socket (&key (remote-host "localhost")
 			 local-port
 			 remote-port 
 			 (connect :active)
 			 (format :text)
+                         (reuse-address t)
 			 &allow-other-keys)
   (check-type remote-host string)
   (let ((element-type (ecase format
@@ -72,26 +185,27 @@
                         (:bivalent 'unsigned-byte))))
     (ecase connect 
       (:passive
-       (make-instance 'server-socket
-		      :port local-port
-		      :passive-socket (%new-passive-socket local-port)
-		      :element-type element-type))
+       (let ((comm::*use_so_reuseaddr* reuse-address))
+         (make-instance 'passive-socket
+		        :port local-port
+		        :passive-socket (%new-passive-socket local-port)
+		        :element-type '(unsigned-byte 8) #+obs element-type)))
       (:active
-       (let ((stream (comm:open-tcp-stream remote-host remote-port
-					   :direction :io
-					   :element-type element-type)))
-	 (unless stream
-	   ;; Pretend to know what the problem is.  We really need to dig
-	   ;; for the real cause at some point.
-	   (error 'socket-error :stream nil :code 111
-		  :identifier :connection-refused
-		  :action "creating a local socket and connecting to a remote host"))
-	 (change-class stream 'chunked-socket-stream))))))
+       (handler-case
+           (let ((stream (comm:open-tcp-stream remote-host remote-port
+					       :direction :io
+					       :element-type '(unsigned-byte 8) #+obs element-type
+                                               :errorp t)))
+	     (change-class stream 'bidirectional-binary-socket-stream))
+         (simple-error (condition) 
+                       (let ((code (first (last (simple-condition-format-arguments condition)))))
+                         (socket-error condition code
+                              :connect "~A occured while connecting (~?)" (simple-condition-format-arguments condition)))))))))
 
 
-(defmethod close ((server-socket server-socket) &key abort)
+(defmethod close ((passive-socket passive-socket) &key abort)
   (declare (ignore abort))
-  (comm::close-socket (passive-socket server-socket)))
+  (comm::close-socket (socket-os-fd passive-socket)))
 
 (declaim (ftype (function ((unsigned-byte 32)) (values simple-string))
 		ipaddr-to-dotted))
@@ -143,32 +257,37 @@
 	addr)
     (dotted-to-ipaddr (ipaddr-to-dotted host))))
 
-(defun remote-host (socket-stream)
-   (comm:socket-stream-peer-address socket-stream))
+(defmethod remote-host ((socket comm:socket-stream))
+  (comm:socket-stream-peer-address socket))
 
-(defun remote-port (socket-stream)
+(defmethod remote-port ((socket comm:socket-stream))
   (multiple-value-bind (host port)
-      (comm:socket-stream-peer-address socket-stream)
+      (comm:socket-stream-peer-address socket)
     (declare (ignore host))
     port))
 
-(defun local-host (socket-stream)
-   (comm:socket-stream-address socket-stream))
+(defmethod local-host ((socket comm:socket-stream))
+  (multiple-value-bind (host port)
+      (comm:socket-stream-address socket)
+    (declare (ignore port))
+    host))
 
-(defun local-port (socket-stream)
-  (if (typep socket-stream 'socket::server-socket)
-      (port socket-stream)
-    (multiple-value-bind (host port)
-        (comm:socket-stream-address socket-stream)
-      (declare (ignore host))
-      port)))
+(defmethod local-port ((socket comm:socket-stream))
+  (multiple-value-bind (host port)
+      (comm:socket-stream-address socket)
+    (declare (ignore host))
+    port))
 
 (defun socket-control (stream &key (output-chunking nil oc-p) output-chunking-eof (input-chunking nil ic-p))
   (when oc-p
-    (setf (output-chunking stream) output-chunking))
+    (when output-chunking
+      (de.dataheaven.chunked-stream-mixin::initialize-output-chunking stream))
+    (setf (output-chunking-p stream) output-chunking))
   (when output-chunking-eof
-    (close-chunk stream))
+    (de.dataheaven.chunked-stream-mixin::disable-output-chunking stream))
   (when ic-p
-    (setf (input-chunking stream) input-chunking)))
+    (when input-chunking
+      (de.dataheaven.chunked-stream-mixin::initialize-input-chunking stream))
+    (setf (input-chunking-p stream) input-chunking)))
 
 (provide 'acl-socket)
