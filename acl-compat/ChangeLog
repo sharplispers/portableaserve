@@ -1,3 +1,14 @@
+2003-05-06  Rudi Schlatte  <rudi@constantly.at>
+
+	* lw-buffering.lisp (stream-fill-buffer): Implement
+	blocking/non-blocking semantics (read at least one byte per
+	fill-buffer call).  Otherwise we'd get spurious EOFs with slow
+	servers.
+
+	* chunked-stream-mixin.lisp (gray-stream:stream-fill-buffer):
+	Return a sensible value (amount of bytes that can be read before
+	next call to fill-buffer).
+
 2003-05-03  Rudi Schlatte  <rudi@constantly.at>
 
 	* chunked-stream-mixin.lisp (gray-stream:stream-fill-buffer): Make

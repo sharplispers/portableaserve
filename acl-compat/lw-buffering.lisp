@@ -116,10 +116,20 @@
                                        buffer 0 limit nil)
             ;; TODO: Replace with implementation-specific unblocking
             ;; read-sequence call
-            #-cmu (loop for n-read from 0 below limit
-                        while (listen (native-lisp-stream stream))
-                        do (setf (aref buffer n-read)
-                                 (read-byte (native-lisp-stream stream)))
+            #-cmu (loop with byte
+                        for n-read from 0 below limit
+                        ;; Implement b/nb semantics: read at least one
+                        ;; byte.  If we return nil when the server has
+                        ;; not yet begun responding, we get premature
+                        ;; EOFs in some upper layer, or we'd have to
+                        ;; busy-loop somewhere.
+                        while (and (if (> 0 n-read)
+                                       (listen (native-lisp-stream stream))
+                                     t)
+                                   (setf byte (read-byte
+                                               (native-lisp-stream stream)
+                                               nil nil)))
+                        do (setf (aref buffer n-read) byte)
                         count t)))
       (if (zerop read-bytes)
           nil

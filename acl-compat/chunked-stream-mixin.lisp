@@ -98,89 +98,96 @@ obviously 0 because no chunk-data got read so far."
        ))))
 
 (defmethod gray-stream:stream-fill-buffer ((stream chunked-stream-mixin))
-  "STREAM-FILL-BUFFER gets called when the input-buffer contains no
-more data (the index is bigger than the limit). We call out to the
-real buffer filling mechanism by calling the next specialized
-method. This method is responsible to update the buffer state in
-coordination with the chunk-header."
+  "Refill buffer from stream."
+  ;; STREAM-FILL-BUFFER gets called when the input-buffer contains no
+  ;; more data (the index is bigger than the limit). We call out to
+  ;; the real buffer filling mechanism by calling the next specialized
+  ;; method. This method is responsible to update the buffer state in
+  ;; coordination with the chunk-header.
   (with-slots (chunk-input-avail real-input-limit) stream
     (gray-stream:with-stream-input-buffer (input-buffer input-index input-limit) stream
        (labels
           ((pop-char ()
-                        (when (and (>= input-index input-limit) ; need new data
-                                   (not (call-next-method))) ; couldn't get it
-                          (error "Unexpected end-of-file while reading chunk block"))
-                        (prog1 (code-char (buffer-ref input-buffer input-index))
-                          (incf input-index)))
+             (when (and (>= input-index input-limit) ; need new data
+                        (not (call-next-method))) ; couldn't get it
+               (error "Unexpected end-of-file while reading chunk block"))
+             (prog1 (code-char (buffer-ref input-buffer input-index))
+               (incf input-index)))
            (read-chunk-header ()
              (let ((chunk-length 0))
                (tagbody
-                  initial-crlf (let ((char (pop-char)))
-                                 (cond ((digit-char-p char 16)
-                                        (decf input-index) ; unread char
-                                        (go chunk-size))
-                                       ((eq #\Return char)
-                                        (if (eq (pop-char) #\Linefeed)
-                                            (go chunk-size)
-                                            (error "End of chunk-header corrupted: Expected Linefeed")))
-                                       (t (error "End of chunk-header corrupted: Expected Carriage Return or a digit"))))
-
-                  chunk-size (let ((char (pop-char)))
+                initial-crlf (let ((char (pop-char)))
                                (cond ((digit-char-p char 16)
-                                      (setf chunk-length
-                                            (+ (* 16 chunk-length)
-                                               (digit-char-p char 16)))
+                                      (decf input-index) ; unread char
                                       (go chunk-size))
-                                     (t (decf input-index) ; unread char
-                                        (go skip-rest))))
+                                     ((eq #\Return char)
+                                      (if (eq (pop-char) #\Linefeed)
+                                          (go chunk-size)
+                                        (error "End of chunk-header corrupted: Expected Linefeed")))
+                                     (t (error "End of chunk-header corrupted: Expected Carriage Return or a digit"))))
 
-                  skip-rest (if (eq #\Return (pop-char))
-                                (go check-linefeed)
-                                (go skip-rest))
+                chunk-size (let ((char (pop-char)))
+                             (cond ((digit-char-p char 16)
+                                    (setf chunk-length
+                                          (+ (* 16 chunk-length)
+                                             (digit-char-p char 16)))
+                                    (go chunk-size))
+                                   (t (decf input-index) ; unread char
+                                      (go skip-rest))))
 
-                  check-linefeed (let ((char (pop-char)))
-                                   (case char
-                                     (#\Linefeed (go accept))
-                                     (t (error "End of chunk-header corrupted: LF expected, ~A read." char))))
+                skip-rest (if (eq #\Return (pop-char))
+                              (go check-linefeed)
+                            (go skip-rest))
 
-                  accept)
-                 chunk-length)))
+                check-linefeed (let ((char (pop-char)))
+                                 (case char
+                                   (#\Linefeed (go accept))
+                                   (t (error "End of chunk-header corrupted: LF expected, ~A read." char))))
 
-        (cond ((not (input-chunking-p stream)) (call-next-method))
-              ((zerop chunk-input-avail)
-               ;; We are at the beginning of a new chunk.
-               (when real-input-limit (setf input-limit real-input-limit))
-               (let* ((chunk-length (read-chunk-header))
-                      (end-of-chunk (+ input-index chunk-length)))
-                 (if (zerop chunk-length)
-                     ;; rfc2616 indicates that input chunking is
-                     ;; turned off after zero-length chunk is read
-                     ;; (see section 19.4.6) -- turn off chunking
-                     (progn (signal 'excl::socket-chunking-end-of-file
-                                    :format-arguments stream)
-                            (setf (input-chunking-p stream) nil)
-                            ;; TODO: whoever handles
-                            ;; socket-chunking-end-of-file (client.cl
-                            ;; in AllegroServe's case) should read the
-                            ;; trailer (see section 3.6).  All we can
-                            ;; reasonably do here is turn off
-                            ;; chunking, or throw information away.
-                            )
-                   ;; Now set up stream attributes so that read methods
-                   ;; call refill-buffer both at end of chunk and end of
-                   ;; buffer
-                   (setf real-input-limit input-limit
-                         input-limit (min real-input-limit end-of-chunk)
-                         chunk-input-avail (max 0 (- end-of-chunk
-                                                     real-input-limit))))))
-              (t
-               ;; We are in the middle of a chunk; re-fill buffer
-               (let ((bytes-read (call-next-method)))
-                 (if bytes-read
-                     (setf real-input-limit input-limit
-                           input-limit (min real-input-limit chunk-input-avail)
-                           chunk-input-avail (max 0 (- chunk-input-avail bytes-read)))
-                   (error "Unexpected end-of-file in the middle of a chunk")))))))))
+                accept)
+               chunk-length)))
+
+         (cond ((not (input-chunking-p stream))
+                ;; Chunking not active; just fill buffer normally
+                (call-next-method))
+               ((zerop chunk-input-avail)
+                ;; We are at the beginning of a new chunk.
+                (when real-input-limit (setf input-limit real-input-limit))
+                (let* ((chunk-length (read-chunk-header))
+                       (end-of-chunk (+ input-index chunk-length)))
+                  (if (zerop chunk-length)
+                      ;; rfc2616 indicates that input chunking is
+                      ;; turned off after zero-length chunk is read
+                      ;; (see section 19.4.6) -- turn off chunking
+                      (progn (signal 'excl::socket-chunking-end-of-file
+                                     :format-arguments stream)
+                             (setf (input-chunking-p stream) nil)
+                             ;; TODO: whoever handles
+                             ;; socket-chunking-end-of-file (client.cl
+                             ;; in AllegroServe's case) should read the
+                             ;; trailer (see section 3.6).  All we can
+                             ;; reasonably do here is turn off
+                             ;; chunking, or throw information away.
+                             )
+                    ;; Now set up stream attributes so that read methods
+                    ;; call refill-buffer both at end of chunk and end of
+                    ;; buffer
+                    (progn
+                      (setf real-input-limit input-limit
+                            input-limit (min real-input-limit end-of-chunk)
+                            chunk-input-avail (max 0 (- end-of-chunk
+                                                        real-input-limit)))
+                      input-limit))))
+               (t
+                ;; We are in the middle of a chunk; re-fill buffer
+                (let ((bytes-read (call-next-method)))
+                  (if bytes-read
+                      (progn
+                        (setf real-input-limit input-limit
+                              input-limit (min real-input-limit chunk-input-avail)
+                              chunk-input-avail (max 0 (- chunk-input-avail bytes-read)))
+                        input-limit)
+                    (error "Unexpected end-of-file in the middle of a chunk")))))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;
