@@ -49,7 +49,7 @@
 ;;;;
 ;;;; Nuernberg, 01.Jul.2001 Jochen Schmidt
 
-(defpackage "META"
+(defpackage #:meta
   (:use #:common-lisp)
   (:export
    #:with-string-meta
