@@ -21,6 +21,14 @@
 			:file
 			nil)))
 
+
+(defun filesys-inode (path)
+  (let ((checked-path (probe-file path)))
+    (cond
+      (checked-path (let ((stat (system:get-file-stat checked-path)))
+		      (system:file-stat-inode stat)))
+      (t (error "path ~a does not exist." path)))))
+
 (defmacro atomically (&body forms)
   `(mp:without-preemption ,@forms))
 
