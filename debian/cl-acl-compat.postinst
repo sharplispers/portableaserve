@@ -22,11 +22,12 @@ set -e
 #     installation fails and the `postinst' is called with `abort-upgrade',
 #     `abort-remove' or `abort-deconfigure'.
 
-THE_PACKAGE_NAME=acl-compat
+PKG=acl-compat
 
 case "$1" in
     configure)
-	/usr/sbin/register-common-lisp-source ${THE_PACKAGE_NAME}
+	/usr/sbin/clc-only-compatible $PKG lispworks cmucl
+	/usr/sbin/register-common-lisp-source $PKG
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)
 	;;
