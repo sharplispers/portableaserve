@@ -1,3 +1,7 @@
+2003-04-02  Rudi Schlatte  <rudi@constantly.at>
+
+	* uri.lisp (render-uri): Fix printing URIs in the presence of #\~
+	(Thanks to Harley Gorrell)
 
 2003-03-24  Rudi Schlatte  <rudi@constantly.at>
 

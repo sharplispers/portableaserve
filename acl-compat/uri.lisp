@@ -193,7 +193,7 @@
 
 (defun render-uri (uri stream)
   "Print an URI-Object in normal URI-notation"
-  (format stream 		
+  (format stream "~A"
           (with-output-to-string (new-stream)
             (with-slots (scheme host port path query fragment) uri
               (when scheme 
