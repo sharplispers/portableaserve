@@ -5,5 +5,5 @@ Abstract: Documentation for the webserver Aserve
 Section: Lisp/Net
 
 Format: HTML
-Index: /usr/share/doc/cl-aserve/html/aserve.html
-Files: /usr/share/doc/cl-aserve/html/*.html
+Index: /usr/share/doc/cl-aserve/aserve.html
+Files: /usr/share/doc/cl-aserve/*.html
