@@ -197,4 +197,12 @@
    #:with-stream-input-buffer
    #+(or lispworks cmu)
    #:with-stream-output-buffer))
+   
+(in-package :gray-stream)
+(defun buffer-ref (buffer index)
+  #+lispworks (schar buffer index)
+  #+cmu (aref buffer index))
 
+(defun (setf buffer-ref) (new-value buffer index)
+  #+cmu(setf (aref buffer index) (char-code new-value))
+  #+lispworks (setf (schar buffer index) new-value))
