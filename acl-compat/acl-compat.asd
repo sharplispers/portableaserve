@@ -105,8 +105,7 @@ lisp-system"))
 
 
 ;standard MCL make-load-form is not ansi compliant because of CLIM
-#(and mcl (not openmcl))
-(require :ansi-make-load-form)
+#+(and mcl (not openmcl)) (require :ansi-make-load-form)
 
 #+(or lispworks cmu scl mcl openmcl)
 (defsystem acl-compat
@@ -125,7 +124,7 @@ lisp-system"))
                ;; cmucl-imp, tho)
 	       #+(and cmu (not common-lisp-controller))
                (:file "cmu-read-sequence")
-	       #+(and (mcl (not openmcl)) (:file "acl-socket-mcl")
+	       #+(and mcl (not openmcl)) (:file "acl-socket-mcl")
 	       #+(and mcl openmcl) (:file "acl-socket-openmcl")
 	       #-mcl (:unportable-cl-source-file "acl-socket"
 		      :depends-on ("acl-excl" "chunked-stream-mixin" 
@@ -157,7 +156,3 @@ lisp-system"))
 (when (ignore-errors (find-class 'load-compiled-op))
   (defmethod perform :after ((op load-compiled-op) (c (eql (find-system 'acl-compat))))
     (pushnew :acl-compat cl:*features*)))
-
-
-                   ))
-   ))
