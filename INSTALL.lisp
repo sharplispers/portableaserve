@@ -80,10 +80,9 @@
 
 
 #+mcl
-(require :mk-defsystem)
+(require :make)
 ;Portable mk-defsystem can be found here:
 ;http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/~checkout~/clocc/clocc/src/defsystem-3.x/defsystem.lisp
-;Place the file or an alias to it (or the compiled file) in the MCL Library folder for require to find it.
 
 #+mcl
 (progn
@@ -94,13 +93,14 @@
 (load "acl-compat:acl-compat-mcl.system")
 
 ; Compile and load ACL Compatibility system
-(mk:oos "ACL-COMPAT" :load :compile-during-load t) 
+(mk:oos "ACL-COMPAT" :load :compile-during-load t)
 
 ; Load definition of Aserve system
-(load "aserve:aserve.system")
+(load "aserve:aserve-mcl.system")
 
 ; Compile and load the ASERVE system
-(mk:oos "ASERVE" :load :compile-during-load t)
+(let ((ccl:*warn-if-redefine* nil)) ;defines a few vars in more than one file
+  (mk:oos "ASERVE" :load :compile-during-load t) )
 )
 
 
