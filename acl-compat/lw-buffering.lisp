@@ -128,7 +128,7 @@
 
 (defmethod stream-read-byte ((stream buffered-bivalent-input-stream))
   (with-stream-input-buffer (buffer index limit) stream
-     (unless (and index (<= index limit))
+     (unless (and index (< index limit))
        (when (null (stream-fill-buffer stream))
 	 (return-from stream-read-byte :eof)))
      (prog1 (aref buffer index)
