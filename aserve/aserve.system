@@ -51,7 +51,8 @@
   :finally-do
   (progn
     (pushnew :aserve *features*)))
- 
+
+#+cmu
 (defun init-aserve-cmu ()
   ;; this isn't strictly necessary, but scheduling feels very coarse
   ;; without startup-idle-and-top-level-loops, leading to answer delays
