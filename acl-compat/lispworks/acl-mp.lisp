@@ -192,7 +192,10 @@ and evaluate TIMEOUT-FORMS."
 (defun make-process-lock (&key name)
   (mp:make-lock :name name))
 
-(defmacro with-process-lock ((lock &key norecursive) &body forms)
+(defmacro with-process-lock ((lock &key norecursive timeout whostate) &body forms)
   (declare (ignore norecursive))
-  `(mp:with-lock (,lock) ,@forms))
+  `(mp:with-lock (,lock
+		  ,@(when whostate (list :whostate whostate))
+		  ,@(when timeout (list :timeout timeout)))
+    ,@forms))
 

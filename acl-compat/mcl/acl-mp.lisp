@@ -107,8 +107,8 @@
     `(ccl:make-lock ,name)
     `(ccl:make-lock)))
 
-(defmacro with-process-lock ((lock &key norecursive) &body forms)
-  (declare (ignore norecursive))
+(defmacro with-process-lock ((lock &key norecursive timeout whostate) &body forms)
+  (declare (ignore norecursive whostate timeout))
   `(ccl:with-lock-grabbed (,lock) ,@forms))
 
 

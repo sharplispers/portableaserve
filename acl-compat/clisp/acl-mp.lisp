@@ -61,8 +61,9 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
   (declare (ignore name))
   (error "Attempting to use multithreading with clisp."))
 
-(defmacro with-process-lock ((lock &key norecursive) &body forms)
-  (declare (ignore lock norecursive))
+(defmacro with-process-lock ((lock &key norecursive whostate timeout)
+			     &body forms)
+  (declare (ignore lock norecursive whostate timeout))
   `(progn ,@forms))
 
 (defmacro with-timeout ((seconds &body timeout-forms) &body body)

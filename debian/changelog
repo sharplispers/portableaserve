@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2003.07.06) unstable; urgency=low
+
+  * Update for cmucl-18e
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat,  5 Jul 2003 21:48:33 -0600
+
 cl-portable-aserve (1.2.12c+cvs2003.06.12) unstable; urgency=low
 
   * Add version dependency for cmucl 18e (closes: 197564)

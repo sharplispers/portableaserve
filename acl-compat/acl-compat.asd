@@ -31,14 +31,12 @@
 
 (defmethod perform ((operation compile-op) (component gray-streams))
   ;; vanilla cmucl
-  #+(and cmu common-lisp-controller) (require 'cmucl-graystream)
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
          (pushnew :gray-streams *features*)))
 
 (defmethod perform ((operation load-op) (component gray-streams))
   ;; vanilla cmucl
-  #+(and cmu common-lisp-controller) (require 'cmucl-graystream)
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
          (pushnew :gray-streams *features*)))
@@ -172,15 +170,10 @@ lisp-system"))
 	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
   #+sbcl :depends-on
   #+sbcl (:sb-bsd-sockets)
-  #+(or ;;(and cmu common-lisp-controller (not gray-streams))
-     (and lispworks ssl-available))
+  #+(and lispworks ssl-available)
   :depends-on
-  #+(or ;;(and cmu common-lisp-controller (not gray-streams))
-     (and lispworks ssl-available))
-  (
-   ;;#+(and cmu common-lisp-controller (not gray-streams)) :cmucl-graystream
-     #+(and lispworks ssl-available) :cl-ssl
-       )
+  #+(and lispworks ssl-available)
+  (:cl-ssl)
   :perform (load-op :after (op acl-compat)
 		    (pushnew :acl-compat cl:*features*))
   )

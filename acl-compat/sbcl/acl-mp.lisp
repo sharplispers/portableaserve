@@ -47,8 +47,8 @@
   (def process-kill (process))          ; *x
   (def make-process-lock (&key name)))  ; *x
 
-(defmacro with-process-lock ((lock &key norecursive) &body forms)
-  (declare (ignore lock norecursive))
+(defmacro with-process-lock ((lock &key norecursive timeout whostate) &body forms)
+  (declare (ignore lock norecursive timeout whostate))
   `(progn ,@forms))                     ; *x
 
 (defmacro without-scheduling (&body forms)
@@ -90,17 +90,17 @@
 
 (defvar *conditional-store-queue* (sb-thread:make-waitqueue))
 
-(defmacro with-process-lock ((place &optional state) &body body)
-  (let ((old-state (gensym "OLD-STATE")))
+(defmacro with-process-lock ((place &optional timeout whostate) &body body)
+  (let ((old-whostate (gensym "OLD-WHOSTATE")))
     `(sb-thread:with-recursive-lock (,place)
-                                    (let (,old-state)
-                                      (unwind-protect
-                                          (progn
-                                            (when ,state
-                                              (setf ,old-state (process-state *current-process*))
-                                              (setf (process-state *current-process*) ,state))
-                                            ,@body)
-                                        (setf (process-state *current-process*) ,old-state))))))
+      (let (,old-whostate)
+	(unwind-protect
+	     (progn
+	       (when ,whostate
+		 (setf ,old-whostate (process-whostate *current-process*))
+		 (setf (process-whostate *current-process*) ,whostate))
+	       ,@body)
+	  (setf (process-whostate *current-process*) ,old-whostate))))))
 
 
 (defun make-process  (&key (name "Anonymous") reset-action run-reasons
