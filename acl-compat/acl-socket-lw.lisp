@@ -178,29 +178,26 @@
 			 (format :text)
                          (reuse-address t)
 			 &allow-other-keys)
+  (declare (ignore format))
   (check-type remote-host string)
-  (let ((element-type (ecase format
-			(:text 'base-char)
-			(:binary 'signed-byte)
-                        (:bivalent 'unsigned-byte))))
-    (ecase connect 
-      (:passive
-       (let ((comm::*use_so_reuseaddr* reuse-address))
-         (make-instance 'passive-socket
-		        :port local-port
-		        :passive-socket (%new-passive-socket local-port)
-		        :element-type '(unsigned-byte 8) #+obs element-type)))
-      (:active
-       (handler-case
-           (let ((stream (comm:open-tcp-stream remote-host remote-port
-					       :direction :io
-					       :element-type '(unsigned-byte 8) #+obs element-type
-                                               :errorp t)))
-	     (change-class stream 'bidirectional-binary-socket-stream))
-         (simple-error (condition) 
-                       (let ((code (first (last (simple-condition-format-arguments condition)))))
-                         (socket-error condition code
-                              :connect "~A occured while connecting (~?)" (simple-condition-format-arguments condition)))))))))
+  (ecase connect 
+    (:passive
+     (let ((comm::*use_so_reuseaddr* reuse-address))
+       (make-instance 'passive-socket
+                      :port local-port
+                      :passive-socket (%new-passive-socket local-port)
+                      :element-type '(unsigned-byte 8))))
+    (:active
+     (handler-case
+         (let ((stream (comm:open-tcp-stream remote-host remote-port
+                                             :direction :io
+                                             :element-type '(unsigned-byte 8)
+                                             :errorp t)))
+           (change-class stream 'bidirectional-binary-socket-stream))
+       (simple-error (condition) 
+                     (let ((code (first (last (simple-condition-format-arguments condition)))))
+                       (socket-error condition code
+                                     :connect "~A occured while connecting (~?)" (simple-condition-format-arguments condition))))))))
 
 
 (defmethod close ((passive-socket passive-socket) &key abort)

@@ -107,8 +107,9 @@
                 'net.uri:uri)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-(meta:enable-meta-syntax)
+  (meta:enable-meta-syntax))
 
+(eval-when (:compile-toplevel :execute)
 (deftype alpha-char () '(and character (satisfies alpha-char-p)))
 (deftype reserved-char () '(member #\; #\/ #\? #\: #\@ #\& #\= #\+ #\$ #\,))
 (deftype alpha-num () '(and character (satisfies alphanumericp)))
@@ -118,7 +119,9 @@
 (deftype scheme-char () '(or alpha-num (member #\+ #\- #\.)))
 (deftype authority-char () '(or unreserved-char escaped-char (member #\; #\: #\@ #\& #\= #\+ #\$ #\,)))
 (deftype path-char () '(or authority-char (member #\/)))
-(deftype uri-char () '(or unreserved-char reserved-char escaped-char)))
+(deftype uri-char () '(or unreserved-char reserved-char escaped-char))
+(deftype query-char () '(and uri-char (not (eql #\#))))
+(deftype fragment-char () '(and uri-char (not (eql #\?)))))
 
 (defun %meta-parse-uri (str)
   (let (last-result)
@@ -141,17 +144,23 @@
                     (or (meta:match [$[@(path-char c) !(vector-push-extend c result)]
                                       !(setf last-result result)])
                         (progn (setf meta::index old-index) nil)))
-              (query/fragment (&aux (old-index meta::index) c
+              (query (&aux (old-index meta::index) c
                            (result (make-result)))
-                     (or (meta:match [$[@(uri-char c) !(vector-push-extend c result)]
+                     (or (meta:match [$[@(query-char c) !(vector-push-extend c result)]
+                                       !(setf last-result result)])
+                         (progn (setf meta::index old-index) nil)))
+              (fragment (&aux (old-index meta::index) c
+                           (result (make-result)))
+                     (or (meta:match [$[@(fragment-char c) !(vector-push-extend c result)]
                                        !(setf last-result result)])
                          (progn (setf meta::index old-index) nil)))
               (uri (&aux scheme authority path query fragment)
                       (and (meta:match [{[!(scheme) !(setf scheme last-result)] []}
                                        {[!(authority) !(setf authority last-result)] []}
                                        {[!(path) !(setf path last-result)] []}
-                                       {[#\? !(query/fragment) !(setf query last-result)] []}
-                                       {[#\# !(query/fragment) !(setf fragment last-result)] []}])
+                                       {[#\? !(query) !(setf query last-result)] []}
+                                       {[#\# !(fragment) !(setf fragment last-result)] []}
+                                       {[#\? !(query) !(setf query last-result)] []}])
                            (values scheme authority path query fragment))))
        (uri)))))
 

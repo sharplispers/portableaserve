@@ -19,7 +19,9 @@
   ;; vanilla cmucl
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
-         (pushnew :gray-streams *features*)))
+         (pushnew :gray-streams *features*))
+  ;; LispWorks (it's already there)
+  #+lispworks (lw:do-nothing))
 
 (defmethod perform ((operation load-op) (component gray-streams))
   ;; Debian cmucl distribution
@@ -28,7 +30,9 @@
   ;; vanilla cmucl
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
-         (pushnew :gray-streams *features*)))
+         (pushnew :gray-streams *features*))
+  ;; LispWorks it's already there
+  #+lispworks (lw:do-nothing))
 
 ;;;; ignore warnings
 ;;;;
@@ -72,22 +76,47 @@ indicate failure."))
 	(:error (error 'compile-failed :component c :operation operation))
 	(:ignore nil)))))
 
+;;;
+;;; This is thought to reduce reader-conditionals in the system definition
+;;;
+(defclass unportable-cl-source-file (cl-source-file) ()
+  (:documentation
+   "This is for files which contain lisp-system dependent code. Until now those
+are marked by a -system postfix but we could later change that to a directory per
+lisp-system"))
+
+(defun lisp-system-shortname ()
+  #+acl :acl #+lispworks :lw #+cmu :cmu #+mcl :mcl #+openmcl :openmcl)
+
+(defmethod component-pathname ((component unportable-cl-source-file))
+  (let ((pathname (call-next-method)))
+    (make-pathname :name (format nil "~A-~A" (pathname-name pathname) 
+                                 (string-downcase (lisp-system-shortname)))
+                   :defaults pathname)))
+
 ;;;; system
 
 (defsystem acl-compat
   :components ((:gray-streams "vendor-gray-streams")
 	       (:file "nregex")
 	       (:file "acl-mp-package")
-	       (:file "acl-mp-cmu"
-		      :depends-on ("acl-mp-package"))
-	       (:file "acl-excl-cmu"
-		      :depends-on ("vendor-gray-streams" "nregex"))
-	       (:file "cmu-read-sequence")
-	       (:file "acl-socket-cmu"
-		      :depends-on ("acl-excl-cmu" "cmu-read-sequence"))
-	       (:file "acl-sys-cmu")
+	       (:unportable-cl-source-file "acl-mp"
+                      :depends-on ("acl-mp-package" "acl-socket"))
+	       (:unportable-cl-source-file "acl-excl"
+		      :depends-on ("gray-stream-package" "nregex"))
+	       #+cmu(:file "cmu-read-sequence")
+	       (:unportable-cl-source-file "acl-socket"
+		      :depends-on ("acl-excl" "chunked-stream-mixin" 
+                                              #+cmu "cmu-read-sequence"))
+	       (:unportable-cl-source-file "acl-sys")
 	       (:file "meta")
 	       (:file "uri"
 		      :depends-on ("meta"))
-	       (:legacy-cl-source-file "chunked"
-		      :depends-on ("acl-excl-cmu"))))
+               (:file "gray-stream-package"
+                :depends-on ("vendor-gray-streams"))
+	       (:legacy-cl-source-file "chunked-stream-mixin"
+		      :depends-on ("acl-excl" "gray-stream-package"))
+               #+nil
+               (:legacy-cl-source-file "md5")
+               #+nil
+               (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5"))))

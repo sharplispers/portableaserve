@@ -121,7 +121,6 @@
   (let ((collected-fds nil))
     (flet ((fd (stream-or-fd)
              (typecase stream-or-fd
-               (stream::os-file-handle-stream (stream::os-file-handle-stream-file-handle stream-or-fd))
                (comm:socket-stream (comm:socket-stream-socket stream-or-fd))
                (socket::passive-socket (socket::socket-os-fd stream-or-fd))
                (fixnum stream-or-fd)))
