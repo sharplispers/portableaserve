@@ -6,7 +6,7 @@ Standards-Version: 3.1.1
 Build-Depends: debhelper
 
 Package: cl-aserve
-Architecture: any
+Architecture: all
 Depends: cmucl (>= 2.5.2), common-lisp-controller (>= 2.4), cl-acl-compat
 Description: Portable Aserve
  Aserve done in a portable fashion
