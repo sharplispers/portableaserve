@@ -138,9 +138,9 @@ lisp-system"))
 	       (:legacy-cl-source-file "chunked-stream-mixin"
 		      :depends-on ("packages" "acl-excl" #+nil "gray-stream-package"))
 
-	       #-(or allegro mcl)
+	       #-(or allegro mcl cmu)
                (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
-	       #-(or allegro mcl)
+	       #-(or allegro mcl cmu)
                (:file "acl-ssl-streams" :depends-on ("packages"))
 
                #+nil
