@@ -1,3 +1,10 @@
+cl-portable-aserve (1.2.27+cvs2003.08.29) unstable; urgency=low
+
+  * New upstream 
+  * Patched to allegroserver 1.2.27 version
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun, 24 Aug 2003 12:18:25 -0600
+
 cl-portable-aserve (1.2.12c+cvs2003.08.17) unstable; urgency=low
 
   * New upstream
