@@ -24,13 +24,14 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: clpage.cl,v 1.4 2004/02/17 12:48:44 rudi Exp $
+;; $Id: clpage.cl,v 1.5 2004/03/16 02:57:02 kevinrosenberg Exp $
 
 
 (eval-when (compile load eval) (require :aserve))
 
 (in-package :net.aserve)
 
+#+ignore
 (defpackage :net.aserve
   (:use :common-lisp :acl-compat.excl :net.html.generator :puri)
   (:export #:clp-directory-entity-processor
@@ -43,6 +44,15 @@
 	   #:request-variable-value
 	   ))
 
+(export '(clp-directory-entity-processor
+	  clp-entity
+	  def-clp-function
+	  emit-clp-entity
+	  find-clp-module
+	  find-clp-module-function
+	  publish-clp
+	  request-variable-value
+	  ))
 
 (defclass clp-entity (entity)
   ;; a clp file

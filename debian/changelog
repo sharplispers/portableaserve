@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.35+cvs.2004.03.15) unstable; urgency=low
+
+  * New upstream
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Mon, 15 Mar 2004 19:53:00 -0700
+
 cl-portable-aserve (1.2.35+cvs.2004.03.05) unstable; urgency=low
 
   * Add dependencies on cl-ppcre and cl-puri (closes:236283)
