@@ -1,3 +1,10 @@
+cl-portable-aserve (1.2.27+cvs2003.11.15b) unstable; urgency=low
+
+  * Add notice to README.Debian about dependencies when compiling
+  on CMUCL (closes:220765)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat, 15 Nov 2003 20:31:55 -0700
+
 cl-portable-aserve (1.2.27+cvs2003.11.15) unstable; urgency=low
 
   * New upstream

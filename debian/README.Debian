@@ -1,7 +1,12 @@
 The Debian Package cl-portable-aserve
 -------------------------------------
 
-Best tested with CMUCL on sid:
+Note: On CMUCL, this package also requires the Debian package
+cmucl-source. However, cmucl-source package is not included as a
+dependency for cl-portable-aserve since cl-portable-aserve can be used
+with other CL implementations which would not require cmucl-source.
+
+Tested with CMUCL on sid:
 	
 $ lisp
 * (require :aserve)
@@ -21,4 +26,4 @@ Other example-files may be found in:
 More info about Portable Aserve may be found on
 http://www.sourceforge.net/projects/portableaserve/
 
- -- Kevin M. Rosenberg <kmr@debian.org>, Sun Jun 15 19:49:30 2003
+ -- Kevin M. Rosenberg <kmr@debian.org>, Sat Nov 15 20:31:04 2003
