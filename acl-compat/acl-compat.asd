@@ -152,7 +152,7 @@ lisp-system"))
 	       (:unportable-cl-source-file "acl-socket"
 		   :depends-on ("packages" "acl-excl"
 					   #-(or mcl allegro) "chunked-stream-mixin"
-                                   #+(and cmu (not common-lisp-controller))
+                                   #+(and cmu (not cmu18d) (not common-lisp-controller))
                                    "cmu-read-sequence"))
 	       (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
 	       (:file "meta")
