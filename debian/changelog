@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.27+cvs2003.11.15) unstable; urgency=low
+
+  * New upstream
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat, 15 Nov 2003 20:19:28 -0700
+
 cl-portable-aserve (1.2.27+cvs2003.09.19) unstable; urgency=low
 
   * New upstream, fix clisp compilation (closes:210759)
