@@ -141,19 +141,19 @@ streams and handled by their close methods."
 
 (defun remote-host (socket-stream)
   (warn "remote-host not implemented!")
-  -1)
+  0)
 
 (defun remote-port (socket-stream)
   (warn "remote-port not implemented!")
-  -1)
+  0)
 
 (defun local-host (socket-stream)
   (warn "local-host not implemented!")
-  -1)
+  0)
 
 (defun local-port (socket-stream)
   (warn "local-port not implemented!")
-  -1)
+  0)
 
 ;; Now, throw chunking in the mix
 

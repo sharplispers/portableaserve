@@ -101,7 +101,7 @@
         #+(or cmu lispworks scl) #:acl-mp
         #+(or lispworks cmu)#:excl
         #+clisp #:socket
-        #+sbcl #:sockets
+        #+sbcl #:sb-bsd-sockets
         #+(or lispworks cmu) #:de.dataheaven.chunked-stream-mixin
         #+cormanlisp #:socket
         )

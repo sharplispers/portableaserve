@@ -1,3 +1,11 @@
+2003-02-28  Rudi Schlatte  <rudi@constantly.at>
+
+	* acl-socket-sbcl.lisp: 
+	(remote-host, remote-port, local-host, local-port): Change return
+	value to something convertible to an (invalid) inet address
+
+	* acl-compat.asd, packages.lisp: Support sbcl 0.7.13 single-threaded
+
 2002-12-26  Rudi Schlatte  <rudi@constantly.at>
 
 	* lw-buffering.lisp (write-elements): end argument value can be

@@ -153,7 +153,7 @@ lisp-system"))
                #+nil
 	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
   #+sbcl :depends-on
-  #+sbcl (:db-sockets)
+  #+sbcl (:sb-bsd-sockets)
   #+(or ;;(and cmu common-lisp-controller (not gray-streams))
      (and lispworks ssl-available))
   :depends-on
