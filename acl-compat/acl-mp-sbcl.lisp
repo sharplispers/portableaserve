@@ -64,7 +64,7 @@
   (let ((c (gensym "TIMEOUT-")))
     `(handler-case
       (sb-unix::with-timeout ,seconds (progn ,@body))
-      (sb-kernel::timeout (,c) (locally (declare (ignore ,c)),@timeout-forms)))))
+      (sb-kernel::timeout (,c) ,@timeout-forms))))
 
 
 #+sb-thread
