@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.11 2003/03/24 13:39:18 rudi Exp $
+;; $Id: client.cl,v 1.12 2003/06/12 03:11:43 desoi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -448,6 +448,7 @@ or \"foo.com:8000\", not ~s" proxy))
        then (typecase content
 	      ((array character (*)) nil)
 	      ((array (unsigned-byte 8) (*)) nil)
+              ((array base-char (*)) nil) ;added for paserve - in some lisps (e.g. mcl) strings are not character arrays
 	      (t (error "Illegal content array: ~s" content)))
 	    
 	    (setq content-length (length content)))
