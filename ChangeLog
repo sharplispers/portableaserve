@@ -1,3 +1,7 @@
+2003-12-02  Rudi Schlatte  <rudi@constantly.at>
+
+	* Update to upstream version 1.2.33
+
 2003-12-01  Rudi Schlatte  <rudi@constantly.at>
 
 	* aserve/log.cl (log-request): Don't output request string via format.

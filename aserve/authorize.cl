@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: authorize.cl,v 1.5 2003/08/24 12:35:00 rudi Exp $
+;; $Id: authorize.cl,v 1.6 2003/12/02 14:20:40 rudi Exp $
 
 ;; Description:
 ;;   classes and functions for authorizing access to entities
@@ -71,12 +71,22 @@
 		 then (return-from authorize t))))
 
     ;; valid name/password not given, ask for it 
-    (with-http-response (req ent :response 
-			     *response-unauthorized*)
-      (setf (request-reply-content-length req) 0)
+    (with-http-response (req *dummy-computed-entity* 
+			     :response *response-unauthorized*
+			     :format :text)
       (set-basic-authorization req
 			       (password-authorizer-realm auth))
-      (with-http-body (req ent)))
+      
+      ; this is done to preventing a chunking response which
+      ; confuse the proxy (for now)..
+      (if* (member ':use-socket-stream (request-reply-strategy req))
+	 then (setf (request-reply-strategy req)
+		'(:string-output-stream
+		  :post-headers)))
+
+      (with-http-body (req *dummy-computed-entity*)
+	(html (:html (:body (:h1 "Access is not authorized"))))
+	))
     :done))
 	    
 	    

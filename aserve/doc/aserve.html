@@ -8,9 +8,9 @@
 <body>
 
 <h1 align="center">AllegroServe - A Web Application Server<br>
-<small><small><small>version <font face="Courier New">1.2.23</font></small></small></small></h1>
+<small><small><small>version <font face="Courier New">1.2.32</font></small></small></small></h1>
 
-<p align="left"><strong><small>copyright(c) 2000-2001. Franz Inc</small></strong></p>
+<p align="left"><strong><small>copyright(c) 2000-2003. Franz Inc</small></strong></p>
 
 <h2 align="left">Table of Contents</h2>
 
@@ -22,7 +22,11 @@
 <font face="Courier New">&nbsp; <a href="#f-shutdown">shutdown</a></font><br>
 <a href="#publishing-information">Publishing Information</a><br>
 <font face="Courier New">&nbsp; <a href="#f-publish-file">publish-file</a><br>
+&nbsp;&nbsp;&nbsp; </font><a href="#entity-hook-function">Entity hook function</a><font
+face="Courier New"><br>
 &nbsp; <a href="#f-publish-directory">publish-directory</a><br>
+&nbsp;&nbsp; </font>&nbsp; <a href="#directory-access-files">Directory Access Files</a><font
+face="Courier New"><br>
 &nbsp; <a href="#f-publish">publish</a></font><br>
 &nbsp;&nbsp;&nbsp;&nbsp; <font face="Courier New"><a href="#f-publish-prefix">publish-prefix</a></font><br>
 &nbsp;&nbsp;&nbsp;&nbsp; <a href="#f-publish-multi"><font face="Courier New">publish-multi</font></a><br>
@@ -161,7 +165,9 @@ server running.</p>
 <p><strong><font face="Courier New"><a name="f-start"></a>(start &amp;key port host
 listeners chunking keep-alive server setuid setgid <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; debug proxy proxy-proxy
-cache restore-cache accept-hook ssl os-processes external-format)</font></strong></p>
+cache restore-cache accept-hook ssl ssl-password<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; os-processes
+external-format)</font></strong></p>
 
 <p>If no arguments are given then <strong>start</strong>&nbsp; starts a multi-threaded web
 server on port 80, which is the standard web server port.&nbsp;&nbsp;&nbsp; If you are
@@ -242,6 +248,8 @@ only need be concerned with <strong>:port</strong> and <strong>:listeners.
     than 80).&nbsp; This makes use of the <strong>accept-hook</strong> argument so if <strong>ssl</strong>
     is specified then <strong>accept-hook</strong> should not be specified.&nbsp;&nbsp; ssl is
     supported only in certain versions of Allegro CL.</li>
+  <li>ssl-password - if the private key in the PEM encoded file referenced by the <strong>ssl</strong>
+    argument is encrypted, then this is the key to decrypt it.</li>
   <li>os-processes - if given it should be an integer number of operating system processes in
     which to run AllegroServe.&nbsp; This is available on Unix only at the moment.&nbsp; The
     AllegroServes in different processes do <strong>not</strong> share a common Lisp heap..
@@ -323,7 +331,7 @@ an entity assigned, the old entity is replaced by the new entity.</p>
 <p><a name="f-publish-file"></a><strong><font face="Courier New">(publish-file &amp;key
 path host port&nbsp; file content-type class preload cache-p remove <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-authorizer server timeout plist)</font></strong></p>
+authorizer server timeout plist hook)</font></strong></p>
 
 <p>This creates an entity that will return the contents of a file on the disk in response
 to a request.&nbsp;&nbsp; The <strong>url</strong> and <strong>file</strong>&nbsp; must be
@@ -375,6 +383,8 @@ given, the rest of the arguments are optional..&nbsp; The arguments have these m
     argument is <strong>nil</strong> meaning ignore this value and use the timeout value held
     in the server object and retrieved with<strong> wserver-response-timeout</strong>..</li>
   <li><strong>plist</strong> - initial property list for this entity</li>
+  <li><strong>hook</strong> - a function of three arguments: req,ent and extra. &nbsp;&nbsp;
+    See <a href="#entity-hook-function">entity hook function</a>.</li>
 </ul>
 
 <p>The function that handles requests for files will respond correctly to <strong>If-Modified-Since</strong>
@@ -386,6 +396,41 @@ header lines and thus minimizes network traffic. </p>
 
 <pre>(publish-file :path &quot;/password&quot; :file &quot;/etc/passwd&quot; :content-type &quot;text/plain&quot;)</pre>
 
+<h3><a name="entity-hook-function"></a>Entity Hook Function</h3>
+
+<p>AllegroServe supplies many subclasses of entity which automatically generate a
+responses to requests.&nbsp;&nbsp;&nbsp;&nbsp; There are times when user code needs to run
+during the generation of&nbsp; a response by one of the built-in entity classes.
+&nbsp;&nbsp; For example you may wish to add or modify the headers that will be sent back
+with the <strong>publish-file</strong>'s response.&nbsp;&nbsp;&nbsp; The entity hook
+function is called just before the<strong> with-http-body</strong> in the response
+function.&nbsp; At this point all the response headers have been specified but the hook
+function is free to change them or add new headers.</p>
+
+<p>The entity hook function takes three arguments: <strong>req</strong>, <strong>ent</strong>
+and <strong>extra</strong>.&nbsp;&nbsp; <strong>Req</strong> and <strong>ent</strong> are
+the familiar http-request and entity arguments.&nbsp;&nbsp; <strong>Extra</strong> is
+usually <strong>nil</strong> but will be one of the following symbols to tell&nbsp; the
+hook function if it's being called in a special context.</p>
+
+<table border="1" width="100%">
+  <tr>
+    <td width="21%"><strong>:illegal-range</strong></td>
+    <td width="79%">request has asked for a range of bytes that is not present in the entity.
+    &nbsp; As a result a &quot;416 - Illegal Range Specified&quot;&nbsp; response is being
+    generated.</td>
+  </tr>
+  <tr>
+    <td width="21%"><strong>:in-range</strong></td>
+    <td width="79%">request has asked for a range of bytes and that range is being returned.</td>
+  </tr>
+  <tr>
+    <td width="21%"><strong>:not-modified</strong></td>
+    <td width="79%">request contains an &quot;If Not Modified&quot; header and AllegroServe is
+    returning a &quot;304 - Not Modified&quot; response.</td>
+  </tr>
+</table>
+
 <p>&nbsp;</p>
 
 <p>&nbsp;</p>
@@ -393,7 +438,9 @@ header lines and thus minimizes network traffic. </p>
 <p><a name="f-publish-directory"></a><strong><font face="Courier New">(publish-directory
 &amp;key prefix host port destination remove authorizer server <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-indexes filter timeout plist publisher access-file)</font></strong></p>
+indexes filter timeout plist publisher access-file<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+hook)</font></strong></p>
 
 <p><strong>publish-directory</strong> is used to publish a complete directory tree of
 files.&nbsp; This is similar to how web servers such as Apache publish files. &nbsp;
@@ -403,13 +450,14 @@ created and published.&nbsp; </p>
 
 <p><strong>publish-directory</strong> creates a mapping from all urls whose name begins
 with<strong> prefix</strong> to files stored in the directory specified by the <strong>destination</strong>.&nbsp;&nbsp;
-The <strong>host</strong>, <strong>port, remove, authorizer, plist </strong>and <strong>server</strong>
-arguments are as described above for <strong>publish.</strong> &nbsp;&nbsp;&nbsp;&nbsp;
-The <strong>timeout</strong> argument defaults as described in <strong>publish-file</strong>.
-&nbsp; The <strong>access-file</strong> argument names the <a
-href="#directory-access-files">access file</a> name which will be used in this directory
-tree. When a request comes in for which there isn't an entity that matches it
-exactly,&nbsp; AllegroServe checks to see if a prefix of the request has been
+The <strong>host</strong>, <strong>port, remove, authorizer, plist, hook </strong>and <strong>server</strong>
+arguments are as described above for <strong>publish-file.</strong>
+&nbsp;&nbsp;&nbsp;&nbsp; The <strong>timeout</strong> argument defaults as described in <strong>publish-file</strong>.
+&nbsp;The <strong>hook</strong> argument specifies what hook function should be put in the
+entities that <strong>publish-directory</strong> creates.&nbsp;&nbsp; The <strong>access-file</strong>
+argument names the <a href="#directory-access-files">access file</a> name which will be
+used in this directory tree. When a request comes in for which there isn't an entity that
+matches it exactly,&nbsp; AllegroServe checks to see if a prefix of the request has been
 registered.&nbsp; If so, and if the resulting entity is a <strong>directory-entity</strong>
 as created by this function, then it strips the prefix off the given request and appends
 the remaining part of the request to the destination string.&nbsp; It then publishes that
@@ -452,6 +500,25 @@ The filename is a string naming the file that's been matched with the request.&n
 for this file.&nbsp; The <strong>publisher</strong> function must return an entity to be
 processed to send back a response.&nbsp;&nbsp; The <strong>publisher</strong> function may
 wish to publish that entity but it need not do so.</p>
+<div align="center"><center>
+
+<table border="1" width="86%" cellpadding="5">
+  <tr>
+    <td width="100%">Note:&nbsp; <strong>publish-directory</strong> is a more general function
+    than its name implies.&nbsp;&nbsp;&nbsp; It looks at each url path for a match for <strong>prefix
+    </strong>and if such a match is found the <strong>prefix</strong> is removed and replaced
+    with <strong>destination</strong>.&nbsp;&nbsp; Thus is prefix is <strong>&quot;/foo&quot;</strong>
+    and destination is <strong>&quot;/bar&quot;</strong> then a url path of&nbsp; <strong>&quot;/foobaz/joe.html&quot;
+    </strong>would be converted to <strong>&quot;/barbaz/joe.html&quot;.</strong>
+    &nbsp;&nbsp;&nbsp; This is rarely useful but it does show that you have to be careful
+    about the prefix and destination strings.&nbsp; It's usually the case that if the prefix
+    string ends in <strong>&quot;/&quot;</strong> then the destination string should end in <strong>&quot;/&quot;</strong>
+    (and vice versa).&nbsp; Thus a prefix of <strong>&quot;/foo&quot;</strong> would have a
+    destination of <strong>&quot;/bar&quot; </strong>and a prefix of <strong>&quot;/foo/&quot;</strong>
+    would have a destination of <strong>&quot;/bar/&quot;</strong>.&nbsp; </td>
+  </tr>
+</table>
+</center></div>
 
 <p>&nbsp;</p>
 
@@ -635,19 +702,21 @@ to subdirectories<br>
 <p>&nbsp;</p>
 
 <p><a name="f-publish"></a><strong><font face="Courier New">(publish &amp;key path host
-port content-type function class format remove server authorizer timeout plist)</font></strong></p>
+port content-type function class format remove server authorizer timeout plist hook)</font></strong></p>
 
 <p>This creates a mapping from a url to a <strong>computed-entity</strong>, that is an
 entity that computes its response every time a request comes in.&nbsp; The <strong>path</strong>,
-<strong>host</strong>, <strong>port</strong>, <strong>remove, server</strong> , <strong>authorizer
-</strong>and <strong>class</strong> arguments are as in the other publish
+<strong>host</strong>, <strong>port</strong>, <strong>remove, server</strong> , <strong>authorizer,
+hook </strong>and <strong>class</strong> arguments are as in the other publish
 functions.&nbsp;&nbsp;The <strong>timeout</strong> argument defaults to <strong>nil </strong>always.&nbsp;&nbsp;
 The <strong>content-type</strong> sets a default value for the response to the request but
 this can be overridden.&nbsp; The <strong>format</strong> argument is either <strong>:text
 </strong>(the default) or <strong>:binary</strong> and it specifies the kind of value that
 will be sent back (after the response headers, which are always in text).&nbsp;&nbsp; This
 value is only important if the response is generated in a particular way (described
-below).</p>
+below).&nbsp;&nbsp; The value of the<strong> hook</strong> argument is stored in the
+entity created however the hook function will only be run if the <strong>function</strong>
+supplied makes use of it.</p>
 
 <p>The <strong>function </strong>argument is&nbsp; a function of two arguments: an object
 of class <strong>http-request</strong> that holds a description of the request, and an
@@ -660,7 +729,7 @@ the response is only that the request wasn't found.</p>
 <p><a name="f-publish"></a><a name="f-publish-prefix"></a><strong><font face="Courier New">(publish-prefix
 &amp;key prefix host port content-type function class <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-format remove server authorizer timeout plist)</font></strong></p>
+format remove server authorizer timeout plist hook)</font></strong></p>
 
 <p>This is like <strong>publish </strong>except that it declares <strong>function</strong>
 to be the handler for all urls that begin with the string <strong>prefix</strong>.
@@ -671,19 +740,21 @@ handler for &quot;/foo/bar.html&quot; then the specific handler will be chosen i
 handler is used to make available a whole directory of files since their complete names
 being with a common prefix (namely the directory in which the files are located).
 &nbsp;&nbsp; If you want to publish a whole directory then you probably want to use <strong>publish-directory</strong>
-since it has a number of features to support file publishing.</p>
+since it has a number of features to support file publishing.&nbsp;&nbsp; The value of the<strong>
+hook</strong> argument is stored in the entity created however the hook function will only
+be run if the <strong>function</strong> supplied makes use of it.</p>
 
 <p>&nbsp;</p>
 
 <p><a name="f-publish-multi"></a><strong><font face="Courier New">(publish-multi &amp;key
-path host port content-type items class remove server authorizer timeout)</font></strong></p>
+path host port content-type items class remove server authorizer timeout hook)</font></strong></p>
 
 <p>Some web pages are created from information from various sources.&nbsp;&nbsp; <strong>publish-multi</strong>
 allows you to specify a sequence of places that supply data for the combined web page.
 &nbsp; The data for each page is cached by <strong>publish-multi</strong> so that minimal
-conputation is required each time the page is requested.&nbsp;&nbsp;&nbsp; </p>
+computation is required each time the page is requested.&nbsp;&nbsp;&nbsp; </p>
 
-<p>The <strong>host, port, content-type, class, remove, server authorizer </strong>and<strong>
+<p>The <strong>host, port, content-type, class, remove, server, authorizer, hook </strong>and<strong>
 timeout</strong> arguments are the same as those of the other publish functions.
 &nbsp;&nbsp; The <strong>items </strong>argument is unique to <strong>publish-multi</strong>
 and is a list of zero or more of the following objects 
@@ -848,7 +919,13 @@ responsibility of the code supplied as the <strong>body </strong>form of the mac
 &nbsp;&nbsp;&nbsp; In cases where there is no body to the response being sent it is still
 necessary to call <strong>with-http-body </strong>so that the other parts of the response
 are sent out, e.g.<font face="Courier New"> </font>at a minimum you should put<font
-face="Courier New"> (with-http-body (req ent)) </font>in the body of a with-http-response</p>
+face="Courier New"> (with-http-body (req ent)) </font>in the body of a with-http-response.</p>
+
+<p align="left"><em>The <strong>body </strong>forms may not be executed! </em>If the
+request is an http <strong>head</strong> request then the browser wants only the headers
+returned.&nbsp;&nbsp; The <strong>with-http-body </strong>macro will not evaulate the <strong>body</strong>
+forms.&nbsp;&nbsp; You must be aware of this and should never put code in the <strong>body
+</strong>form that absolutely must be executed when a request is given.</p>
 
 <p align="left">The <strong>headers</strong> argument is a list of conses, where the car
 is the header name (a keyword symbol) and the cdr is the header value.&nbsp; These headers
@@ -871,13 +948,20 @@ have an effect on the stream created.</em></p>
 <hr>
 
 <p><a name="f-get-request-body"></a><strong><font face="Courier New">(get-request-body
-request)</font></strong></p>
+request &amp;key external-format)</font></strong></p>
 
 <p>Return the body of the request as a string.&nbsp; If there is no body the return value
 will be an empty string.&nbsp;&nbsp; The result is cached inside the request object, so
 this function can be called more than once while processing a request.&nbsp;&nbsp; The
 typical reason for there to be a body to a request is when a web browser sends the result
-of a form with&nbsp; a POST method.</p>
+of a form with&nbsp; a POST method.&nbsp;&nbsp; The octets that make up the body of the
+request are converted to a string (and then cached) using the <strong>:octets</strong>
+external format as this is the appropriate external format if the request body contains a
+list of form values.</p>
+
+<p>If an <strong>external-format</strong> is specified the body is reconverted to a string
+using the given external-format and then returned from this function.&nbsp;&nbsp; This
+reconversion does not affect the cached value.</p>
 
 <hr>
 
@@ -1433,11 +1517,15 @@ user(8): <strong>(coerce
 <p>You may want to restrict certain entities to be accessible from only certain machines
 or people.&nbsp;&nbsp; You can put the test for authorization in the entity response
 function using one of the following functions, or you can have the check done
-automatically by storing an <strong>authorizer</strong> object in the entity.</p>
+automatically by storing a list of <strong>authorizer</strong> objects in the entity.</p>
 
 <p>&nbsp;</p>
 
 <h3>functions</h3>
+
+<p>These two functions&nbsp; invoke and process the <em>Basic</em> Authorization Method
+&nbsp; defined by the http specification.&nbsp;&nbsp;&nbsp; The <strong>password-authorizer</strong>
+class described below make use of these functions.</p>
 
 <p><a name="f-get-basic-authorization"></a><strong><font face="Courier New">(get-basic-authorization
 request)</font></strong></p>
@@ -1482,22 +1570,28 @@ and the password is <strong>bar</strong>.</p>
 
 <h3>authorizer classes</h3>
 
-<p>If an entity has an associated <strong>authorizer</strong> object, then before that
-entity's response function is run the authorizer is tested to see if&nbsp; it will accept
-or deny the current request.&nbsp;&nbsp;&nbsp; AllegroServe supplies three &nbsp;
+<p>The authorizer slot of an entity object can contain a <strong>authorizer</strong>
+object or a list of zero or more <strong>authorizer</strong> objects.&nbsp; When a request
+arrives for this entity the <strong>authorizer</strong> objects are consulted to see if
+this request should be permitted.&nbsp;&nbsp; In order for the request to be permitted, <em>all</em>
+authorizer objects must permit the request.&nbsp; AllegroServe supplies three &nbsp;
 interesting subclasses of <strong>authorizer</strong> and users are free to add their own
 subclasses to support their own authorization needs.&nbsp;&nbsp; </p>
 
 <p>The protocol followed during authorization is this: 
 
 <ol>
-  <li>an entity object is selected that matches the request</li>
-  <li>if the entity object's authorizer slot is <strong>nil</strong> then it is considered
+  <li>an entity object is selected that matches the request.&nbsp; The value of the entity's
+    authorizer slot is retrieved from the entity object.</li>
+  <li>if the list of pending authorizer objects is <strong>nil</strong> then it is considered
     authorized.</li>
-  <li>otherwise the <strong>authorize</strong> generic function is called, passing it the
-    authorization object, the http-request object and the entity object</li>
+  <li>otherwise the <strong>authorize</strong> generic function is called on the first <strong>authorizer</strong>
+    object, passing <strong>authorize</strong> the <strong>authorizer</strong> object, the
+    http-request object and the entity object</li>
   <li>the return value from <strong>authorize </strong>can be&nbsp; <br>
-    <strong>t </strong>- meaning this request is authorized to access this entity<br>
+    <strong>t </strong>- meaning this request is authorized to access this entity.&nbsp; In
+    this case the first authorizer object is popped from the list of pending authorizer
+    objects and we go back to step 2.<br>
     <strong>nil - </strong>meaning that this request isn't authorized.&nbsp; The response from
     AllegroServe will be the standard &quot;failed request&quot; response so the user won't be
     able to distinguish this response from one that would be received if the entity didn't
@@ -1515,7 +1609,7 @@ subclasses to support their own authorization needs.&nbsp;&nbsp; </p>
 <p><a name="c-password-authorizer"></a><strong>password-authorizer</strong>&nbsp; [class]</p>
 
 <p>This subclass of <strong>authorizer</strong> is useful if you want to protect an entity
-using the basic authorization scheme that asks for a name and a password.
+using the Basic authorization scheme that asks for a name and a password.
 &nbsp;&nbsp;&nbsp; When you create this class of object you should supply values for the
 two slots:</p>
 
@@ -1706,8 +1800,8 @@ which this request was sent.&nbsp; If you wish to specify this you are only allo
 specify a subsequence of the host to which this request was sent (i.e the name of the
 machine running the webserver).&nbsp;&nbsp; The <strong>domain</strong> should have at
 least two periods in it (i.e.&nbsp; &quot;.foo.com&quot;).<br>
-<strong>expiration</strong> can be a lisp universal time or it can be the symbol <strong>:never</strong>
-meaning this should never expire.&nbsp; If <strong>expiration </strong>isn't given or is <strong>nil</strong>
+<strong>expires</strong> can be a lisp universal time or it can be the symbol <strong>:never</strong>
+meaning this should never expire.&nbsp; If <strong>expires </strong>isn't given or is <strong>nil</strong>
 then this cookie will expire when the user quits their web browser.<br>
 <strong>secure</strong> should be true or false.&nbsp; Any non-nil value is interpreted as
 true. The default value is false.<br>
@@ -1968,8 +2062,8 @@ skip-body)</font></strong></p>
     <td width="62%">If the method is <strong>:put</strong> or<strong> :post</strong> then the
     request should include something to be sent to the web server.&nbsp;&nbsp; The value of
     this argument is either a string or a vector of type (unsigned-byte 8) which will be sent
-    to the web server.&nbsp; See the <strong>query</strong> argument for a more convenient way
-    to <strong>:post</strong> data to a form.</td>
+    to the web server.&nbsp;&nbsp; It may also be a list of strings or vectors. See the <strong>query</strong>
+    argument for a more convenient way to <strong>:post</strong> data to a form.</td>
   </tr>
   <tr>
     <td width="22%">content-type</td>
@@ -2336,7 +2430,7 @@ returns the resources used by this connection to the operating system.&nbsp; </p
 <p><a name="f-uriencode-string"></a>(<strong><font face="Courier New">uriencode-string&nbsp;
 string &amp;key external-format)</font></strong></p>
 
-<p>Convert the string into a format that would be save to use as a component of a url.
+<p>Convert the string into a format that would be safe to use as a component of a url.
 &nbsp;&nbsp;&nbsp; In this conversion most printing characters are not changed
 &nbsp;&nbsp; All non printing characters and printing characters that could be confused
 with characters that separate fields in a url are encoded a %xy where xy is the
@@ -2556,8 +2650,8 @@ read on.</p>
   </tr>
   <tr>
     <td width="26%">vhost-error-stream</td>
-    <td width="57%">Unused by AllegroServe but applications may wish to store here a stream to
-    which to write a log of errors</td>
+    <td width="57%">Stream to which AllegroServe sends informational and error messages that
+    are generated during request processing.</td>
     <td width="17%"><strong>:error-stream</strong></td>
   </tr>
   <tr>

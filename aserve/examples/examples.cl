@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: examples.cl,v 1.5 2002/12/03 16:34:07 rudi Exp $
+;; $Id: examples.cl,v 1.6 2003/12/02 14:20:39 rudi Exp $
 
 ;; Description:
 ;;   Allegro iServe examples
@@ -43,7 +43,7 @@
 ;; example files this is bad news.
 ; (unpublish :all t)
 
-(defparameter *example-pathname* *load-truename*) ; where this file is
+(defparameter *example-pathname* *load-pathname*) ; where this file is
 (defmacro example-file (name)
     ;; create an absolute address for this file we'll load
     `(merge-pathnames ,name *example-pathname*))
@@ -55,6 +55,7 @@
 	 :content-type "text/html"
 	 :function
 	 #'(lambda (req ent)
+	     ;(print (net.aserve::compute-request-headers req))
 	     (with-http-response (req ent)
 	       (with-http-body (req ent)
 		 (html
@@ -142,9 +143,15 @@
 				  :br
 				  ;; published in urian.cl
 				  ((:a :href "urian")
-				   "International Web Page Character Finder")))
+				   "International Web Page Character Finder")
+				  :br
+				  ;; published in locale.cl
+				  ((:a :href "locale")
+				   "Locale Demo")
+				  :br
+				  ))
 			 
-			 #+(and unix (and allegro (version>= 6 1)))
+			 #+(and unix allegro (version>= 6 1))
 			 (html
 			  "cgi tests: " 
 			  ((:a :href "cgi0") "show environment")
@@ -355,7 +362,6 @@
  :content-type "text/html"
  :function
  #'(lambda (req ent)
-     
      (let ((lookup (assoc "symbol" (request-query req) :test #'equal)))
        (with-http-response (req ent)
 	 (with-http-body (req ent)
@@ -464,7 +470,10 @@
 						*response-unauthorized*)
 			 (set-basic-authorization req
 						   "secretserver")
-			 (with-http-body (req ent)))))))
+			 (with-http-body (req ent)
+			   (html (:h1 "You Failed")
+				 "You failed to enter the correct name/password")
+			   ))))))
 
 
 (publish :path "/local-secret"
@@ -667,7 +676,6 @@
 	 :content-type "text/html; charset=utf-8"
 	 :function
 	 #'(lambda (req ent)
-	     
 	     (with-http-response (req ent)
 	       (let ((files-written)
 		     (text-strings)
@@ -868,8 +876,7 @@
 ;; existing tree of pages on your machine if you want to see this work.
 
 ;; the franz home page
-#+ignore
-(publish-directory :prefix "/"
+#+ignore (publish-directory :prefix "/"
 		   :destination "/net/tanya/home/httpd/html/"
 		   )
 

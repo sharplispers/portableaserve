@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.11 2003/08/24 12:35:00 rudi Exp $
+;; $Id: proxy.cl,v 1.12 2003/12/02 14:20:40 rudi Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -371,7 +371,8 @@
 	 (state :pre-send)
 	 (keep-alive)
 	 (cached-connection)
-	 (phostport (and ent (entity-extra ent))))
+	 (phostport (and ent (entity-extra ent)))
+	 (otherheaders))
 
     (if* phostport
        then ; we're proxying to a proxy. yikes
@@ -450,6 +451,10 @@ cached connection = ~s~%" cond cached-connection))
 				      then (format nil "~a:~d"
 						   host port)
 				      else host)))
+	    (dolist (header (request-headers req))
+	      
+	      (insert-non-standard-header outbuf (car header) (cdr header)))
+	    
 	    (setq outend (add-trailing-crlf outbuf 1))
 
 	    (if-debug-action :xmit
@@ -663,7 +668,8 @@ cached connection = ~s~%" cond cached-connection))
 	      (setf (request-reply-code req) 
 		(code-to-response response)) ; for the logging
 	    
-	      (parse-header-block outbuf header-start outend)
+	      (setq otherheaders
+		(parse-header-block outbuf header-start outend))
 	    
 	      ; Get the body of the message if any.
 	      ; there is never a response  to a :head request although the header
@@ -730,6 +736,9 @@ cached connection = ~s~%" cond cached-connection))
     
 	      ; transfer-encoding - 
 	      ; we won't chunk back since we know the content length
+	      
+	      (dolist (header otherheaders)
+		(insert-non-standard-header clibuf (car header) (cdr header)))
 
 	      (setq cliend (add-trailing-crlf clibuf 2))
 

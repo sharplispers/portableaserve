@@ -1,10 +1,18 @@
 ;; load in aserve
 ;;
-;; $Id: load.cl,v 1.3 2002/12/03 14:44:38 rudi Exp $
+;; $Id: load.cl,v 1.4 2003/12/02 14:20:40 rudi Exp $
 ;;
 
+;
+; loading this file will compile and load AllegroServe and Webactions
+;
+; calling (make-aserve.fasl) will build
+;   aserve.fasl  - just allegroserve
+;   webactions/webactions.fasl  - just webactions 
+;
+
 (defvar *loadswitch* :compile-if-needed)
-(defparameter *aserve-root* (directory-namestring *load-truename*))
+(defparameter *aserve-root* (directory-namestring *load-pathname*))
 
 (defparameter *aserve-files* 
     ;; this list is in cl/src/sys/make.cl as well... keep in sync
@@ -37,10 +45,12 @@
       "examples/prfile9.jpg"
       "examples/tutorial.cl"
       "examples/aservelogo.gif"
+      "examples/aservepowered.gif"
       "examples/chat.cl"
       "examples/file2000.txt"
       "examples/puzzle.cl"
       "examples/urian.cl"
+      "examples/locale.cl"
       "load.cl"
       "test/t-aserve.cl"
       "test/server.pem"
@@ -68,22 +78,53 @@
     '("examples/examples"
       "examples/puzzle"
       "examples/urian"
+      "examples/locale"
       ))
 
 (defparameter *aserve-international-only*
     ;; files that should only be loaded into a international lisp
     '("examples/puzzle"
       "examples/urian"
+      "examples/locale"
       ))
 
 
+
+(defparameter *webactions-files*
+    ;; this list of source files that are compiled to make 
+    ;; webactions
+    '("webactions/clpage"
+      "webactions/webact"
+      "webactions/websession"
+      
+      "webactions/clpcode/clp"
+      "webactions/clpcode/wa"
+      "webactions/clpcode/http"
+      "webactions/clpcode/time"))
+
+(defparameter *webactions-other-files*
+    ;; other files to distribute with a source distribution
+    '("webactions/load.cl"
+      "webactions/doc/using-webactions.html"
+      "webactions/doc/webactions.html"
+      "webactions/test/t-webactions.cl"
+      "webactions/test/sitea/project.cl"
+      "webactions/test/sitea/file1.clp"
+      "webactions/test/sitea/file2.clp"
+      "webactions/test/sitea/file3.clp"))
+      
+
+    
 ;; end experimental
 
-(require :sock)  ; so we can tell if we have hiper sockets
+(eval-when (compile eval load)
+  (require :sock) ;; so we can tell if we have hiper sockets
+  )
 ;(setq *features* (delete :hiper-socket *features*))
 
 (with-compilation-unit  nil
-  (dolist (file (append *aserve-files* *aserve-examples*))
+  (dolist (file (append *aserve-files* *aserve-examples*
+			*webactions-files*))
     #+allegro-cl-lite
     (progn
       ;; aServe doesn't work very well under 5.0.1 Lite due to
@@ -91,9 +132,9 @@
       ;; not the lite version
       (if* (equal file "examples/examples")
 	 then (load (merge-pathnames (format nil "~a.cl" file)
-				     *load-truename*))
+				     *load-pathname*))
 	 else (excl:load-compiled (merge-pathnames (format nil "~a.cl" file)
-						   *load-truename*)))
+						   *load-pathname*)))
       (gc t) ; must compact to keep under the heap limit
       )
     #-allegro-cl-lite
@@ -102,14 +143,14 @@
        then (progn (case *loadswitch*
 		     (:compile-if-needed (compile-file-if-needed 
 					  (merge-pathnames (format nil "~a.cl" file)
-							   *load-truename*)))
+							   *load-pathname*)))
 		     (:compile (compile-file 
 				(merge-pathnames (format nil "~a.cl" file)
-						 *load-truename*)))
+						 *load-pathname*)))
 		     (:load nil))
 		   (load (merge-pathnames 
 			  (format nil "~a.fasl" file)
-			  *load-truename*))))))
+			  *load-pathname*))))))
 
 
 
@@ -153,27 +194,9 @@
 
 (defun make-distribution ()
   ;; make a distributable version of aserve
-  (run-shell-command 
-   (format nil "rm -fr ~aaserve-dist" *aserve-root*)
-   :show-window :hide
-   )
-   
-  (run-shell-command 
-   (format nil "mkdir ~aaserve-dist ~aaserve-dist/doc ~aaserve-dist/examples ~aaserve-dist/test"
-	   *aserve-root*
-	   *aserve-root*
-	   *aserve-root*
-	   *aserve-root*
-	   )
-   :show-window :hide)
-  
-  (run-shell-command 
-   (format nil "mkdir ~aaserve-dist/test/testdir ~aaserve-dist/test/testdir/suba ~aaserve-dist/test/testdir/subb"
-	   *aserve-root*
-	   *aserve-root*
-	   *aserve-root*
-	   )
-   :show-window :hide)
+
+  (run-shell-command (format nil "rm -fr ~aaserve-dist" *aserve-root*)
+		     :show-window :hide)
    
   (copy-files-to *aserve-files* "aserve.fasl" :root *aserve-root*)
   
@@ -201,7 +224,8 @@
 ;;    be no warnings.
 ;; 4. start the server (net.aserve:start :port 8000) 
 ;;	and run through the samples from Netscape and IE
-;; 5. :cl test/t-aserve
+;; 5a. :cl test/t-aserve
+;; 5b: :cl webactions/test/t-webactions
 ;; 6. (make-src-distribution)
 ;; 7. (ftp-publish-src)
 ;; 8. on cobweb in /fi/opensource/src/aserve 
@@ -223,84 +247,30 @@
 
 
 (defun make-aserve.fasl ()
-  (copy-files-to *aserve-files* "aserve.fasl" :root *aserve-root*))
+  ;; make both aserve and webactions
+  (copy-files-to *aserve-files* "aserve.fasl" :root *aserve-root* 
+		 :verbose t)
+  (copy-files-to *webactions-files* "webactions/webactions.fasl" 
+		 :root *aserve-root*
+		 :verbose t)
+  )
 
 
 
 (defun make-src-distribution (&optional (dist-name aserve-version-name))
   ;; make a source distribution of aserve
-  ;;
-    
-  (run-shell-command 
-   (format nil "rm -fr ~aaserve-src" *aserve-root*)
-   :show-window :hide)
-    
-  (run-shell-command 
-   (format nil "mkdir ~aaserve-src ~aaserve-src/~a ~aaserve-src/~a/htmlgen "
-	   *aserve-root*
-	   
-	   *aserve-root*
-	   dist-name
-	   
-	   *aserve-root*
-	   dist-name
-	   )
-   :show-window :hide)
+
+  (run-shell-command (format nil "rm -fr ~aaserve-src" *aserve-root*)
+		     :show-window :hide)
   
-  (run-shell-command 
-   (format nil "mkdir ~aaserve-src/~a/doc ~aaserve-src/~a/examples ~aaserve-src/~a/test"
-	   *aserve-root*
-	   dist-name
-	   
-	   *aserve-root*
-	   dist-name
-	   
-	   *aserve-root*
-	   dist-name
-	   
-	   )
-   :show-window :hide)
-  (run-shell-command 
-   (format nil "mkdir ~aaserve-src/~a/test/testdir ~aaserve-src/~a/test/testdir/suba ~aaserve-src/~a/test/testdir/subb"
-	   *aserve-root*
-	   dist-name
-	   
-	   *aserve-root*
-	   dist-name
-	   
-	   *aserve-root*
-	   dist-name
-	   
-	   )
-   :show-window :hide)
-  
-  (run-shell-command 
-   (format nil "mkdir  ~aaserve-src/~a/test/testdir/subc ~aaserve-src/~a/test/testdir/subd"
-	   *aserve-root*
-	   dist-name
-	   
-	   *aserve-root*
-	   dist-name
-	   
-	   )
-   :show-window :hide)
-  (run-shell-command 
-   (format nil "mkdir ~aaserve-src/~a/test/testdir/suba/subsuba ~aaserve-src/~a/test/testdir/suba/subd "
-	   *aserve-root*
-	   dist-name
-	   
-	   *aserve-root*
-	   dist-name
-	   )
-   :show-window :hide)
-	   
-  (dolist (file (append (mapcar #'(lambda (file) (format nil "~a.cl" file))
-				*aserve-files*)
-			*aserve-other-files*))
-    (copy-files-to
-     (list file)
-     (format nil "aserve-src/~a/~a" dist-name file)
-     :root *aserve-root*)))
+  (dolist (file (append (mapcar (lambda (file) (format nil "~a.cl" file))
+				(append *aserve-files*
+					*webactions-files*))
+			*aserve-other-files*
+			*webactions-other-files*))
+    (copy-files-to (list file)
+		   (format nil "aserve-src/~a/~a" dist-name file)
+		   :root *aserve-root*)))
 
 
 (defun ftp-publish-src ()
@@ -332,15 +302,18 @@
 	    
   
 
-(defun copy-files-to (files dest &key (root ""))
+(defun copy-files-to (files dest &key (root "") verbose)
   ;; copy the contents of all files to the file named dest.
   ;; append .fasl to the filenames (if no type is present)
+
+  (setq dest (concatenate 'string root dest))
+  (ensure-directories-exist dest)
   
   (let ((buffer (make-array 4096 :element-type '(unsigned-byte 8))))
-    (with-open-file (p (concatenate 'string root dest)
-		     :direction :output
-		     :if-exists :supersede
+    (with-open-file (p dest :direction :output :if-exists :supersede
 		     :element-type '(unsigned-byte 8))
+      (if* verbose
+	 then (format t "Creating ~s~%" dest))
       (dolist (file files)
 	(setq file (concatenate 'string root file))
 	(if* (and (null (pathname-type file))

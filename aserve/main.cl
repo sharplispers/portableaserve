@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.30 2003/11/03 02:59:11 desoi Exp $
+;; $Id: main.cl,v 1.31 2003/12/02 14:20:40 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -37,7 +37,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 27))
+(defparameter *aserve-version* '(1 2 33))
 
 #+allegro
 (eval-when (eval load)

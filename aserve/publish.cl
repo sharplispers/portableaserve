@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.14 2003/11/03 02:59:26 desoi Exp $
+;; $Id: publish.cl,v 1.15 2003/12/02 14:20:40 rudi Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -118,6 +118,12 @@
 (defclass computed-entity (entity)
   ;; entity computed each time it's called
   ((function :initarg :function :reader entity-function)))
+
+(defvar *dummy-computed-entity* 
+    ;; needed when intercepting and sending a computed entity in place
+    ;; of the entity being published
+    (make-instance 'computed-entity))
+
 
 (defclass access-file-mixin ()
   ;; slots needed if you want to use access files during
@@ -1028,24 +1034,25 @@
 				       :response *response-not-found*)
 				(with-http-body (req ent)
 				  (html 
-				   (:head (:title "404 - NotFound")
-					  (:body
-					   (:h1 "Not Found")
-					   "The request for "
-					   (:b
-					   (:princ-safe 
-					    (render-uri 
-					     (request-uri req)
-					     nil
-					     )))
-					   " was not found on this server."
-					   :br
-					   :br
-					   :hr
-					   (:i
-					    "AllegroServe "
-					    (:princ-safe *aserve-version-string*))
-					   ))))))
+				   (:html
+				    (:head (:title "404 - NotFound"))
+				    (:body
+				     (:h1 "Not Found")
+				     "The request for "
+				     (:b
+				      (:princ-safe 
+				       (render-uri 
+					(request-uri req)
+					nil
+					)))
+				     " was not found on this server."
+				     :br
+				     :br
+				     :hr
+				     (:i
+				      "AllegroServe "
+				      (:princ-safe *aserve-version-string*))
+				     ))))))
 		:content-type "text/html"))
 	    (setf (wserver-invalid-request *wserver*) entity))
     (process-entity req entity)))
@@ -1062,16 +1069,17 @@
 				       :response *response-not-found*)
 				(with-http-body (req ent)
 				  (html 
-				   (:head (:title "404 - NotFound")
-					  (:body
-					   (:h1 "Not Found")
-					   "The request for "
-					   (:princ-safe 
-					    (render-uri 
-					     (request-uri req)
-					     nil
-					     ))
-					   " was denied."))))))
+				   (:html
+				    (:head (:title "404 - NotFound"))
+				    (:body
+				     (:h1 "Not Found")
+				     "The request for "
+				     (:princ-safe 
+				      (render-uri 
+				       (request-uri req)
+				       nil
+				       ))
+				     " was denied."))))))
 		:content-type "text/html"))
 	    (setf (wserver-denied-request *wserver*) entity))
     (process-entity req entity)))
