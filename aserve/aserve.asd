@@ -74,7 +74,7 @@ indicate failure."))
                (:acl-file "client"
                       :depends-on ("main"))
                (:acl-file "proxy"
-                      :depends-on ("main")))
+                      :depends-on ("main" "headers")))
   :depends-on (htmlgen acl-compat)
   :perform (load-op :after (op aserve)
 		    (pushnew :aserve cl:*features*))
