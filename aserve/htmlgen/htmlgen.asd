@@ -5,13 +5,14 @@
 (in-package #:htmlgen-system)
 
 (defclass acl-file (cl-source-file) ())
-(defmethod asdf::source-file-type ((c acl-file) (s module)) "cl")
+(defmethod source-file-type ((c acl-file) (s module)) "cl")
 
-#+(or lispworks cmu mcl openmcl clisp sbcl)
 (defsystem htmlgen
-  :components ((:acl-file "htmlgen"))
-  #-allegro :depends-on #-allegro (acl-compat)
-  :perform (load-op :after (op htmlgen)
-		    (pushnew :htmlgen cl:*features*))
-  )
+    :author "John K. Foderaro"
+    :licence "LLGPL"
+    :default-component-class acl-file
+    :components ((:file "htmlgen"))
+    #-allegro :depends-on #-allegro (acl-compat)
+    :perform (load-op :after (op htmlgen)
+                      (pushnew :htmlgen cl:*features*)))
 

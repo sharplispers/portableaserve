@@ -163,5 +163,4 @@ lisp-system"))
                  #+(and (or cmu lispworks) ssl-available) :cl-ssl
                  )
     :perform (load-op :after (op acl-compat)
-                      (pushnew :acl-compat cl:*features*))
-    )
+                      (pushnew :acl-compat cl:*features*)))

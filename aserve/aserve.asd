@@ -55,30 +55,25 @@ indicate failure."))
 
 #+(or lispworks cmu sbcl mcl openmcl clisp)
 (defsystem aserve
-  :components ((:acl-file "packages")
-               (:acl-file "macs" :depends-on ("packages"))
-               (:legacy-acl-source-file "main"
-                      :depends-on ("macs"))
-               (:acl-file "headers"
-                      :depends-on ("main"))
-               (:legacy-acl-source-file "parse"
-                      :depends-on ("main"))
-               (:acl-file "decode"
-                      :depends-on ("main"))
-               (:acl-file "publish"
-                      :depends-on ("main"))
-               (:acl-file "authorize"
-                      :depends-on ("main" "publish"))
-               (:acl-file "log"
-                      :depends-on ("main"))
-               (:acl-file "client"
-                      :depends-on ("main"))
-               (:acl-file "proxy"
-                      :depends-on ("main" "headers")))
-  :depends-on (htmlgen acl-compat)
-  :perform (load-op :after (op aserve)
-		    (pushnew :aserve cl:*features*))
-  )
+    :name "AllegroServe (portable)"
+    :author "John K. Foderaro"
+    :version "1.2.35"
+    :licence "LLGPL"
+    :default-component-class acl-file
+    :components ((:file "packages")
+                 (:file "macs" :depends-on ("packages"))
+                 (:legacy-acl-source-file "main" :depends-on ("macs"))
+                 (:file "headers" :depends-on ("main"))
+                 (:legacy-acl-source-file "parse" :depends-on ("main"))
+                 (:file "decode" :depends-on ("main"))
+                 (:file "publish" :depends-on ("main"))
+                 (:file "authorize" :depends-on ("main" "publish"))
+                 (:file "log" :depends-on ("main"))
+                 (:file "client" :depends-on ("main"))
+                 (:file "proxy" :depends-on ("main" "headers")))
+    :depends-on (htmlgen acl-compat)
+    :perform (load-op :after (op aserve)
+                      (pushnew :aserve cl:*features*)))
 
 #+allegro
 (defclass original-aserve (asdf:component)
