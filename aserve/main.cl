@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.1 2001/08/06 03:42:23 neonsquare Exp $
+;; $Id: main.cl,v 1.2 2001/08/08 15:21:26 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -1531,7 +1531,7 @@ by keyword symbols and not by strings"
 				         :for i :from 0 :below length
 					 :do (setf (aref result i) (code-char (aref ret i)))
 					 :finally (return result)))
-			    )
+			    
 	    
 			    ; netscape (at least) is buggy in that 
 			    ; it sends a crlf after
@@ -1551,7 +1551,7 @@ by keyword symbols and not by strings"
 					 else (unread-char 
 					       ch (request-socket req)))
 			       elseif ch
-				 then (unread-char ch (request-socket req))))
+				 then (unread-char ch (request-socket req)))))
 				      
 				      
 		     else ; no content length given
