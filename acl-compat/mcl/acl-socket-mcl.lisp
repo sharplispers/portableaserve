@@ -1,7 +1,7 @@
 ;;; MCL layer for ACL sockets.
 ;;; Based on acl-socket-cmu.lisp and acl-socket-lw.lisp.
 ;;;
-;;; John DeSoi, Ph.D. jdesoi@planetc.com
+;;; John DeSoi, Ph.D. desoi@users.sourceforget.net
 
 
 (defpackage :acl-compat.socket
