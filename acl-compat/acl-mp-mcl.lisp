@@ -1,70 +1,84 @@
+;;; This file implements the process functions for AllegroServe in MCL.
+;;; Based on the the work done for cmucl and Lispworks.
+;;;
+;;; John DeSoi, Ph.D. desoi@mac.com
+
 
 
 (defpackage mp
   (:nicknames :acl-compat-mp :acl-mp)
   (:use :COMMON-LISP) 
   (:export
-   "*CURRENT-PROCESS*"
    "CURRENT-PROCESS"
    "INTERRRUPT-PROCESS"
+   "MAKE-PROCESS"
    "MAKE-PROCESS-LOCK"
    "PROCESS-ADD-RUN-REASON"
-   "PROCESS-ALLOW-SCHEDULE"
    "PROCESS-KILL"
-   "PROCESS-NAME"
+   "PROCESS-PROPERTY-LIST"
    "PROCESS-REVOKE-RUN-REASON"
    "PROCESS-RUN-FUNCTION"
-   "PROCESS-RUN-REASONS"
-   "PROCESS-WAIT"
    "WITH-PROCESS-LOCK"
    "WITH-TIMEOUT"
-   "WITHOUT-INTERRUPTS"
    "WITHOUT-SCHEDULING"
    ))
 
+
 (in-package :mp)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+
+; existing stuff from ccl we can reuse directly
+(shadowing-import 
+ '(ccl:*current-process*
+   ccl::lock
+   ccl:process-allow-schedule
+   ccl:process-name
+   ccl:process-preset
+   ccl:process-run-reasons
+   ccl:process-wait
+   ccl:without-interrupts) 
+ :mp)
+)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  
-(shadowing-import 'ccl:*current-process*)   ;need to refer to mp:*current-process*
-  
-;(export '*current-process*) 
-  
+
+(export 
+ '(*current-process*
+   lock
+   process-allow-schedule
+   process-name
+   process-preset
+   process-run-reasons
+   process-wait
+   without-interrupts) 
+ :mp)
+)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+                 
 (defmacro without-scheduling (&body forms)
   `(ccl:without-interrupts ,@forms))
 
-(defmacro without-interrupts (&body forms)
-  `(ccl:without-interrupts ,@forms))
+; more ideas stolen from acl-mp-lw.lisp
+(defun invoke-with-timeout (seconds bodyfn timeoutfn)
+  (block timeout
+    (let* ((process *current-process*)
+           (timer (ccl:process-run-function "with-timeout-timer"
+                                            #'(lambda () 
+                                                (sleep seconds)
+                                                (ccl:process-interrupt process
+                                                                       #'(lambda ()
+                                                                           (return-from timeout
+                                                                             (funcall timeoutfn))))))))
+      (unwind-protect (funcall bodyfn)
+        (ccl:process-kill timer)))))
 
-(defmacro process-run-function (name-or-kwds function &rest args)
-  (if function ; I don't get how this works; in some calls function is nil and then the real function is next
-    `(ccl:process-run-function ,name-or-kwds ,function ,@args)
-    `(ccl:process-run-function ,name-or-kwds ,(first args) ,@(rest args))))
+(defmacro with-timeout ((seconds &body timeout-forms) &body body)
+  "Execute BODY; if execution takes more than SECONDS seconds, terminate and evaluate TIMEOUT-FORMS."
+  `(invoke-with-timeout ,seconds #'(lambda () ,@body)
+                        #'(lambda () ,@timeout-forms)))
 
-(defmacro process-wait (whostate function &rest args)
-  `(ccl:process-wait ,whostate ,function ,@args) )
-
-(defmacro process-name (process)
-  `(ccl:process-name ,process) )
-
-;! from corman - need to determine how to do it right
-(defmacro with-timeout ((seconds &body timeout-body) &body body)
-	"Currently implemented in a manner that the timeout never occurs."
-	(declare (ignore seconds timeout-body))
-	`(progn
-		,@body))
-
-(defmacro process-kill (process)
-  `(ccl:process-kill ,process) )
-
-
-(defmacro process-allow-schedule ()
-  `(ccl:process-allow-schedule) )
-
-
-(defmacro process-run-reasons (process)
-  `(ccl:process-run-reasons ,process) )
 
 (defmacro process-revoke-run-reason (process reason)
   `(ccl:process-disable-run-reason ,process ,reason) )
@@ -74,12 +88,20 @@
 
 
 (defmacro make-process-lock (&key name)
-  `(ccl:make-lock :name ,name) )
+  (if name
+    `(ccl:make-lock ,name)
+    `(ccl:make-lock)))
 
 (defmacro with-process-lock ((lock &key norecursive) &body forms)
   (declare (ignore norecursive))
   `(ccl:with-lock-grabbed (,lock) ,@forms))
 
+
+(defmacro process-kill (process)
+  `(progn 
+     (unless (ccl:process-active-p ,process) ;won't die unless enabled
+       (ccl:process-reset-and-enable ,process) )
+     (ccl:process-kill ,process)))
 
 )
 
@@ -92,5 +114,29 @@
   ccl:*current-process*)
 
 
-;! need something for process-plist? currently those disabled for mcl
+;property list implementation from acl-mp-cmu.lisp
+(defvar *process-plists* (make-hash-table :test #'eq)
+  "maps processes to their plists.
+See the functions process-plist, (setf process-plist).")
 
+(defun process-property-list (process)
+  (gethash process *process-plists*))
+
+(defun (setf process-property-list) (new-value process)
+  (setf (gethash process *process-plists*) new-value))
+
+; from acl-mp-lw.lisp
+(defun make-process (&key (name "Anonymous") reset-action run-reasons arrest-reasons (priority 0) quantum
+                          resume-hook suspend-hook initial-bindings run-immediately)
+  (declare (ignore priority quantum reset-action resume-hook suspend-hook run-immediately))
+  (declare (ignore initial-bindings)) ;! need separate lexical bindings for each process?
+  ;(let ((mp:*process-initial-bindings* initial-bindings))
+    (ccl:make-process name :run-reasons run-reasons :arrest-reasons arrest-reasons))
+
+(defun process-run-function (name-or-options preset-function &rest preset-arguments)
+  (let ((process (ctypecase name-or-options
+                   (string (mp:make-process :name name-or-options))
+                   (list (apply #'mp:make-process name-or-options)))))
+    (apply #'mp:process-preset process preset-function preset-arguments)
+    (process-add-run-reason process :enable)
+    process))
