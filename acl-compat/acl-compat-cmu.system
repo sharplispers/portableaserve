@@ -14,15 +14,16 @@
 ;    :binary-pathname nil
 ;    :binary-extension nil
     :components ((:file "nregex")
-                 (:file "acl-mp-package")
+                 (:file "packages" :depends-on ("nregex"))
+                 ;;(:file "acl-mp-package")
                  (:file "acl-mp-cmu"
-                        :depends-on ("acl-mp-package"))
+                        :depends-on ("packages"))
                  (:file "acl-excl-cmu"
-                        :depends-on ("nregex"))
+                        :depends-on ("packages" "nregex"))
                  (:file "cmu-read-sequence")
                  (:file "acl-socket-cmu"
-                        :depends-on ("acl-excl-cmu" "cmu-read-sequence"))
-                 (:file "acl-sys-cmu")
+                        :depends-on ("packages" "acl-excl-cmu" "cmu-read-sequence"))
+                 (:file "acl-sys-cmu" :depends-on ("packages"))
                  (:file "meta")
                  (:file "uri"
                         :depends-on ("meta"))
