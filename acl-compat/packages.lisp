@@ -158,10 +158,10 @@
                 #:stream-clear-input
                 #:stream-clear-output
                 #:stream-line-column
-                #-(or clisp cormanlisp) #:stream-read-sequence
+                #-clisp #:stream-read-sequence
                 #:stream-unread-char
                 #:stream-read-line
-                #-(or clisp cormanlisp) #:stream-write-sequence
+                #-clisp #:stream-write-sequence
                 #:stream-write-string
                 #+lispworks #:stream-write-buffer
                 #+lispworks #:stream-read-buffer
@@ -186,10 +186,10 @@
    #:stream-clear-input
    #:stream-clear-output
    #:stream-line-column
-   #-(or clisp cormanlisp) #:stream-read-sequence
+   #-clisp #:stream-read-sequence
    #:stream-unread-char
    #:stream-read-line
-   #-(or clisp cormanlisp) #:stream-write-sequence
+   #-clisp #:stream-write-sequence
    #:stream-write-string
    #:stream-write-buffer
    #:stream-read-buffer
@@ -218,10 +218,10 @@
    #:stream-clear-input
    #:stream-clear-output
    #:stream-line-column
-   #-(or clisp cormanlisp) #:stream-read-sequence
+   #-clisp #:stream-read-sequence
    #:stream-unread-char
    #:stream-read-line
-   #-(or clisp cormanlisp) #:stream-write-sequence
+   #-clisp #:stream-write-sequence
    #:stream-write-string
    #:stream-write-buffer
    #:stream-read-buffer
