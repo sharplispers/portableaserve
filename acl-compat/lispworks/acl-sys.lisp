@@ -21,4 +21,4 @@
 ;; onto the *features* list when it detects the presence of WIN32
 ;; under Lispworks.
 #+WIN32 (eval-when (:compile-toplevel :load-toplevel :execute)
-          (pushnew :mswindows *features))
+          (pushnew :mswindows *features*))
