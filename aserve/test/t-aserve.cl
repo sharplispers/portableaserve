@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: t-aserve.cl,v 1.5 2004/02/08 15:41:06 rudi Exp $
+;; $Id: t-aserve.cl,v 1.6 2004/02/12 21:31:53 rudi Exp $
 
 ;; Description:
 ;;   test iserve
@@ -43,7 +43,7 @@
   (rename-package (find-package :ptester) :ptester '(:util.test)))
 
 (defpackage :net.aserve.test
-  (:use :common-lisp :excl :net.html.generator :net.aserve 
+  (:use :common-lisp :acl-compat.excl :net.html.generator :net.aserve 
 	:net.aserve.client
 	:util.test)
   )
