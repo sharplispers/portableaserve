@@ -7,8 +7,6 @@
 ;;; TODO:
 ;;;  - 
 
-(require :acl-excl)
-
 (defpackage :com.ljosa.chunked
   (:use :common-lisp #+LISPWORKS :stream)
   (:export :chunked-mixin :make-chunked-stream :*buffer-size* 
@@ -196,13 +194,17 @@
 
 (defmethod close-chunk ((stream chunked-mixin))
   (finish-output stream)
-  (if (output-chunking stream)
-      (let ((*recursive* t))
-        (princ 0 stream)
-        (write-crlf stream)
-        (write-crlf stream)
-        (finish-output stream))
-    (error "Chunking is not enabled for output on this stream: ~S." stream)))
+  (with-slots (output-chunking input-chunking) stream
+    (if output-chunking
+	(let ((*recursive* t))
+	  (princ 0 stream)
+	  (write-crlf stream)
+	  (write-crlf stream)
+	  (finish-output stream)
+	  (setf output-chunking nil
+		input-chunking nil))
+	(error "Chunking is not enabled for output on this stream: ~S."
+	       stream))))
 
 (provide :com.ljosa.chunked)
 
