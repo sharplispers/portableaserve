@@ -1,3 +1,8 @@
+Changes in Portable AServe 1.2.3b (09.08.2001)
+- Fixed bug with POST requests
+- General code cleanup
+- implemented some missing ACL-COMPAT functions
+
 Changes in AServe for LW 1.2.3a (06.08.2001)
 - Rudolf Schlatte's changes for supporting CMUCL
   merged.
