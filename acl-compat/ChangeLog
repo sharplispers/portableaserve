@@ -1,5 +1,10 @@
 2004-01-11  Rudi Schlatte  <rudi@constantly.at>
 
+	* sbcl/acl-socket.lisp (make-socket): Handle :local-port nil,
+	don't bind socket in that case (let os choose a port)
+
+2004-01-11  Rudi Schlatte  <rudi@constantly.at>
+
 	* packages.lisp (defpackage acl-compat.excl): Export some symbols
 	for mcl, too
 

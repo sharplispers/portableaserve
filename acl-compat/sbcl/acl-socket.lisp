@@ -70,10 +70,11 @@ to read about the missing parts."
     (ecase connect
       (:passive
        (setf (sockopt-reuse-address socket) reuse-address)
-       (socket-bind socket #(0 0 0 0) local-port)
+       (if local-port
+	   (socket-bind socket #(0 0 0 0) local-port))
        (socket-listen socket 10)        ;Arbitrarily chosen backlog value
        (make-instance 'server-socket
-                      :port local-port
+                      :port (nth-value 1 (socket-name socket))
                       :socket socket
                       :element-type element-type
                       :stream-type format))
