@@ -15,9 +15,12 @@ in the subdirectories of this archive
  The quick-installation script compiles and loads Portable AllegroServe.
 
  Loading the file aserve:example.cl and evaluating
- (aserve-example::start-server :port 2001) starts an 
- AllegroServe server on http://localhost:2001 that shows off some of
- the things possible with AllegroServe.
+ (aserve-example::start-server :port 2001) starts an AllegroServe
+ server on http://localhost:2001 that shows off some of the things
+ possible with AllegroServe.  Depending on the Lisp implementation, it
+ might be necessary to give additional arguments :chunking nil and/or
+ :listeners 0, since chunked transfer encoding and multi-threading are
+ not supported everywhere.
 
 
 Regards,

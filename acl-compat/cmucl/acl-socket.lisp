@@ -82,7 +82,7 @@ to read about the missing parts."
       (:passive
          (make-instance 'server-socket
 		        :port local-port
-                        :fd (ext:create-inet-listener local-port :reuse-address t)
+                        :fd (ext:create-inet-listener local-port :stream :reuse-address t)
                         :element-type element-type
                         :stream-type format))
       (:active
