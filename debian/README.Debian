@@ -7,6 +7,7 @@ Only tested with CMUCL on sid:
 
 $ lisp
 * (require :aserve)
+* (init-aserve-cmu) ;; only if you're using CMUCL
 * (load "aserve:example.cl")
 * (in-package :aserve-example)
 * (start-server :port 2001)
