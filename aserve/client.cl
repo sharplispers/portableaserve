@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.4 2002/02/15 01:17:39 neonsquare Exp $
+;; $Id: client.cl,v 1.5 2002/02/26 16:26:18 desoi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -119,7 +119,7 @@
 
 
 (defvar crlf (make-array 2 :element-type 'character
-			 :initial-contents '(#\return #\newline)))
+			 :initial-contents '(#\return #\linefeed)))
 
 (defmacro with-better-scan-macros (&rest body)
   ;; define the macros for scanning characters in a string
@@ -144,7 +144,7 @@
 			  then (let ((ans (buf-substr start ,i ,buffer)))
 				 (incf ,i)  ; skip to newline
 				 (return ans))
-			elseif (eq thisch #\newline)
+			elseif (eq thisch #\linefeed)
 			  then (return (buf-substr start ,i ,buffer))))
 		     (incf ,i)
 		     )))
@@ -798,7 +798,7 @@ or \"foo.com:8000\", not ~s" proxy))
 
         (setf ch (code-char ch))
         (cond ((eql ch #\return)) ; ignore CR
-              ((eql ch #\newline) (return i)) ; end of line
+              ((eql ch #\linefeed) (return i)) ; end of line
               ((< i max) ; ignore characters beyond line end
                (setf (schar buffer i) ch)
                (incf i)))))))

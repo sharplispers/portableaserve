@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.14 2002/02/22 15:28:52 desoi Exp $
+;; $Id: main.cl,v 1.15 2002/02/26 16:28:03 desoi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -2109,7 +2109,7 @@ by keyword symbols and not by strings"
 				       (if* (and (eql (aref mpbuffer jj)
 						      #.(char-code #\return))
 						 (eql (aref mpbuffer (1+ jj))
-						      #.(char-code #\newline)))
+						      #.(char-code #\linefeed)))
 					  then (return-from scan-forward
 						 (values i :boundary (+ jj 2)))
 					elseif (and (eq (aref mpbuffer jj)
@@ -2751,7 +2751,7 @@ in get-multipart-sequence"))|#
 	    digit (- (char-code ch) #.(char-code #\0)))
       
       (case state
-	(:pre (if* (member ch '(#\space #\tab #\newline #\return) :test #'eq)
+	(:pre (if* (member ch '(#\space #\tab #\newline #\linefeed #\return) :test #'eq)
 		 then (incf i)
 		 else (setq state :number-first)))
 	(:number-first
@@ -2768,7 +2768,7 @@ in get-multipart-sequence"))|#
 	    else (setq state :post)))
 	
 	(:post 
-	 (if* (member ch '(#\space #\tab #\newline #\return) :test #'eq)
+	 (if* (member ch '(#\space #\tab #\newline #\linefeed #\return) :test #'eq)
 	    then (incf i)
 	    else (return-from string-to-number nil)))))))
 	

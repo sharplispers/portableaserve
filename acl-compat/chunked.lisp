@@ -51,7 +51,7 @@
         (go s1))
    s2 (let ((char (read-char stream)))
         (case char
-          (#\Newline (go accept))
+          (#\Linefeed (go accept))
           (t (error "Parse error in state s2: ~S." char))))
    accept)
   x)
@@ -64,7 +64,7 @@
 	     (unless (eq expected-char char)
 	       (error "Expected ~C, got ~C." expected-char char)))))
     (expect #\Return)
-    (expect #\Newline)))
+    (expect #\Linefeed)))
 
 (defmethod stream-read-char ((stream chunked-mixin))
   (with-slots (input-chunking remaining-input output-chunking) stream
@@ -100,7 +100,7 @@
   (loop
    with chars = nil
    for char = (stream-read-char stream)
-   until (eq char #\newline)
+   until (eq char #\Linefeed)
    do
    (if (eq char :eof)
      (if (null chars)
@@ -156,7 +156,7 @@
 (defmethod write-crlf ((stream stream))
   (let ((*recursive* t))
     (write-char #\Return stream)
-    (write-char #\Newline stream)))
+    (write-char #\Linefeed stream)))
 
 (defmethod stream-force-output ((stream chunked-mixin))
   (with-slots (output-chunking output-buffer) stream
