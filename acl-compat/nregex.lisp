@@ -25,7 +25,7 @@
 ;;;; relevant functions.
 ;;;;
 
-#-(or mcl sbcl)
+#-(or mcl sbcl cmu)
 (in-package :user)
 
 ;;;; CND - 6/3/2001
