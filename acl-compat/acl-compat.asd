@@ -123,7 +123,7 @@ lisp-system"))
                ;; hack in for the time being... (bug reported to
                ;; cmucl-imp, tho)
 	       #+(and cmu (not common-lisp-controller))
-               (:file "cmu-read-sequence")
+               (:file "cmu-read-sequence" :depends-on ("vendor-gray-streams"))
 	       (:unportable-cl-source-file "acl-socket"
 		   :depends-on ("packages" "acl-excl"
 					   #-(or mcl allegro) "chunked-stream-mixin"
