@@ -83,7 +83,10 @@
              :initform nil)
    (plist :accessor uri-plist
           :initarg :plist
-          :initform nil)))
+          :initform nil)
+   (string :accessor uri-string
+	   :initarg :string
+	   :initform nil)))
 )
 
 (defmethod uri ((object uri))
@@ -205,7 +208,8 @@
                            :port port
                            :path (and path (coerce path 'simple-string))
                            :query (and query (coerce query 'simple-string))
-                           :fragment (and fragment (coerce fragment 'simple-string))))))
+                           :fragment (and fragment (coerce fragment 'simple-string))
+			   :string name))))
 
 (defmethod merge-uris (uri base &optional place)
   (declare (ignore place))
@@ -241,6 +245,7 @@
                                                    :count 2 
                                                    :start (1- pos)))))
                (copy-uri uri :scheme (uri-scheme base-uri) :host (uri-host base-uri)
+			 :string nil
                          :path (%render-parsed-path (cons :absolute buffer)))))))
 
 (defun %relative-path (target base)
@@ -349,6 +354,7 @@ pos2) result)
 		 :path (or path (uri-path uri))
 		 :query (or query (uri-query uri))
 		 :fragment (or fragment (uri-fragment uri))
-		 :plist (or plist (uri-plist uri))))
+		 :plist (or plist (uri-plist uri))
+		 :string (or string (uri-string uri))))
 
 (provide 'uri)
