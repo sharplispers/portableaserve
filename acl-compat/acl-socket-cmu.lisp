@@ -55,7 +55,7 @@ client wanted to initiate a connection and wait is nil."
                    :element-type (element-type server-socket)
                    :auto-close t)))
       (if (eq (stream-type server-socket) :bivalent)
-          (excl:make-bivalent-stream stream)
+          (excl::make-bivalent-stream stream)
           stream))))
 
 (defun make-socket (&key (remote-host "localhost")
@@ -90,7 +90,7 @@ to read about the missing parts."
                       (ext:connect-to-inet-socket remote-host remote-port)
                       :input t :output t :element-type element-type)))
          (if (eq :bivalent format)
-             (excl:make-bivalent-stream stream)
+             (excl::make-bivalent-stream stream)
              stream))))))
 
 (defmethod close ((server server-socket) &key abort)
