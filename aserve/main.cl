@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.19 2002/06/09 11:35:01 rudi Exp $
+;; $Id: main.cl,v 1.20 2002/06/11 14:03:15 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -2917,7 +2917,7 @@ in get-multipart-sequence"))|#
 		    (if* port
 		       then (values (car parts) port))))))
 
-f;-------
+;-------
 
 #+allegro
 (defun ensure-stream-lock (stream)
