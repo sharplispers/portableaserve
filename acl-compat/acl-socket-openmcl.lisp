@@ -27,7 +27,6 @@
   (shadowing-import
    '(ccl:make-socket
      ccl:accept-connection
-     ccl:ipaddr-to-dotted 
      ccl:dotted-to-ipaddr 
      ccl:ipaddr-to-hostname
      ccl:lookup-hostname
@@ -59,22 +58,12 @@
 
 ; OpenMCL has a built-in ipaddr-to-dotted. But it appears that sometimes
 ; the log function is being called after the connection is closed and
-; it causes nil to be passed to ipaddr-to-dotted. So until we have a fix,
-; we just provide this to deal with nil values. The aserve log-request 
-; method should really check to see that it has a good value.
-;
-; Second reason for this: ccl:ipaddr-to-dotted gives the wrong result.
-#+ignore
-(defun ccl:ipaddr-to-dotted (ipaddr &key values)
-  (if (null ipaddr)
-    (if values (values 0 0 0 0) "0.0.0.0")
-    (let ((a (logand #xff (ash ipaddr -24)))
-	  (b (logand #xff (ash ipaddr -16)))
-	  (c (logand #xff (ash ipaddr -8)))
-	  (d (logand #xff ipaddr)))
-      (if values
-	(values a b c d)
-        (format nil "~d.~d.~d.~d" a b c d)))))
+; it causes nil to be passed to ipaddr-to-dotted. So we wrap ipaddr-to-dotten
+; to ensure only non-nil values are passed.
+
+(defun ipaddr-to-dotted (ipaddr &key values)
+  (unless (null ipaddr)
+    (ccl:ipaddr-to-dotted ipaddr values)))
 
 (defun socket-control (stream &key output-chunking output-chunking-eof input-chunking)
   (declare (ignore stream))
