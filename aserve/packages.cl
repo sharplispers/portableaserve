@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: packages.cl,v 1.1 2002/12/03 14:44:37 rudi Exp $
+;; $Id: packages.cl,v 1.2 2002/12/17 11:30:28 rudi Exp $
 
 ;; Description:
 ;;   packages and exports for AllegroServe
@@ -36,7 +36,7 @@
 ; note: net.html.generator is not defined here since that's a
 ;  standalone package
 ;
-(in-package :user)
+(in-package :cl-user)
 
 (defpackage :net.aserve
   (:use :common-lisp :acl-compat.excl :net.html.generator :net.uri)
