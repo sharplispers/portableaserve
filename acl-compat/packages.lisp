@@ -13,40 +13,41 @@
 ;;;;
 
 ;;; general
-(defpackage :excl
-	(:use #:common-lisp #:nregex
-              #+cmu #:ext
-              #+clisp #:ext
-              )
-        #+lispworks (:import-from :common-lisp #:fixnump)
-	(:export
-         #:if*
-         #:*initial-terminal-io*
-         #:*cl-default-special-bindings*
-         #:filesys-size
-         #:filesys-write-date
-         #:stream-input-fn
-         #:match-regexp
-         #:compile-regexp
-         #:*current-case-mode*
-         #:intern*
-         #:filesys-type
-         #:errorset
-         #:atomically
-         #:fast
-         #:without-package-locks
-         #:fixnump
-         #+(or lispworks mcl) #:socket-error
-         #+(or lispworks mcl) #:run-shell-command
-         #+mcl #:fasl-read
-         #+mcl #:fasl-write
-         #+(or cmu scl) #:string-to-octets
-         #+(or cmu scl) #:write-vector
-         ))
+(defpackage :acl-compat.excl
+  (:use #:common-lisp #:nregex
+        #+cmu #:ext
+        #+clisp #:ext
+        )
+  (:nicknames #:excl)                   ; to be nuked later
+  #+lispworks (:import-from :common-lisp #:fixnump)
+  (:export
+   #:if*
+   #:*initial-terminal-io*
+   #:*cl-default-special-bindings*
+   #:filesys-size
+   #:filesys-write-date
+   #:stream-input-fn
+   #:match-regexp
+   #:compile-regexp
+   #:*current-case-mode*
+   #:intern*
+   #:filesys-type
+   #:errorset
+   #:atomically
+   #:fast
+   #:without-package-locks
+   #:fixnump
+   #+(or lispworks mcl) #:socket-error
+   #+(or lispworks mcl) #:run-shell-command
+   #+mcl #:fasl-read
+   #+mcl #:fasl-write
+   #+(or cmu scl) #:string-to-octets
+   #+(or cmu scl) #:write-vector
+   ))
 
 
 ;; general
-(defpackage :acl-compat-mp
+(defpackage :acl-compat.mp
   (:use :common-lisp)
   (:export 
    #:*current-process*         ;*
@@ -64,7 +65,7 @@
    #:process-disable
    #:process-reset
    #:process-interrupt
-   
+
    #:process-run-function      ;*
    #:process-property-list     ;*
    #:without-scheduling        ;*
@@ -84,10 +85,10 @@
    #:process-wait-with-timeout
    #:wait-for-input-available
    )
-  (:nicknames :acl-mp))
+  (:nicknames :acl-mp :acl-compat-mp))
 
 ;; general
-(defpackage acl-socket
+(defpackage acl-compat.socket
   (:use #+(or cmu lispworks scl) #:acl-mp #:common-lisp
         #+(or lispworks cmu)#:excl
         #+clisp #:socket
@@ -112,12 +113,12 @@
    #+cl-ssl #:make-ssl-server-stream
    #+lispworks #:socket-os-fd
    )
-  #-clisp(:nicknames socket))
+  (:nicknames #-clisp socket acl-socket))
 
 
 #+mcl
-(defpackage system
-  (:nicknames :sys)
+(defpackage acl-compat.system
+  (:nicknames :sys :system)
   (:use :common-lisp) 
   (:export
    #:command-line-arguments
