@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.40 2004/08/31 02:53:17 kevinrosenberg Exp $
+;; $Id: main.cl,v 1.41 2004/08/31 20:36:22 kevinrosenberg Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -2511,8 +2511,8 @@ in get-multipart-sequence"))
                    ;; upon evaluating #'equal, in functions which invoker this setf expander,
                    ;; but it's perfectly happy to work with #'equal itself. Protect from
                    ;; one level of evaluation.
- 		  (test #-lispworks #'equal #+lispworks '#'equal)
-                   (external-format *default-aserve-external-format*))
+     (test #-(or sbcl lispworks) #'equal #+(or sbcl lispworks) '#'equal)
+     (external-format *default-aserve-external-format*))
     (newvalue)
   ;; make it appear that the query alist contains this extra key/value
   `(let ((ent (assoc ,key (request-query ,req :post ,post :uri ,uri

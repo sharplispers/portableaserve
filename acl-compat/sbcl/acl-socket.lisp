@@ -163,7 +163,16 @@ streams and handled by their close methods."
 	(values a b c d)
       (format nil "~d.~d.~d.~d" a b c d))))
 
-(declaim (ftype (function (simple-vector)
+(defun ipaddr-to-vector (ipaddr)
+  "Convert from 32-bit integer to a vector of octets."
+  (declare (type (unsigned-byte 32) ipaddr))
+  (let ((a (logand #xff (ash ipaddr -24)))
+	(b (logand #xff (ash ipaddr -16)))
+	(c (logand #xff (ash ipaddr -8)))
+	(d (logand #xff ipaddr)))
+    (make-array 4 :initial-contents (list a b c d))))
+
+(declaim (ftype (function (vector)
                           (values (unsigned-byte 32)))
                 vector-to-ipaddr))
 (defun vector-to-ipaddr (sensible-ipaddr)
@@ -200,7 +209,7 @@ streams and handled by their close methods."
 (defun ipaddr-to-hostname (ipaddr &key ignore-cache)
   (when ignore-cache
     (warn ":IGNORE-CACHE keyword in IPADDR-TO-HOSTNAME not supported."))
-  (host-ent-name (get-host-by-address (make-inet-address ipaddr))))
+  (host-ent-name (get-host-by-address (ipaddr-to-vector ipaddr))))
 
 (defun lookup-hostname (host &key ignore-cache)
   (when ignore-cache

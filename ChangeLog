@@ -1,3 +1,7 @@
+2004-08-31  Kevin Rosenberg <kevin@rosenberg.net>
+	* Fix ipaddr-to-hostname for SBCL
+	* Fix for request-query-value for SBCL
+	
 2004-08-30  Kevin Rosenberg <kevin@rosenberg.net>
         * Fixes for compilation on SBCL
 	* Add support for :cookie-domain for webactions

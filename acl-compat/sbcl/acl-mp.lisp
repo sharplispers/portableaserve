@@ -121,7 +121,8 @@
                               (string (list :name name-or-options))))
          (process (apply #'make-process make-process-args)))
     (apply #'process-preset process preset-function preset-arguments)
-    (when (process-run-reasons process) (restart-process process))
+    (setf (process-run-reasons process) :enable)
+    (restart-process process)
     process))
 
 
