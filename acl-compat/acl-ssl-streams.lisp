@@ -257,7 +257,11 @@
 
 #-cormanlisp
 (defmethod gray-stream:stream-write-sequence ((stream ssl-stream-mixin) sequence start end)
-  (stream::write-elements stream sequence start end nil))
+  (stream::write-elements stream sequence start end (typecase sequence
+                                                      (string t)
+                                                      ((array unsigned-byte (*)) nil)
+                                                      ((array signed-byte (*)) nil)
+                                                      (otherwise nil))))
 
 #-cormanlisp
 (in-package :acl-socket)
