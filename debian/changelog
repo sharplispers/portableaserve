@@ -1,3 +1,10 @@
+cl-portable-aserve (1.2.35+cvs.2004.08.02) unstable; urgency=low
+
+  * README.Debian: Add note about incompatibilities for webactions
+  (closes:260199)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Mon,  2 Aug 2004 21:41:06 -0600
+
 cl-portable-aserve (1.2.35+cvs.2004.07.08) unstable; urgency=low
 
   * New upstream (closes:258127)

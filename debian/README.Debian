@@ -9,7 +9,7 @@ with other CL implementations which would not require cmucl-source.
 Tested with CMUCL on sid:
 	
 $ lisp
-* (require :aserve)
+* (clc:clc-require 'aserve)
 * (init-aserve-cmu) ;; only if you're using CMUCL
 * (load "aserve:example.cl")
 * (in-package :aserve-example)
@@ -18,7 +18,7 @@ $ lisp
 You can now test on http://localhost:2001/
 
 The example.cl file may be found at:
-/usr/share/common-lisp/repositories/aserve/example.cl
+/usr/share/common-lisp/source/aserve/example.cl
 
 Other example-files may be found in:
 /usr/share/doc/cl-aserve/examples/
@@ -26,4 +26,10 @@ Other example-files may be found in:
 More info about Portable Aserve may be found on
 http://www.sourceforge.net/projects/portableaserve/
 
- -- Kevin M. Rosenberg <kmr@debian.org>, Sat Nov 15 20:31:04 2003
+*** INCOMPATIBILITY NOTICE ***
+
+The webactions module is not yet completely portable. Currently, it
+compiles only on Lispworks and Allegro. Patches will be welcomed
+upstream.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>, Mon Aug  2 21:42:08 2004
