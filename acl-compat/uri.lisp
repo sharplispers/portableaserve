@@ -2,7 +2,7 @@
 ;;;; (c) 2001 by Jochen Schmidt.
 ;;;;
 ;;;; File:            uri.lisp
-;;;; Revision:        1.1.0
+;;;; Revision:        1.2.0
 ;;;; Description:     ACL NET.URI compatible URI implementation
 ;;;; Date:            01.07.2001
 ;;;; Authors:         Jochen Schmidt
@@ -158,12 +158,21 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
 (meta:disable-meta-syntax))
 
-(defun uri-authority (uri)
+(defmethod uri-authority ((uri uri))
   "Construct the authority component out of the host and the
    port slot of an uri-object"
   (if (uri-port uri)
       (format nil "~A:~A" (uri-host uri) (uri-port uri))
     (uri-host uri)))
+
+(defmethod (setf uri-authority) ((value string) (uri uri))
+  "Construct the authority component out of the host and the
+   port slot of an uri-object"
+  (let ((colon-pos (position #\: value)))
+    (if colon-pos
+        (setf (uri-host uri) (subseq value 0 colon-pos)
+              (uri-port uri) (subseq value (1+ colon-pos)))
+      value)))
 
 (defun render-uri (uri stream)
   "Print an URI-Object in normal URI-notation"
@@ -189,9 +198,9 @@
 		(render-uri uri stream)))
 
 (defun string-to-keyword (string)
-	"Convert a string to an appropriate keyword"
-	(when string
-		(intern (string-upcase string) (find-package 'keyword))))
+  "Convert a string to an appropriate keyword"
+  (when string
+    (intern (string-upcase string) (find-package 'keyword))))
 		
 (defun parse-uri (name &key (class 'uri))
   "Parse an URI string and return a new URI Object initialized with
@@ -206,47 +215,90 @@
                            :scheme (string-to-keyword scheme)
                            :host host
                            :port port
-                           :path (and path (coerce path 'simple-string))
-                           :query (and query (coerce query 'simple-string))
-                           :fragment (and fragment (coerce fragment 'simple-string))
+                           :path (and path (plusp (length path))
+                                      (coerce path 'simple-string))
+                           :query (and query (plusp (length query))
+                                       (coerce query 'simple-string))
+                           :fragment (and fragment (plusp (length fragment))
+                                          (coerce fragment 'simple-string))
 			   :string name))))
 
 (defmethod merge-uris (uri base &optional place)
   (declare (ignore place))
   (merge-uris (uri uri) (uri base)))
 
+;;;
+;; MERGE-URIS See http://RFC.net/rfc2396.html section 5.2
+;;;
 (defmethod merge-uris ((uri uri) (base-uri uri) &optional place)
   (declare (ignore place))
-    (cond ((uri-scheme uri) 
-           (return-from merge-uris (copy-uri uri)))
-          ((uri-host uri) (return-from merge-uris (copy-uri uri :scheme (uri-scheme base-uri))))
-          ((and (uri-path uri) (plusp (length (uri-path uri))) (eq (char (uri-path uri) 0) #\/))
-           (copy-uri uri :scheme (uri-scheme base-uri) :host (uri-host base-uri)))
-          (t
-           (let* ((rel-parsed-path (uri-parsed-path uri))
-                  (base-parsed-path (%parse-uri-path 
-                                     (subseq (uri-path base-uri)
-                                             0 (1+ (or (position #\/ (uri-path base-uri) :from-end t) -1)))))
-                                                 
-                  (buffer (remove "." (append (butlast (rest base-parsed-path))
-                                              (rest rel-parsed-path))
-                                  :test #'equal)))
-               (loop :for start-pos = (position-if 
-                                       #'(lambda (x) (not (equal x "..")))
-                                       buffer)
-                     :for pos = (position ".." buffer 
-                                          :test #'equal 
-                                          :start start-pos)
-                     :while pos
-                     :do (unless (equal (elt buffer (1- pos))
-                                        "..")
-                           (setf buffer (remove-if #'(lambda (x) (declare (ignore x)) t) 
-                                                   buffer 
-                                                   :count 2 
-                                                   :start (1- pos)))))
-               (copy-uri uri :scheme (uri-scheme base-uri) :host (uri-host base-uri)
-			 :string nil
-                         :path (%render-parsed-path (cons :absolute buffer)))))))
+  ;; Step 2 Test for current document reference
+  (when (and (null (uri-path uri))
+             (null (uri-scheme uri))
+             (null (uri-authority uri))
+             (null (uri-query uri)))
+    (return-from merge-uris (copy-uri base-uri :query nil :fragment (uri-fragment uri))))
+
+  ;; Step 3 Test for absolute reference (TODO validating?)
+  (when (uri-scheme uri)
+    (return-from merge-uris (copy-uri uri)))
+  (let ((scheme (uri-scheme base-uri))) ; inherit scheme
+
+    ;; Step 4
+    (when (uri-authority uri)
+      (return-from merge-uris (copy-uri uri :scheme scheme)))
+    (let ((host (uri-host base-uri))
+          (port (uri-port base-uri))) ; inherit authority
+
+      ;; Step 5
+      (when (and (uri-path uri) (eql (char (uri-path uri) 0) #\/))
+        (return-from merge-uris (copy-uri uri :scheme scheme :host host :port port)))
+
+      ;; Step 6
+      (%merge-relative-path-uris uri base-uri scheme host port))))
+
+;;; We do some normalization to make the merging easier
+(defun %canonicalize-path (opath)
+  ;; A leading "" is only ok if it is the only element
+  (let* ((path (if (and (cdr opath)
+                        (equal (car opath) ""))
+                   (cdr opath)
+                 opath))
+         (last-segment (first (last path))))
+    ;; Remove trailing "." or ".."
+    (cond ((equal last-segment ".")
+           (nconc (nbutlast path) (list "")))
+          ((equal last-segment "..")
+           (nconc path (list "")))
+          (t path))))
+
+(defun %merge-relative-path-uris (uri base-uri scheme host port)
+  ;; Step 6 a+b(+d)
+  (let ((buffer (%canonicalize-path 
+                 (append (rest (%parse-uri-path 
+                                (subseq (uri-path base-uri)
+                                        0 (or (position #\/ (uri-path base-uri) 
+                                                        :from-end t) 0))))
+                         (or (rest (uri-parsed-path uri)) '(""))))))
+    
+    ;; Step c) Remove all occurrences of "./" where . is a complete path segment
+    (setf buffer (delete-if #'(lambda (segment) (and (stringp segment)
+                                                     (string= "." segment)))
+                            buffer))
+
+    ;; Step e) Remove all occurrences of <segment>/../
+    (loop for start-pos = (position-if #'(lambda (s) (not (equal s ".."))) buffer)
+          for pos = (and start-pos (position-if #'(lambda (s) (equal s "..")) 
+                                                buffer :start start-pos))
+          while pos 
+          do (unless (equal (elt buffer (1- pos)) "..")
+               (setf buffer (delete-if (constantly t) buffer :count 2 :start (1- pos)))))
+    (copy-uri uri 
+              :scheme scheme 
+              :host host 
+              :port port
+              :string nil
+              :path (%render-parsed-path (cons :absolute buffer)))))
 
 (defun %relative-path (target base)
   "Calculate the minimum relative path from target in relation to base"
@@ -272,7 +324,7 @@
       (if (or (string-not-equal host (uri-host base)) (not (equal port (uri-port base))))
           uri
         (make-instance  'uri 
-                        :path (%relative-path path (uri-path base))
+                        :path (and path (%relative-path path (uri-path base)))
                         :query (uri-query uri)
                         :fragment (uri-fragment uri)
                         :plist (uri-plist uri)))))
@@ -300,41 +352,40 @@
   "Convert the normal string representation of a path to a
    more Lispy list-notation"
   (let ((pathlength (length path)))
-  (if (zerop pathlength)
-      (list :absolute "")
-    (loop :with token :of-type string = nil
-          :with pos1 :of-type fixnum = 0
-          :with pos2 :of-type fixnum = 0
-          :with result = (if (eql (elt path 0)
-                                  #\/)
-                             (progn
-                               (incf pos1)
-                               (incf pos2)
-                               (list :absolute))
-                           (list :relative))
-          :for c :across (subseq path pos1)
-          :do (cond ((eql c #\;)
-                     (setf token (cons (subseq path pos1 pos2) token)
-                           pos1 (incf pos2)))
-                    ((eql c #\/)
-                     (if token
-                         (progn (setf token
-                                      (cons (subseq path pos1 pos2)
-token)
-                                      pos1 (incf pos2)
-                                      result (cons (nreverse token)
-result)
-                                      token nil))
-                       (progn (setf result (cons (subseq path pos1
-pos2) result)
-                             pos1 (incf pos2)))))
-                    (t (incf pos2)))
-          :finally (progn
-                     (when (> pos2 pos1)
-                       (push (subseq path pos1 pos2) result))
-                     (return (nreverse (if (eql (char path (1- pathlength)) #\/)
-                                           (cons "" result)
-                                         result))))))))
+    (if (zerop pathlength)
+        (list :absolute "")
+      (loop :with token = nil
+            :with pos1 :of-type fixnum = 0
+            :with pos2 :of-type fixnum = 0
+            :with result = (if (eql (elt path 0)
+                                    #\/)
+                               (progn
+                                 (incf pos1)
+                                 (incf pos2)
+                                 (list :absolute))
+                             (list :relative))
+            :for c :across (subseq path pos1)
+            :do (cond ((eql c #\;)
+                       (setf token (cons (subseq path pos1 pos2) token)
+                             pos1 (incf pos2)))
+                      ((eql c #\/)
+                       (if token
+                           (setf token (cons (subseq path pos1 pos2) token)
+                                 pos1 (incf pos2)
+                                 result (cons (nreverse token)
+                                              result)
+                                 token nil)
+                         (setf result (cons (subseq path pos1 pos2) result)
+                               pos1 (incf pos2))))
+                      (t (incf pos2)))
+            :finally (when (> pos2 pos1)
+                       (let ((s (subseq path pos1 pos2)))
+                         (if token 
+                             (push (nreverse (push s token)) result)
+                           (push (subseq path pos1 pos2) result))))
+            (return (nreverse (if (eql (char path (1- pathlength)) #\/)
+                                  (cons "" result)
+                                result)))))))
 
 (defmethod uri-parsed-path (uri)
   (with-slots (path) uri
