@@ -26,7 +26,7 @@
   #+lispworks (lw:do-nothing))
 
 (defmethod perform ((operation load-op) (component gray-streams))
-#+(and cmu (not graystreams) cmucl-not-yet-asdf) (require :cmucl-graystream)
+  #+(and cmu (not graystreams) cmucl-not-yet-asdf) (require :cmucl-graystream)
   ;; vanilla cmucl
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
@@ -38,7 +38,7 @@
 (defmethod perform ((operation load-compiled-op) (component gray-streams))
 #+(and cmu (not graystreams) cmucl-not-yet-asdf) (require :cmucl-graystream)
   ;; Nothing to do, uses ASDF :depends-on
-)	
+)
 
 
 ;;;; ignore warnings
@@ -94,6 +94,7 @@ lisp-system"))
 
 (defun lisp-system-shortname ()
   #+acl :acl #+lispworks :lw #+cmu :cmu #+mcl :mcl #+openmcl :openmcl
+  #+clisp :clisp
   #+scl :scl)
 
 (defmethod component-pathname ((component unportable-cl-source-file))
@@ -108,7 +109,7 @@ lisp-system"))
 ;standard MCL make-load-form is not ansi compliant because of CLIM
 #+(and mcl (not openmcl)) (require :ansi-make-load-form)
 
-#+(or lispworks cmu scl mcl openmcl)
+#+(or lispworks cmu scl mcl openmcl clisp)
 (defsystem acl-compat
   :components ((:gray-streams "vendor-gray-streams")
 	       (:file "nregex")
@@ -161,7 +162,7 @@ lisp-system"))
 		    (pushnew :acl-compat cl:*features*))
   )
 
-#+(or lispworks cmu mcl openmcl scl)
+#+(or lispworks cmu mcl openmcl scl clisp)
 (when (ignore-errors (find-class 'load-compiled-op))
   (defmethod perform :after ((op load-compiled-op) (c (eql (find-system 'acl-compat))))
     (pushnew :acl-compat cl:*features*)))

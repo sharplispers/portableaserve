@@ -1,12 +1,13 @@
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (find-package :gray-stream)
     (defpackage :gray-stream
-      (:import-from #+lispworks :stream #+cmu :lisp
+      (:import-from #+lispworks :stream #+cmu :lisp #+clisp :gray
        #:fundamental-binary-input-stream
        #:fundamental-binary-output-stream
        #:fundamental-character-input-stream
        #:fundamental-character-output-stream
-       #:stream-element-type
+       #-clisp #:stream-element-type
        #:stream-listen
        #:stream-read-byte
        #:stream-read-char
@@ -18,10 +19,10 @@
        #:stream-clear-input
        #:stream-clear-output
        #:stream-line-column
-       #:stream-read-sequence
+       #-clisp #:stream-read-sequence
        #:stream-unread-char
        #:stream-read-line
-       #:stream-write-sequence
+       #-clisp #:stream-write-sequence
        #:stream-write-string
        #+lispworks #:stream-write-buffer
        #+lispworks #:stream-read-buffer
@@ -29,7 +30,9 @@
        #+lispworks #:stream-flush-buffer
        #+lispworks #:with-stream-input-buffer
        #+lispworks #:with-stream-output-buffer)
-      (:export 
+      #+clisp(:import-from :common-lisp
+                           #:stream-element-type)
+      (:export
        #:fundamental-binary-input-stream
        #:fundamental-binary-output-stream
        #:fundamental-character-input-stream

@@ -11,7 +11,7 @@
 (defclass acl-file (cl-source-file) ())
 (defmethod asdf:source-file-type ((c acl-file) (s module)) "cl")
 
-#+(or lispworks cmu mcl openmcl)
+#+(or lispworks cmu mcl openmcl clisp)
 (defsystem aserve
   :components ((:acl-file "macs")
                (:acl-file "main"
@@ -38,7 +38,7 @@
   )
 
 ;;; Logical pathname is needed by AllegroServe examples
-#+(or lispworks cmu mcl openmcl)
+#+(or lispworks cmu mcl openmcl clisp)
 (setf (logical-pathname-translations "ASERVE")
       `(
         #+ignore                        ; Don't need this with asdf

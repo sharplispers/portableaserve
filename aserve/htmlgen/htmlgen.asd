@@ -7,7 +7,7 @@
 (defclass acl-file (cl-source-file) ())
 (defmethod asdf::source-file-type ((c acl-file) (s module)) "cl")
 
-#+(or lispworks cmu mcl openmcl)
+#+(or lispworks cmu mcl openmcl clisp)
 (defsystem htmlgen
   :components ((:acl-file "htmlgen"))
   #-allegro :depends-on #-allegro (acl-compat)
@@ -15,7 +15,7 @@
 		    (pushnew :htmlgen cl:*features*))
   )
 
-#+(or lispworks cmu mcl openmcl)
+#+(or lispworks cmu mcl openmcl clisp)
 (when (ignore-errors (find-class 'load-compiled-op))
   (defmethod perform :after ((op load-compiled-op) (c (eql (find-system :htmlgen))))
     (pushnew :htmlgen cl:*features*)))

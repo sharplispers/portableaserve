@@ -14,7 +14,10 @@
 
 ;;; general
 (defpackage :excl
-	(:use #:common-lisp #:nregex #+cmu #:ext)
+	(:use #:common-lisp #:nregex
+              #+cmu #:ext
+              #+clisp #:ext
+              )
 	(:export
          #:if*
          #:*initial-terminal-io*
@@ -40,12 +43,12 @@
          #+(or cmu scl) #:write-vector
 
          ;; TODO: find better place for bivalent stream classes
-         #+(or cmu scl) #:bivalent-input-stream
-         #+(or cmu scl) #:bivalent-output-stream
-         #+(or cmu scl) #:bivalent-stream
-         #+(or cmu scl) #:make-bivalent-input-stream
-         #+(or cmu scl) #:make-bivalent-output-stream
-         #+(or cmu scl) #:make-bivalent-stream
+         #+(or cmu scl clisp) #:bivalent-input-stream
+         #+(or cmu scl clisp) #:bivalent-output-stream
+         #+(or cmu scl clisp) #:bivalent-stream
+         #+(or cmu scl clisp) #:make-bivalent-input-stream
+         #+(or cmu scl clisp) #:make-bivalent-output-stream
+         #+(or cmu scl clisp) #:make-bivalent-stream
          ))
 
 
@@ -94,6 +97,7 @@
 (defpackage acl-socket
   (:use #+(or cmu lispworks scl) #:acl-mp #:common-lisp
         #+(or lispworks cmu)#:excl
+        #+clisp #:socket
         ;#+de.dataheaven.chunked #:de.dataheaven.chunked-stream-mixin
         )
   #+cl-ssl (:import-from :ssl #:MAKE-SSL-CLIENT-STREAM #:MAKE-SSL-SERVER-STREAM)
@@ -115,7 +119,7 @@
    #+cl-ssl #:make-ssl-server-stream
    #+lispworks #:socket-os-fd
    )
-  (:nicknames socket))
+  #-clisp(:nicknames socket))
 
 
 #+mcl
