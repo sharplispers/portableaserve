@@ -60,8 +60,11 @@ binary-arch: build
 	dh_install -p $(pkg-aserve) $(src-aserve) $(clc-aserve)
 	dh_install -p $(pkg-html) $(src-html) $(clc-html)
 	dh_install -p $(pkg-compat) $(src-compat) $(clc-compat)
-	dh_installdirs -p $(pkg-aserve) $(doc-base)/$(pkg-aserve)/html
-	dh_install aserve/doc/*.html $(doc-base)/$(pkg-aserve)/html
+	dh_installdirs -p $(pkg-aserve) $(doc-base)/$(pkg-aserve)/html 
+	dh_install -p $(pkg-aserve) $(filter-out $(wildcard aserve/doc/*.html),htmlgen.html) $(doc-base)/$(pkg-aserve)/html
+
+	dh_installdirs -p $(pkg-html) $(doc-base)/$(pkg-html)
+	dh_install -p $(pkg-html) aserve/doc/htmlgen.htm* $(doc-base)/$(pkg-html)
 
 	dh_link -p $(pkg-aserve) $(clc-aserve)/$(name-aserve).asd $(clc-systems)/$(name-aserve).asd
 	dh_link -p $(pkg-compat) $(clc-compat)/$(name-compat).asd $(clc-systems)/$(name-compat).asd
