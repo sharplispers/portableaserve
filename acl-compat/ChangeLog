@@ -1,3 +1,8 @@
+2003-05-02  Rudi Schlatte  <rudi@constantly.at>
+
+	* acl-compat.asd (acl-compat): Current cmucl versions handle Gray
+	streams in (read,write)-sequence -- remove hack
+
 2003-04-30  Rudi Schlatte  <rudi@constantly.at>
 
 	* sbcl/acl-mp.lisp (with-timeout): Use timeout symbols from the
