@@ -6,10 +6,19 @@
 
 (defpackage socket
   (:use :common-lisp)
-  (:export make-socket accept-connection
-           ipaddr-to-dotted dotted-to-ipaddr ipaddr-to-hostname lookup-hostname
-           remote-host remote-port local-host local-port socket-control
+  (:export #:make-socket 
+           #:accept-connection
+           #:ipaddr-to-dotted 
+           #:dotted-to-ipaddr 
+           #:ipaddr-to-hostname 
+           #:lookup-hostname
+           #:remote-host 
+           #:remote-port 
+           #:local-host 
+           #:local-port 
+           #:socket-control
            ))
+
 
 (in-package :socket)
 
