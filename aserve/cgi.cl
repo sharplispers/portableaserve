@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: cgi.cl,v 1.7 2004/02/17 12:48:44 rudi Exp $
+;; $Id: cgi.cl,v 1.8 2004/03/16 16:19:23 kevinrosenberg Exp $
 
 ;; Description:
 ;;   common gateway interface (running external programs)
@@ -80,10 +80,10 @@
       (t (error "illegal value for error-output: ~s" error-output)))
     
     
-    (let ((our-ip (socket:local-host (request-socket req))))
-      (let ((hostname (socket:ipaddr-to-hostname our-ip)))
+    (let ((our-ip (acl-compat.socket:local-host (request-socket req))))
+      (let ((hostname (acl-compat.socket:ipaddr-to-hostname our-ip)))
 	(if* (null hostname) 
-	   then (setq hostname (socket:ipaddr-to-dotted our-ip)))
+	   then (setq hostname (acl-compat.socket:ipaddr-to-dotted our-ip)))
 	(push (cons "SERVER_NAME" hostname) envs)))
     
     (push (cons "SERVER_PROTOCOL"
@@ -91,7 +91,7 @@
 	  envs)
     
     (push (cons "SERVER_PORT"
-		(write-to-string (socket:local-port 
+		(write-to-string (acl-compat.socket:local-port 
 				  (request-socket req))))
 	  envs)
     
@@ -119,12 +119,12 @@
 		 then (push (cons "QUERY_STRING" query) envs))))
     
     
-    (let ((their-ip (socket:remote-host (request-socket req))))
-      (let ((hostname (socket:ipaddr-to-hostname their-ip)))
+    (let ((their-ip (acl-compat.socket:remote-host (request-socket req))))
+      (let ((hostname (acl-compat.socket:ipaddr-to-hostname their-ip)))
 	(if*  hostname
 	   then (push (cons "REMOTE_HOST" hostname) envs)))
       
-      (push (cons "REMOTE_ADDR" (socket:ipaddr-to-dotted their-ip))
+      (push (cons "REMOTE_ADDR" (acl-compat.socket:ipaddr-to-dotted their-ip))
 	    envs))
     
     (if* auth-type
