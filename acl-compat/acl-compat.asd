@@ -141,7 +141,10 @@ lisp-system"))
    (:unportable-cl-source-file
     "acl-socket-openmcl" :depends-on ("packages" "chunked-stream-mixin"))
    ;; Diverse macros, utility functions
-   (:unportable-cl-source-file "acl-excl" :depends-on ("packages" "nregex"))
+   #-allegro (:file "acl-excl-common" :depends-on ("packages" "nregex"))
+   (:unportable-cl-source-file "acl-excl" :depends-on
+                               #-allegro ("acl-excl-common")
+                               #+allegro ("packages" "nregex"))
    (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
    ;; URI objects, URI parsing
    (:file "meta")

@@ -1,3 +1,14 @@
+2004-01-19  Rudi Schlatte  <rudi@constantly.at>
+
+	* scl/acl-excl.lisp, sbcl/acl-excl.lisp, mcl/acl-excl.lisp,
+	lispworks/acl-excl.lisp, cmucl/acl-excl.lisp,
+	clisp/acl-excl.lisp: Remove common functionality from
+	implementation-specific files, dammit!
+
+	* acl-compat.asd: Added acl-excl-common.
+
+	* acl-excl-common.lisp: New file.
+
 2004-01-18  Rudi Schlatte  <rudi@62-99-252-74.C-GMITTE.Xdsl-line.inode.at>
 
 	* acl-excl-corman.lisp (intern*), sbcl/acl-excl.lisp (intern*),
