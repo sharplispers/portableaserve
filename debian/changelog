@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2003.07.29) unstable; urgency=low
+
+  * Update dependencies to move package into testing
+  
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue, 29 Jul 2003 13:32:29 -0600
+
 cl-portable-aserve (1.2.12c+cvs2003.07.06) unstable; urgency=low
 
   * Update for cmucl-18e
