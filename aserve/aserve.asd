@@ -53,7 +53,7 @@ indicate failure."))
 	(:error (error 'compile-failed :component c :operation operation))
 	(:ignore nil)))))
 
-#+(or lispworks cmu mcl openmcl clisp)
+#+(or lispworks cmu sbcl mcl openmcl clisp)
 (defsystem aserve
   :components ((:acl-file "packages")
                (:acl-file "macs" :depends-on ("packages"))
@@ -81,7 +81,7 @@ indicate failure."))
   )
 
 ;;; Logical pathname is needed by AllegroServe examples
-#+(or lispworks cmu mcl openmcl clisp)
+#+(or lispworks cmu mcl openmcl clisp sbcl)
 (setf (logical-pathname-translations "ASERVE")
       `(
         #+ignore                        ; Don't need this with asdf

@@ -31,14 +31,14 @@
 
 (defmethod perform ((operation compile-op) (component gray-streams))
   ;; vanilla cmucl
-  #+common-lisp-controller (require 'cmucl-graystream)
+  #+(and cmu common-lisp-controller) (require 'cmucl-graystream)
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
          (pushnew :gray-streams *features*)))
 
 (defmethod perform ((operation load-op) (component gray-streams))
   ;; vanilla cmucl
-  #+common-lisp-controller (require 'cmucl-graystream)
+  #+(and cmu common-lisp-controller) (require 'cmucl-graystream)
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
          (pushnew :gray-streams *features*)))
@@ -97,7 +97,7 @@ lisp-system"))
 
 (defun lisp-system-shortname ()
   #+allegro :allegro #+lispworks :lw #+cmu :cmu #+(and mcl (not openmcl)) :mcl 
-  #+openmcl :openmcl #+clisp :clisp #+scl :scl)
+  #+openmcl :openmcl #+clisp :clisp #+scl :scl #+sbcl :sbcl)
 
 (defmethod component-pathname ((component unportable-cl-source-file))
   (let ((pathname (call-next-method)))
@@ -111,7 +111,7 @@ lisp-system"))
 ;standard MCL make-load-form is not ansi compliant because of CLIM
 #+(and mcl (not openmcl)) (require :ansi-make-load-form)
 
-#+(or lispworks cmu scl mcl openmcl clisp allegro)
+#+(or lispworks cmu scl sbcl mcl openmcl clisp allegro)
 (defsystem acl-compat
   :components ((:gray-streams "vendor-gray-streams")
 	       (:file "nregex")
@@ -152,6 +152,8 @@ lisp-system"))
                (:legacy-cl-source-file "md5")
                #+nil
 	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
+  #+sbcl :depends-on
+  #+sbcl (:db-sockets)
   #+(or ;;(and cmu common-lisp-controller (not gray-streams))
      (and lispworks ssl-available))
   :depends-on
@@ -161,9 +163,6 @@ lisp-system"))
    ;;#+(and cmu common-lisp-controller (not gray-streams)) :cmucl-graystream
      #+(and lispworks ssl-available) :cl-ssl
        )
-
   :perform (load-op :after (op acl-compat)
 		    (pushnew :acl-compat cl:*features*))
   )
-
-

@@ -1,3 +1,8 @@
+2002-12-17  Rudi Schlatte  <rudi@constantly.at>
+
+	*  (Module): Added first stab at sbcl support (some stub
+	functions, basic page serving works)
+
 2002-12-13  Rudi Schlatte  <rudi@constantly.at>
 
 	* lw-buffering.lisp (stream-write-sequence): Make publish-multi

@@ -17,6 +17,7 @@
   (:use #:common-lisp #:nregex
         #+cmu #:ext
         #+clisp #:ext
+        #+sbcl #:sb-ext #+sbcl #:sb-gray
         )
   (:nicknames #:excl)                   ; to be nuked later
   #+lispworks (:import-from :common-lisp #:fixnump)
@@ -49,6 +50,7 @@
 ;; general
 (defpackage :acl-compat.mp
   (:use :common-lisp)
+  (:nicknames :acl-mp :acl-compat-mp)
   (:export 
    #:*current-process*         ;*
    #:process-kill              ;*
@@ -84,15 +86,16 @@
    #:process-name-to-process
    #:process-wait-with-timeout
    #:wait-for-input-available
-   )
-  (:nicknames :acl-mp :acl-compat-mp))
+   ))
 
 ;; general
 (defpackage acl-compat.socket
-  (:use #+(or cmu lispworks scl) #:acl-mp #:common-lisp
+  (:use #:common-lisp
+        #+(or cmu lispworks scl) #:acl-mp
         #+(or lispworks cmu)#:excl
         #+clisp #:socket
-        ;#+de.dataheaven.chunked #:de.dataheaven.chunked-stream-mixin
+        #+sbcl #:sockets
+        #+(or lispworks cmu) #:de.dataheaven.chunked-stream-mixin
         )
   #+cl-ssl (:import-from :ssl #:MAKE-SSL-CLIENT-STREAM #:MAKE-SSL-SERVER-STREAM)
   #+lispworks (:shadow socket-stream stream-error)
@@ -116,7 +119,6 @@
   (:nicknames #-clisp socket acl-socket))
 
 
-#+mcl
 (defpackage acl-compat.system
   (:nicknames :sys :system)
   (:use :common-lisp) 
@@ -128,8 +130,9 @@
 
 
 (defpackage :gray-stream
+  (:use #:common-lisp)
   (:import-from #+lispworks :stream #+cmu :lisp #+clisp :gray
-                #+(or mcl openmcl) :ccl #+allegro :excl
+                #+(or mcl openmcl) :ccl #+allegro :excl #+sbcl :sb-gray
                 #:fundamental-binary-input-stream
                 #:fundamental-binary-output-stream
                 #:fundamental-character-input-stream
@@ -179,10 +182,9 @@
    #:stream-read-line
    #-clisp #:stream-write-sequence
    #:stream-write-string
-   #+(or lispworks cmu clisp) #:stream-write-buffer
-   #+(or lispworks cmu clisp) #:stream-read-buffer
-   #+(or lispworks cmu clisp) #:stream-fill-buffer
-   #+(or lispworks cmu clisp) #:stream-flush-buffer
-   #+(or lispworks cmu clisp) #:with-stream-input-buffer
-   #+(or lispworks cmu clisp) #:with-stream-output-buffer))
-
+   #:stream-write-buffer
+   #:stream-read-buffer
+   #:stream-fill-buffer
+   #:stream-flush-buffer
+   #:with-stream-input-buffer
+   #:with-stream-output-buffer))

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.23 2002/12/03 14:44:37 rudi Exp $
+;; $Id: main.cl,v 1.24 2002/12/17 14:49:57 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -225,6 +225,9 @@
 
 #+(and clisp unix)
 (defun getpid () (unix:getpid))
+
+#+ (and sbcl unix)
+(defun getpid () (sb-unix:unix-getpid))
 
 ;; more specials
 (defvar *max-socket-fd* 0) ; the maximum fd returned by accept-connection
