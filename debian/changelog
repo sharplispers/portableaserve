@@ -1,3 +1,10 @@
+cl-portable-aserve (1.2.35+cvs.2004.03.16b) unstable; urgency=low
+
+  * New upstream
+  * Now compiles webactions on cmucl/sbcl (closes:231151)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue, 16 Mar 2004 13:41:41 -0700
+
 cl-portable-aserve (1.2.35+cvs.2004.03.16) unstable; urgency=low
 
   * New upstream (closes:238258)
