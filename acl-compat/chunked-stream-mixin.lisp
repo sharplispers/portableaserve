@@ -270,9 +270,6 @@ obviously 0 because no chunk-data got read so far."
     (format stream "0~A~A~A~A" #\Return #\Linefeed #\Return #\Linefeed)
     (force-output stream)))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (pushnew :de.dataheaven.chunked *features*))
 
-(provide :de.dataheaven.chunked)
 
 
