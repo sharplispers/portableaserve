@@ -1,3 +1,7 @@
+2003-12-01  Rudi Schlatte  <rudi@constantly.at>
+
+	* aserve/log.cl (log-request): Don't output request string via format.
+
 2003-11-27  Rudi Schlatte  <rudi@constantly.at>
 
 	* aserve/test/t-aserve.cl: Don't assume that long-site-name

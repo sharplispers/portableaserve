@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: log.cl,v 1.7 2003/08/24 12:35:00 rudi Exp $
+;; $Id: log.cl,v 1.8 2003/12/01 09:23:52 rudi Exp $
 
 ;; Description:
 ;;   iserve's logging
@@ -125,12 +125,12 @@
 
 	    (macrolet ((do-log ()
 			 '(progn (format stream
-				  "~a - - [~a] ~s ~s ~s~%"
+				  "~a - - [~a] "
 				  (acl-compat.socket:ipaddr-to-dotted ipaddr)
-				  (maybe-universal-time-to-date time)
-				  (request-raw-request req)
-				  code
-				  (or length -1))
+				  (maybe-universal-time-to-date time))
+                                 (write-string (request-raw-request req) stream)
+                                 (format stream 
+                                  " ~s ~s~%" code (or length -1))
 			   (force-output stream))))
 			 
 	      (if* lock
