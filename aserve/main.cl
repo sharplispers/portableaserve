@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.15 2002/02/26 16:28:03 desoi Exp $
+;; $Id: main.cl,v 1.16 2002/04/08 14:34:10 desoi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -159,8 +159,11 @@
 (import 'cl::fixnump)
 #+cmu
 (import 'ext:fixnump)
+#+openmcl
+(shadowing-import 'ccl:fixnump)
 #+mcl
-(import 'ccl:fixnump)
+(eval-when (:compile-toplevel :load-toplevel) ;mcl still gives a compiler warning if we don't have this
+  (shadowing-import 'ccl::fixnump) )
 
 (provide :aserve)
 
