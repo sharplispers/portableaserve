@@ -88,6 +88,7 @@
    #:process-name-to-process
    #:process-wait-with-timeout
    #:wait-for-input-available
+   #:process-active-p
    ))
 
 (defpackage :de.dataheaven.chunked-stream-mixin

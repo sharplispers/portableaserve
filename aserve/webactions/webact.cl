@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: webact.cl,v 1.2 2003/12/05 21:23:15 kevinrosenberg Exp $
+;; $Id: webact.cl,v 1.3 2003/12/05 23:21:06 kevinrosenberg Exp $
 
 
 
@@ -624,17 +624,17 @@
     
     (sleep *session-reap-interval*)))
 
-(defvar *webaction-cleanup-lock* (mp:make-process-lock))
+(defvar *webaction-cleanup-lock* (acl-compat.mp:make-process-lock))
 
 (defvar *webaction-cleanup-process* nil)
 
 (defun ensure-webaction-cleanup-process ()
-  (mp:with-process-lock (*webaction-cleanup-lock*)
+  (acl-compat.mp:with-process-lock (*webaction-cleanup-lock*)
     (if* (not (and *webaction-cleanup-process*
-		   (mp:process-active-p *webaction-cleanup-process*)))
+		   (acl-compat.mp:process-active-p *webaction-cleanup-process*)))
        then ; must restart it
 	    (setq *webaction-cleanup-process*
-	      (mp:process-run-function "session reaper" 
+	      (acl-compat.mp:process-run-function "session reaper" 
 		#'webaction-cleanup-process)))))
 
 

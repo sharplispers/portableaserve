@@ -267,6 +267,4 @@
 	   :test 'eql)
    t))
 
-
-  t) 
 )                                     ; #+sb-thread
