@@ -47,13 +47,17 @@
 
 ;;; the CCL::DEFLOADVAR construct ensures that the variable
 ;;; will be reinitialized when a saved image is restarted
-(defloadvar *timer-request-queue* (make-dll-header))
+(defloadvar *timer-request-queue*
+    #-openmcl-native-threads (make-dll-header)
+    #+openmcl-native-threads (make-locked-dll-header))
 
 ;;; Insert the timer request before the first element with a later
 ;;; expiration time (or at the end of the queue if there's no such
 ;;; element.)
 (defun enqueue-timer-request (r)
-  (without-interrupts
+  (#-openmcl-native-threads without-interrupts
+   #+openmcl-native-threads with-locked-dll-header
+   #+openmcl-native-threads (*timer-request-queue*)
    (if (dll-node-succ r)                ;  Already enqueued.
      r                                  ;  Or signal an error.
      (let* ((r-date (timer-request-expiration-tick r)))
@@ -66,7 +70,9 @@
 ;;; Remove a timer request.  (It's a no-op if the request has already
 ;;; been removed.)
 (defun dequeue-timer-request (r)
-  (without-interrupts
+  (#-openmcl-native-threads without-interrupts
+   #+openmcl-native-threads with-locked-dll-header
+   #+openmcl-native-threads (*timer-request-queue*)
    (when (dll-node-succ r)		;enqueued
      (remove-dll-node r))
    r))
@@ -80,6 +86,10 @@
   (let* ((now (get-tick-count))
          (current-process *current-process*)
          (current-process-action ()))
+  (#-openmcl-native-threads progn
+   #+openmcl-native-threads with-locked-dll-header
+   #+openmcl-native-threads (*timer-request-queue*)
+
     (do-dll-nodes (r *timer-request-queue*)
       (when (> (timer-request-expiration-tick r) now)
 	(return))                       ;  Anything remaining is
@@ -93,7 +103,7 @@
           (process-interrupt (timer-request-process r)
 			     (timer-request-function r)))))
     (when current-process-action
-      (funcall current-process-action))))
+      (funcall current-process-action)))))
 
 (%install-periodic-task
  'process-timer-requests                ; Name of periodic task

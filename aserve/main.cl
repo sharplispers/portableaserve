@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.29 2003/08/29 12:45:00 desoi Exp $
+;; $Id: main.cl,v 1.30 2003/11/03 02:59:11 desoi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -227,7 +227,7 @@
 #+ (and sbcl unix)
 (defun getpid () (sb-unix:unix-getpid))
 
-#+mcl
+#+openmcl
 (defun getpid () (ccl::getpid))
 
 ;; more specials
@@ -380,9 +380,14 @@
     :accessor wserver-worker-threads)
      
    (free-workers    ;; estimate of the number of workers that are idle
-    :initform 0
+    :initform #-openmcl-native-threads 0 #+openmcl-native-threads (ccl:make-semaphore)
     :accessor wserver-free-workers)
-     
+
+   #+openmcl-native-threads
+   (work-list
+    :initform (ccl::make-locked-dll-header)
+    :accessor wserver-work-list)
+   
    (accept-thread   ;; thread accepting connetions and dispatching
     :initform nil
     :accessor wserver-accept-thread)
@@ -440,6 +445,11 @@
 		 else "-no socket-")))))
      
 
+#+openmcl-native-threads
+(defstruct (work-list-element (:include ccl::dll-node))
+  semaphore				; used to wake up the worker thread
+  socket)
+     
 ;;;;; virtual host class
 (defclass vhost ()
   ((log-stream :accessor vhost-log-stream
@@ -573,9 +583,15 @@ Problems with protocol may occur." (ef-name ef)))))
 ; safe versions during multiprocessing
 
 (defmacro atomic-incf (var)
+  #+openmcl-native-threads
+  `(ccl::atomic-incf ,var)
+  #-openmcl-native-threads
   `(acl-compat.mp:without-scheduling (incf ,var)))
 
 (defmacro atomic-decf (var)
+  #+openmcl-native-threads
+  `(ccl::atomic-decf ,var)
+  #-openmcl-native-threads
   `(acl-compat.mp:without-scheduling (decf ,var)))
 
 
@@ -962,7 +978,7 @@ by keyword symbols and not by strings"
   ;;
   ;; start the web server
   ;; return the server object
-  #-unix
+  #-(and unix (not openmcl))
   (declare (ignore setuid setgid))
   #-(and allegro (version>= 6 2 beta)) 
   (declare (ignore ssl-password))
@@ -1063,7 +1079,7 @@ by keyword symbols and not by strings"
 					  ))
 	 (is-a-child))
 
-    #+unix
+    #+(and unix (not openmcl))
     (progn
       (if* (fixnump setgid) then (setgid setgid))
       (if* (fixnump setuid) then (setuid setuid)))
@@ -1074,7 +1090,7 @@ by keyword symbols and not by strings"
     (setf (wserver-enable-keep-alive server) keep-alive)
     (setf (wserver-ssl server) ssl)
 
-    #+unix
+    #+(and unix (not openmcl))
     (if* os-processes
        then ; create a number of processes, letting only the main
 	    ; one keep access to the tty
@@ -1198,7 +1214,8 @@ by keyword symbols and not by strings"
   ;; and farming out the work
   
   ; create worker threads
-  (setf (wserver-free-workers *wserver*) 0)
+  #-openmcl-native-threads
+  (setf (wserver-free-workers *wserver*)  0)
   (dotimes (i listeners) (make-worker-thread))
   
   
@@ -1224,7 +1241,10 @@ by keyword symbols and not by strings"
 				)))
     (acl-compat.mp:process-preset proc #'http-worker-thread)
     (push proc (wserver-worker-threads *wserver*))
+    #-openmcl-native-threads
     (atomic-incf (wserver-free-workers *wserver*))
+    #+openmcl-native-threads
+    (ccl:process-enable proc)
     (setf (getf (acl-compat.mp:process-property-list proc) 'short-name) 
       (format nil "w~d" *thread-index*))
     ))
@@ -1232,16 +1252,24 @@ by keyword symbols and not by strings"
 
 (defun http-worker-thread ()
   ;; made runnable when there is an socket on which work is to be done
-  (let ((*print-level* 5)
-	(*worker-request* nil)
-	(*default-aserve-external-format* 
-	 (wserver-external-format *wserver*))
-	)
+  (let* ((*print-level* 5)
+         (*worker-request* nil)
+         (*default-aserve-external-format* 
+          (wserver-external-format *wserver*))
+         #+openmcl-native-threads (semaphore (ccl:make-semaphore))
+         #+openmcl-native-threads (qelem (make-work-list-element
+                                          :semaphore semaphore))
+        )   
     ;; lots of circular data structures in the caching code.. we 
     ;; need to restrict the print level
     (loop
-
-      (let ((sock (car (acl-compat.mp:process-run-reasons acl-compat.mp:*current-process*))))
+      #+openmcl-native-threads
+	(progn
+	  (ccl::locked-dll-header-enqueue qelem (wserver-work-list *wserver*))
+	  (ccl:signal-semaphore (wserver-free-workers *wserver*)) ; tell the server that a worker thread is available
+	  (ccl:wait-on-semaphore semaphore)) ;wait until we have a socket
+      (let ((sock #-openmcl-native-threads (car (acl-compat.mp:process-run-reasons acl-compat.mp:*current-process*))
+		  #+openmcl-native-threads (work-list-element-socket qelem)))
 	#-allegro
 	(when (eq sock :kill) (return))
 	(restart-case
@@ -1278,8 +1306,10 @@ by keyword symbols and not by strings"
 	  (abandon ()
 	      :report "Abandon this request and wait for the next one"
 	    nil))
-	(atomic-incf (wserver-free-workers *wserver*))
-	(acl-compat.mp:process-revoke-run-reason acl-compat.mp:*current-process* sock))
+        #-openmcl-native-threads
+        (progn
+          (atomic-incf (wserver-free-workers *wserver*))
+	  (acl-compat.mp:process-revoke-run-reason acl-compat.mp:*current-process* sock)))
     
       )))
 
@@ -1300,8 +1330,8 @@ by keyword symbols and not by strings"
   ;; ignore sporatic errors but stop if we get a few consecutive ones
   ;; since that means things probably aren't going to get better.
   (let* ((error-count 0)
-	 (workers nil)
-	 (server *wserver*)
+	 #-openmcl-native-threads (workers nil)
+         (server *wserver*)
 	 (main-socket (wserver-socket server))
 	 (ipaddrs (wserver-ipaddrs server)))
     (unwind-protect
@@ -1342,7 +1372,8 @@ by keyword symbols and not by strings"
 		
 		
 		(setq error-count 0) ; reset count
-	
+
+		#-openmcl-native-threads
 		; find a worker thread
 		; keep track of the number of times around the loop looking
 		; for one so we can handle cases where the workers are all busy
@@ -1368,8 +1399,23 @@ by keyword symbols and not by strings"
 			    (pop workers)
 			    (return) ; satisfied
 			    )
-		    (pop workers))))
-	  
+		    (pop workers)))
+		#+openmcl-native-threads
+		(loop
+		    ;; Wait (for up to a second) for some worker thread
+		    ;; to become free.  If that wait times out, create
+		    ;; a new worker thread.
+		    (if (not (ccl:timed-wait-on-semaphore 
+                              (wserver-free-workers *wserver*)  1 ))
+                      (make-worker-thread)
+		      (return
+			(let* ((q (ccl::locked-dll-header-dequeue
+				   (wserver-work-list *wserver*))))
+			  (setf (work-list-element-socket q) sock)
+			  (ccl:signal-semaphore
+			   (work-list-element-semaphore q))
+			  ))))
+	  )
 	    (error (cond)
 	      (logmess (format nil "accept: error ~s on accept ~a" 
 			       error-count cond))
@@ -2720,6 +2766,8 @@ in get-multipart-sequence"))
   data	 ; list of buffers
   create ; create new object for the buffer
   init	 ; optional - used to init buffers taken off the free list
+  #+openmcl-native-threads
+  (lock (acl-compat.mp:make-process-lock))
   )
 
 (defun create-sresource (&key create init)
@@ -2728,6 +2776,8 @@ in get-multipart-sequence"))
 (defun get-sresource (sresource &optional size)
   ;; get a new resource. If size is given then ask for at least that
   ;; size
+  (#-openmcl-native-threads progn
+   #+openmcl-native-threads acl-compat.mp:with-process-lock #+openmcl-native-threads ((sresource-lock sresource))
   (let (to-return)
     ;; force new ones to be allocated
     (acl-compat.mp:without-scheduling 
@@ -2760,19 +2810,22 @@ in get-multipart-sequence"))
        else ; none big enough, so get a new buffer.
 	    (funcall (sresource-create sresource)
 		     sresource
-		     size))))
+		     size)))))
   
 (defun free-sresource (sresource buffer)
   ;; return a resource to the pool
   ;; we silently ignore nil being passed in as a buffer
   (if* buffer 
-     then (acl-compat.mp:without-scheduling
-	    ;; if debugging
-	    (if* (member buffer (sresource-data sresource) :test #'eq)
-	       then (error "freeing freed buffer"))
-	    ;;
+     then (#+openmcl-native-threads acl-compat.mp:with-process-lock #+openmcl-native-threads ((sresource-lock sresource))
+	   #-openmcl-native-threads progn
+				   
+	    (acl-compat.mp:without-scheduling
+ 	      ;; if debugging
+	     (if* (member buffer (sresource-data sresource) :test #'eq)
+		then (error "freeing freed buffer"))
+  	     ;;
 	    
-	    (push buffer (sresource-data sresource)))))
+	     (push buffer (sresource-data sresource))))))
 
 
 

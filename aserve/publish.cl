@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.13 2003/08/24 12:35:00 rudi Exp $
+;; $Id: publish.cl,v 1.14 2003/11/03 02:59:26 desoi Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -1952,6 +1952,7 @@
   (let ((strategy nil)
 	(keep-alive-possible
 	 (and (wserver-enable-keep-alive *wserver*)
+              #-openmcl-native-threads
 	      (>= (wserver-free-workers *wserver*) 2)
 	      (header-value-member "keep-alive" 
 				   (header-slot-value req :connection )))))
@@ -2011,6 +2012,7 @@
   ;; since we konw the file length ahead of time
   (declare (ignore format))
   (let ((keep-alive (and (wserver-enable-keep-alive *wserver*)
+                         #-openmcl-native-threads
 			 (>= (wserver-free-workers *wserver*) 2)
 			 (equalp "keep-alive" 
 				 (header-slot-value req :connection))))

@@ -13,9 +13,11 @@
    "INTERRRUPT-PROCESS"
    "MAKE-PROCESS"
    "MAKE-PROCESS-LOCK"
+   #-openmcl-native-threads
    "PROCESS-ADD-RUN-REASON"
    "PROCESS-KILL"
    "PROCESS-PROPERTY-LIST"
+   #-openmcl-native-threads
    "PROCESS-REVOKE-RUN-REASON"
    "PROCESS-RUN-FUNCTION"
    "WITH-PROCESS-LOCK"
@@ -35,6 +37,7 @@
    ccl:process-allow-schedule
    ccl:process-name
    ccl:process-preset
+   #-openmcl-native-threads
    ccl:process-run-reasons
    ccl:process-wait
    ccl:without-interrupts) 
@@ -95,9 +98,31 @@
                         #'(lambda () ,@timeout-forms)))
 
 
+#+openmcl-native-threads
+(progn
+
+;;; The :INITIAL-BINDINGS arg to process creation functions seems to be
+;;; quoted, even when it appears in a list (as in the case of
+;;; (process-run-function <args>))  By the time that percolates down
+;;; to OpenMCL's process creation functions, it should lose the quote.
+;;;
+;;; Perhaps I imagined that ...
+;;;
+
+(defun ccl::openmcl-fix-initial-bindings (initial-bindings)
+  (if (and (consp initial-bindings)
+           (eq (car initial-bindings) 'quote))
+    (cadr initial-bindings)
+    initial-bindings))
+                             
+)
+	   
+
+#-openmcl-native-threads
 (defmacro process-revoke-run-reason (process reason)
   `(ccl:process-disable-run-reason ,process ,reason) )
 
+#-openmcl-native-threads
 (defmacro process-add-run-reason (process reason)
   `(ccl:process-enable-run-reason ,process ,reason) )
 
@@ -113,7 +138,8 @@
 
 
 (defmacro process-kill (process)
-  `(progn 
+  `(progn
+    #-openmcl-native-threads
      (unless (ccl:process-active-p ,process) ;won't die unless enabled
        (ccl:process-reset-and-enable ,process) )
      (ccl:process-kill ,process)))
@@ -144,14 +170,21 @@ See the functions process-plist, (setf process-plist).")
 (defun make-process (&key (name "Anonymous") reset-action run-reasons arrest-reasons (priority 0) quantum
                           resume-hook suspend-hook initial-bindings run-immediately)
   (declare (ignore priority quantum reset-action resume-hook suspend-hook run-immediately))
+  #-openmcl-native-threads
   (declare (ignore initial-bindings)) ;! need separate lexical bindings for each process?
+  #+openmcl-native-threads
+  (declare (ignore run-reasons arrest-reasons))
   ;(let ((mp:*process-initial-bindings* initial-bindings))
-    (ccl:make-process name :run-reasons run-reasons :arrest-reasons arrest-reasons))
+  #-openmcl-native-threads
+  (ccl:make-process name :run-reasons run-reasons :arrest-reasons arrest-reasons)
+  #+openmcl-native-threads
+  (ccl:make-process name :initial-bindings (ccl::openmcl-fix-initial-bindings initial-bindings)))
 
 (defun process-run-function (name-or-options preset-function &rest preset-arguments)
   (let ((process (ctypecase name-or-options
                    (string (mp:make-process :name name-or-options))
                    (list (apply #'mp:make-process name-or-options)))))
     (apply #'mp:process-preset process preset-function preset-arguments)
-    (process-add-run-reason process :enable)
+    #+openmcl-native-threads (ccl:process-enable process)
+    #-openmcl-native-threads (process-add-run-reason process :enable)
     process))
