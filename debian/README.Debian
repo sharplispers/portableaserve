@@ -1,9 +1,6 @@
 The Debian Package cl-portable-aserve
 -------------------------------------
 
-To use this package with CMUCL, you need to also install the Debian package
-cmucl-graystreams.
-
 Best tested with CMUCL on sid:
 	
 $ lisp
@@ -24,6 +21,4 @@ Other example-files may be found in:
 More info about Portable Aserve may be found on
 http://www.sourceforge.net/projects/portableaserve/
 
-
-Package maintainer:
-Stig E Sandoe <stig@users.sourceforge.net>
+ -- Kevin M. Rosenberg <kmr@debian.org>, Sun Jun 15 19:49:30 2003

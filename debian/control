@@ -14,7 +14,7 @@ Description: Portable Aserve
 
 Package: cl-acl-compat
 Architecture: all
-Depends: common-lisp-controller (>= 3.36), cmucl (> 18e) | lisp-compiler
+Depends: common-lisp-controller (>= 3.36), cmucl (>= 18e) | lisp-compiler
 Description: Compatibility layer for Allegro Common Lisp
  A thin compatibility-layer that emulates Allegro Common Lisp. It is used
  to support a number of Allegro's open-source packages.
