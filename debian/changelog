@@ -1,3 +1,11 @@
+cl-portable-aserve (1.2.12c+cvs2002.10.20) unstable; urgency=low
+
+  * acl-compat.asd: to improve graystream handling with Common Lisp
+  Controller. Merge acl-compat-mcl.system. 
+  * control: Add explanation for the requirement of cmucl-graystream.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun, 20 Oct 2002 13:36:18 -0600
+
 cl-portable-aserve (1.2.12c+cvs2002.10.16) unstable; urgency=low
 
   * Add reader conditional on .asd files so that defsystem is only read

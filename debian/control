@@ -15,9 +15,14 @@ Description: Portable Aserve
 Package: cl-acl-compat
 Architecture: all
 Depends: common-lisp-controller (>= 3.36)
+Recommends: cmucl-graystream
 Description: Compatibility layer for Allegro Common Lisp
  A thin compatibility-layer that emulates Allegro Common Lisp. It is used
  to support a number of Allegro's open-source packages.
+
+ This package requires cmucl-graystream to work with CMUCL. But, that
+ package is not required to allow cl-acl-compat to be installed on
+ platforms that do not support CMUCL.
 
 Package: cl-htmlgen
 Architecture: all

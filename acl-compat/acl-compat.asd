@@ -1,4 +1,3 @@
-
 ;;;; -*- mode: lisp -*-
 ;;;;
 ;;;; This as an ASDF system for ACL-COMPAT, meant to replace
@@ -14,9 +13,6 @@
 (defclass gray-streams (component) ())
 
 (defmethod perform ((operation compile-op) (component gray-streams))
-  ;; Debian cmucl distribution
-  #+(and cmu common-lisp-controller (not gray-streams))
-  (require :cmucl-graystream)
   ;; vanilla cmucl
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
@@ -25,9 +21,6 @@
   #+lispworks (lw:do-nothing))
 
 (defmethod perform ((operation load-op) (component gray-streams))
-  ;; Debian cmucl distribution
-  #+(and cmu common-lisp-controller (not gray-streams))
-  (require :cmucl-graystream)
   ;; vanilla cmucl
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
@@ -37,15 +30,8 @@
 
 #+common-lisp-controller
 (defmethod perform ((operation load-compiled-op) (component gray-streams))
-  ;; Debian cmucl distribution
-  #+(and cmu common-lisp-controller (not gray-streams))
-  (require :cmucl-graystream)
-  ;; vanilla cmucl
-  #+(and cmu (not common-lisp-controller) (not gray-streams))
-  (progn (load "library:subsystems/gray-streams-library")
-         (pushnew :gray-streams *features*))
-  ;; LispWorks (it's already there)
-  #+lispworks (lw:do-nothing))
+  ;; Nothing to do, uses ASDF :depends-on
+)	
 
 
 ;;;; ignore warnings
@@ -100,7 +86,7 @@ are marked by a -system postfix but we could later change that to a directory pe
 lisp-system"))
 
 (defun lisp-system-shortname ()
-  #+acl :acl #+lispworks :lw #+cmu :cmu #+mcl :mcl #+openmcl :openmcl #+scl :scl)
+  #+acl :acl #+lispworks :lw #+cmu :cmu #+mcl :mcl #+scl :scl)
 
 (defmethod component-pathname ((component unportable-cl-source-file))
   (let ((pathname (call-next-method)))
@@ -110,13 +96,19 @@ lisp-system"))
 
 ;;;; system
 
-#+(or lispworks cmu mcl openmcl scl)
+
+;standard MCL make-load-form is not ansi compliant because of CLIM
+#(and mcl (not openmcl))
+(require :ansi-make-load-form)
+
+#+(or lispworks cmu scl mcl openmcl)
 (defsystem acl-compat
   :components ((:gray-streams "vendor-gray-streams")
 	       (:file "nregex")
+	       #+mcl (:file "mcl-timers")
 	       (:file "acl-mp-package")
 	       (:unportable-cl-source-file "acl-mp"
-                      :depends-on ("acl-mp-package" "acl-socket"))
+ 		      :depends-on ("acl-mp-package" "acl-socket" #+mcl "mcl-timers"))
 	       (:unportable-cl-source-file "acl-excl"
 		      :depends-on ("gray-stream-package" "nregex"))
                ;; Debian cmucl has gray stream support for
@@ -126,14 +118,17 @@ lisp-system"))
                ;; cmucl-imp, tho)
 	       #+(and cmu (not common-lisp-controller))
                (:file "cmu-read-sequence")
-	       (:unportable-cl-source-file "acl-socket"
+	       #+(and (mcl (not openmcl)) (:file "acl-socket-mcl")
+	       #+(and mcl openmcl) (:file "acl-socket-openmcl")
+	       #-mcl (:unportable-cl-source-file "acl-socket"
 		      :depends-on ("acl-excl" "chunked-stream-mixin" 
                                    #+(and cmu (not common-lisp-controller))
                                    "cmu-read-sequence"))
 	       (:unportable-cl-source-file "acl-sys")
 	       (:file "meta")
+	       #+openmcl (:file "ansi-loop")
 	       (:file "uri"
-		      :depends-on ("meta"))
+		      :depends-on ("meta" #+openmcl "ansi-loop"))
                (:file "gray-stream-package"
                 :depends-on ("vendor-gray-streams"))
 	       (:legacy-cl-source-file "chunked-stream-mixin"
@@ -142,6 +137,11 @@ lisp-system"))
                (:legacy-cl-source-file "md5")
                #+nil
 	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
+  #+(and cmu common-lisp-controller (not gray-streams))
+  :depends-on
+  #+(and cmu common-lisp-controller (not gray-streams))
+  (:cmucl-graystream)
+
   :perform (load-op :after (op acl-compat)
 		    (pushnew :acl-compat cl:*features*))
   )
@@ -150,3 +150,7 @@ lisp-system"))
 (when (ignore-errors (find-class 'load-compiled-op))
   (defmethod perform :after ((op load-compiled-op) (c (eql (find-system 'acl-compat))))
     (pushnew :acl-compat cl:*features*)))
+
+
+                   ))
+   ))
