@@ -166,7 +166,7 @@
       (setf (output-chunking-p stream) t))))
 
 (defmethod gray-stream:stream-flush-buffer ((stream chunked-stream-mixin)
-                                            &optional wait)
+                                            #-lispworks &optional #-lispworks wait)
   "When there is pending content in the output-buffer then compute the chunk-header and flush
    the buffer"
   (if (output-chunking-p stream)
@@ -179,7 +179,7 @@
                   do (setf (buffer-ref output-buffer i) c))
             (setf (buffer-ref output-buffer output-index) #\Return
                   (buffer-ref output-buffer (1+ output-index)) #\Linefeed)
-            (gray-stream:stream-write-buffer stream output-buffer start (+ output-index 2) wait)
+            (gray-stream:stream-write-buffer stream output-buffer start (+ output-index 2) #-lispworks wait)
             (setf output-index +chunk-header-buffer-offset+))))
     (call-next-method)))
 
