@@ -1,7 +1,27 @@
 This package was debianized by Stig E Sandoe <stig@users.sourceforge.net>
 
-Aserve is distributed under GNU LGPL.
+Aserve is distributed under GNU LGPL.  See also
+/usr/share/doc/cl-aserve/license-allegroserve.txt
+for clarifications. 
 
-[Add contributors to portable aserve]
+The original Aserve is written by Franz Inc, and Portable
+Aserve is maintained by a small team on Sourceforge.
+Prominent team-members:
+  Jochen Schmidt
+  Vebjørn Ljoså
+  Rudolf Schlatte
 
-[Add more copyright-info]
+----
+Prequel to the Gnu Lesser General Public License
+
+Copyright (c) 2000 Franz Inc., Berkeley, CA 94704
+
+Franz Inc. has adopted the concept of the GNU Lesser General Public
+License version 2.1 ("LGPL") to govern the use and distribution of
+AllegroServe.  However, LGPL uses terminology that is more appropriate
+for a program written in C than one written in Lisp.  Nevertheless,
+LGPL can still be applied to a Lisp program if certain clarifications
+are made.  This document details those clarifications.
+
+[See /usr/share/doc/cl-aserve/license-allegroserve.txt for rest.]
+
