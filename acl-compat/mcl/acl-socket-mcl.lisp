@@ -261,7 +261,7 @@
   (declare (ignore stream))
   (warn "SOCKET-CONTROL function not implemented.")
   (when (or output-chunking output-chunking-eof input-chunking)
-    (error "Chunking is not yet supported in MCL. Restart the server with chunking off.") ) )
+    (error "Chunking is not yet supported in MCL. Restart the server with argument :chunking nil (turns chunking off).") ) )
 
 
 (provide 'acl-socket)

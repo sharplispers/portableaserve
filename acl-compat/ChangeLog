@@ -1,3 +1,8 @@
+2003-08-17  Rudi Schlatte  <rudi@constantly.at>
+
+	* sbcl/acl-mp.lisp (with-timeout): Eliminate unused-variable
+	warning.
+
 2003-05-13  Rudi Schlatte  <rudi@constantly.at>
 
 	* cmucl/acl-sys.lisp, cmucl/acl-socket.lisp, cmucl/acl-excl.lisp:

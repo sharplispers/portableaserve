@@ -60,7 +60,7 @@
   (let ((c (gensym "TIMEOUT-")))
     `(handler-case
       (sb-ext:with-timeout ,seconds (progn ,@body))
-      (sb-ext:timeout (,c) ,@timeout-forms))))
+      (sb-ext:timeout (,c) (declare (ignore ,c)) ,@timeout-forms))))
 
 
 #+sb-thread
