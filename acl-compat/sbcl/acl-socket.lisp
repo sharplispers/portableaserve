@@ -138,7 +138,7 @@ streams and handled by their close methods."
       (let ((ll (string-tokens (substitute #\Space #\. dotted))))
 	(+ (ash (first ll) 24) (ash (second ll) 16)
 	   (ash (third ll) 8) (fourth ll)))
-    (ignore-error
+    (ignore-errors
 	(let ((ll (string-tokens (substitute #\Space #\. dotted))))
 	  (+ (ash (first ll) 24) (ash (second ll) 16)
 	     (ash (third ll) 8) (fourth ll))))))
