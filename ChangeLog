@@ -1,3 +1,9 @@
+2003-04-02  Rudi Schlatte  <rudi@constantly.at>
+
+	* aserve/example.cl: Prettified aserve/example.cl: make sensible
+	start-server, start-simple-server functions (Allegro's original
+	examples are in aserve/examples/ nowadays)
+
 2003-03-24  Rudi Schlatte  <rudi@constantly.at>
 
 	* aserve/client.cl (do-http-request): Restore :format :text

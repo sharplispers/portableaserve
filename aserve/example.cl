@@ -5,14 +5,13 @@
    #:COMMON-LISP 
    #:EXCL
    #:NET.HTML.GENERATOR
-   #:NET.ASERVE))
+   #:NET.ASERVE)
+  (:export
+   #:start-server
+   #:stop-server
+   #:start-simple-server))
 
 (in-package :aserve-example)
-
-(setq *wserver* 
-	(make-instance 'wserver :enable-chunking nil :enable-keep-alive nil))
-
-(unpublish :all t)
 
 (defparameter *hit-counter* 0)
 
@@ -108,16 +107,9 @@
 					     `("ASERVE:examples;prfile9.jpg"
 					        "ASERVE:examples;fresh.jpg"))
 				      :element-type '(unsigned-byte 8))
-
 		       (setq selector (mod (1+ selector) 2))
-		     
-		       (loop
-			 (let ((val (read-byte p nil nil)))
-			   (if* (null val) 
-			      then ;eof 
-				   (return))
-			   (write-byte val stream)
-			   )))))))))
+		       (loop for val = (read-byte p nil nil)
+                             while val do (write-byte val stream)))))))))
 
 (publish :path "/pic-redirect"
 	 :content-type "text/html"
@@ -147,9 +139,9 @@
 		 (let ((gotname (assoc "username"
 				       (form-urlencoded-to-query body)
 					:test #'equal)))
-		   (if* gotname
-		      then (setq name (cdr gotname)))))
-		 
+		   (when gotname
+                     (setq name (cdr gotname)))))
+
 	       (with-http-response (req ent)
 		 (with-http-body (req ent)
 		   (html (:head (:title "test form"))
@@ -165,62 +157,55 @@
 
 ;; example of a form that uses that 'get' method
 ;;
-(publish 
- :path "/apropos"
- :content-type "text/html"
- :function
- #'(lambda (req ent)
+(publish :path "/apropos"
+         :content-type "text/html"
+         :function
+         #'(lambda (req ent)
      
-     (let ((lookup (assoc "symbol" (request-query req) :test #'equal)))
-       (with-http-response (req ent)
-	 (with-http-body (req ent)
-	   (html (:head (:title "Allegro Apropos"))
-		 ((:body :background "aserveweb/fresh.jpg")
-		  "New Apropos of "
-		  ((:form :action "apropos"
-			  :method "get")
-		   ((:input :type "text"
-			    :maxlength 40
-			    :size 20
-			    :name "symbol")))
-		  :p
-			
-		  (if* lookup
-		     then (html :hr (:b "Apropos") " of " 
-				(:princ-safe (cdr lookup))
-				:br
-				:br)
-			  (let ((ans (apropos-list (cdr lookup))))
-			    (if* (null ans)
-			       then (html "No Match Found")
-			       else (macrolet ((my-td (str)
-						 `(html ((:td 
-							  :bgcolor "blue")
-							 ((:font :color "white"
-								 :size "+1")
-							  (:b ,str))))))
-						       
-				      (html ((:table
-					      :bgcolor "silver"
-					      :bordercolor "blue"
-					      :border 3
-					      :cellpadding 3
-					      )
-						   
-					     (:tr
-					      (my-td "Symbol")
-					      (my-td "boundp")
-					      (my-td "fboundp"))
-						 
-						   
-					     (dolist (val ans)
-					       (html (:tr 
-						      (:td (:prin1-safe val))
-						      (:td (:prin1 (and (boundp val) t)))
-						      (:td (:prin1 (and (fboundp val) t))))
-						     :newline)))))))
-		     else (html "Enter name and type enter")))
-		 :newline))))))
+             (let ((lookup (assoc "symbol" (request-query req) :test #'equal)))
+               (with-http-response (req ent)
+                 (with-http-body (req ent)
+                   (html (:head (:title "Allegro Apropos"))
+                         ((:body :background "aserveweb/fresh.jpg")
+                          "New Apropos of "
+                          ((:form :action "apropos"
+                                  :method "get")
+                           ((:input :type "text"
+                                    :maxlength 40
+                                    :size 20
+                                    :name "symbol")))
+                          :p
+                          (if lookup
+                              (let ((ans (apropos-list (cdr lookup))))
+                                (html :hr (:b "Apropos") " of "
+                                      (:princ-safe (cdr lookup))
+                                      :br
+                                      :br)
+                                (if (null ans)
+                                    (html "No Match Found")
+                                    (macrolet ((my-td (str)
+                                                 `(html ((:td 
+                                                          :bgcolor "blue")
+                                                         ((:font :color "white"
+                                                                 :size "+1")
+                                                          (:b ,str))))))
+                                      (html ((:table
+                                              :bgcolor "silver"
+                                              :bordercolor "blue"
+                                              :border 3
+                                              :cellpadding 3)
+                                             (:tr
+                                              (my-td "Symbol")
+                                              (my-td "boundp")
+                                              (my-td "fboundp"))
+                                             (dolist (val ans)
+                                               (html (:tr
+                                                      (:td (:prin1-safe val))
+                                                      (:td (:prin1 (and (boundp val) t)))
+                                                      (:td (:prin1 (and (fboundp val) t))))
+                                                     :newline)))))))
+                              (html "Enter name and type enter")))
+                         :newline))))))
 
 ;; a preloaded picture file
 (publish-file :path "/aserveweb/fresh.jpg"
@@ -266,17 +251,15 @@
 	 :function
 	 #'(lambda (req ent)
 	     (multiple-value-bind (name password) (get-basic-authorization req)
-	       (if* (and (equal name "foo") (equal password "bar"))
-		  then (with-http-response (req ent)
+	       (if (and (string= name "foo") (string= password "bar"))
+                   (with-http-response (req ent)
 			 (with-http-body (req ent)
 			   (html (:head (:title "Secret page"))
 				 (:body "You made it to the secret page"))))
-		  else
-		       (with-http-response (req ent :response 
-						*response-unauthorized*)
-			 (set-basic-authorization req
-						   "secretserver")
-			 (with-http-body (req ent)))))))
+                   (with-http-response (req ent
+                                            :response *response-unauthorized*)
+                     (set-basic-authorization req "secretserver")
+                     (with-http-body (req ent)))))))
 
 (publish :path "/local-secret"
 	 :content-type "text/html"
@@ -285,20 +268,19 @@
 	     (let ((net-address (ash (acl-socket:remote-host
 				      (request-socket req))
 				     -24)))
-	       (if* (equal net-address 127)
-		  then (with-http-response (req ent)
-			 (with-http-body (req ent)
-			   (html (:head (:title "Secret page"))
-				 (:body (:b "Congratulations. ")
-					"You are on the local network"))))
-		  else
-		       (with-http-response (req ent)
-			 (with-http-body (req ent)
-			   (html
-			    (:html (:head (:title "Unauthorized"))
-				   (:body 
-				    "You cannot access this page "
-				    "from your location")))))))))
+	       (if (equal net-address 127)
+		   (with-http-response (req ent)
+                     (with-http-body (req ent)
+                       (html (:head (:title "Secret page"))
+                             (:body (:b "Congratulations. ")
+                                    "You are on the local network"))))
+                   (with-http-response (req ent)
+                     (with-http-body (req ent)
+                       (html
+                        (:html (:head (:title "Unauthorized"))
+                               (:body 
+                                "You cannot access this page "
+                                "from your location")))))))))
 
 
 (publish :path "/local-secret-auth"
@@ -372,75 +354,61 @@
 	 :content-type "text/html; charset=utf-8"
 	 :function
 	 #'(lambda (req ent)
-	     
 	     (with-http-response (req ent)
-	       (let ((h nil)
-		     (files-written)
-		     (text-strings)
-		     )
-		 (loop
-		   ; get headers for the next item
-		   (if* (null (setq h (get-multipart-header req)))
-		      then ; no more items
-			   (return))
-		   ; we can get the filename from the header if 
-		   ; it was an <input type="file"> item.  If there is
-		   ; no filename, we just create one.
-		   (let ((cd (assoc :content-disposition h :test #'eq))
-			 (filename)
-			 (sep))
-		     (if* (and cd (consp (cadr cd)))
-			then (setq filename (cdr (assoc "filename" 
-							(cddr (cadr cd))
-							:test #'equalp)))
-			     (if* filename
-				then ;; locate the part of the filename
-				     ;; after the last directory separator.
-				     ;; the common lisp pathname functions are
-				     ;; no help since the filename syntax
-				     ;; may be foreign to the OS on which
-				     ;; the server is running.
-				     (setq sep
-				       (max (or (position #\/ filename
-							  :from-end t) -1)
-					    (or (position #\\ filename
-							  :from-end t) -1)))
-				     (setq filename
-				       (subseq filename (1+ sep) 
-					       (length filename)))))
-		     (if* filename
-			then (push filename files-written)
-		     (with-open-file (pp filename :direction :output
-				      :if-exists :supersede
-				      :element-type '(unsigned-byte 8))
-		       (format t "writing file ~s~%" filename)
-		       (let ((buffer (make-array 4096
-						 :element-type 
-						 '(unsigned-byte 8))))
-			 
-			 (loop (let ((count (get-multipart-sequence 
-					     req 
-					     buffer)))
-				 (if* (null count) then (return))
-				 (write-sequence buffer pp :end count)))))
-			else ; no filename, just grab as a text
-			     ; string
-			     (let ((buffer (make-string 1024)))
-			       (loop
-				 (let ((count (get-multipart-sequence
-					       req buffer
-					       :external-format :utf8-base)))
-				   (if* count
-				      then (push (subseq buffer 0 count)
-						 text-strings)
-				      else (return))))))))
-		 
-	       
-	       
+	       (let (files-written
+                     text-strings)
+		 (loop for h = (get-multipart-header req)
+                       while h
+                       ;; we can get the filename from the header if 
+                       ;; it was an <input type="file"> item.  If there is
+                       ;; no filename, we just create one.
+                       do (let ((cd (assoc :content-disposition h :test #'eq))
+                                (filename)
+                                (sep))
+                            (when (and cd (consp (cadr cd)))
+                              (setq filename (cdr (assoc "filename" 
+                                                         (cddr (cadr cd))
+                                                         :test #'equalp)))
+                              (when filename
+                                ;; locate the part of the filename after
+                                ;; the last directory separator.  the
+                                ;; common lisp pathname functions are no
+                                ;; help since the filename syntax may be
+                                ;; foreign to the OS on which the server
+                                ;; is running.
+                                (setq sep
+                                      (max (or (position #\/ filename
+                                                         :from-end t) -1)
+                                           (or (position #\\ filename
+                                                         :from-end t) -1)))
+                                (setq filename
+                                      (subseq filename (1+ sep)
+                                              (length filename)))))
+                            (if filename
+                                (progn
+                                  (push filename files-written)
+                                  (with-open-file (pp filename :direction :output
+                                                      :if-exists :supersede
+                                                      :element-type '(unsigned-byte 8))
+                                    (format t "writing file ~s~%" filename)
+                                    (let ((buffer (make-array 4096
+                                                              :element-type 
+                                                              '(unsigned-byte 8))))
+                                      ;; note: we could also use
+                                      ;; get-all-multipart-data here
+                                      (loop for count = (get-multipart-sequence
+                                                         req buffer)
+                                            while count
+                                            do (write-sequence buffer pp :end count)))))
+                                ;; no filename, just grab as a text string
+                                (let ((buffer (make-string 1024)))
+                                  (loop for count = (get-multipart-sequence
+                                                     req buffer
+                                                     :external-format :utf8-base)
+                                        while count
+                                        do (push (subseq buffer 0 count) text-strings))))))
 		 ;; now send back a response for the browser
-	       
-		 (with-http-body (req ent
-				      :external-format :utf8-base)
+		 (with-http-body (req ent :external-format :utf8-base)
 		   (html (:html (:head (:title "form example"))
 				(:body "-- processed the form, files written --"
 				       (dolist (file (nreverse files-written))
@@ -531,26 +499,20 @@
 		       (setf k (- i j))
 		       (setf k (+ i j k))
 		       (setf k (- i j k)))))))
-						
-					     
+
 	     (with-http-response (req ent)
 	       (with-http-body (req ent)
 		 (html "done")))))
 
 
-(defun start-server (&key (port 80) (ssl #+cl-ssl t #-cl-ssl nil))
-  (acl-mp:process-run-function "aserve-example" 
-			       #'(lambda ()
-			           (start :server *wserver* 
-				          :port port 
-				          :listeners 5 
-                                          :ssl (and ssl "/home/jsc/ssl/server.pem")
-				          :chunking (not ssl) 
-				          :keep-alive (not ssl)
-                                          ))))
+(defun start-server (&rest args &key (port 2001) &allow-other-keys)
+  (apply #'net.aserve:start :port port args))
 
-(defun start-simple-server (&key (port 80) ssl)
-  (start :server *wserver* :port port :chunking nil :keep-alive nil :listeners 0) :ssl ssl)
+(defun stop-server ()
+  (net.aserve:shutdown))
+
+(defun start-simple-server (&key (port 2001))
+  (net.aserve:start :port port :chunking nil :keep-alive nil :listeners 0))
 
 
 
