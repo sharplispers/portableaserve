@@ -144,7 +144,7 @@ lisp-system"))
 	       (:legacy-cl-source-file "chunked-stream-mixin"
 		      :depends-on ("packages" "acl-excl" #+nil "gray-stream-package"))
 
-               (:file "acl-ssl" :depends-on ("acl-ssl-streams"))
+               (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
                (:file "acl-ssl-streams" :depends-on ("packages"))
 
                #+nil

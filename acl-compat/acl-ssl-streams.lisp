@@ -13,7 +13,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defclass ssl-stream-mixin ()
-  ((ssl-socket :initarg :ssl-socket)))
+  ((ssl-socket :accessor ssl-socket :initarg :ssl-socket)))
 
 (defclass binary-ssl-stream 
           (ssl-stream-mixin
@@ -226,3 +226,50 @@
       (ssl-internal:flush-output-buffer ssl-socket))
     (ssl-internal:close-ssl-socket ssl-socket)))
 |#
+
+(declaim (inline %reader-function-for-sequence))
+(defun %reader-function-for-sequence (sequence)
+  (typecase sequence
+    (string #'read-char)
+    ((array unsigned-byte (*)) #'read-byte)
+    ((array signed-byte (*)) #'read-byte)
+    (otherwise #'read-byte)))
+
+(declaim (inline %writer-function-for-sequence))
+(defun %writer-function-for-sequence (sequence)
+  (typecase sequence
+    (string #'write-char)
+    ((array unsigned-byte (*)) #'write-byte)
+    ((array signed-byte (*)) #'write-byte)
+    (otherwise #'write-byte)))
+
+;; Bivalent socket support for READ-SEQUENCE / WRITE-SEQUENCE
+(defmethod gray-stream:stream-read-sequence ((stream ssl-stream-mixin) sequence start end)
+  (stream::read-elements stream sequence start end (%reader-function-for-sequence sequence)))
+
+(defmethod gray-stream:stream-write-sequence ((stream ssl-stream-mixin) sequence start end)
+  (stream::write-elements stream sequence start end (%writer-function-for-sequence sequence)))
+
+(in-package :acl-socket)
+
+(defmethod remote-host ((socket ssl::ssl-stream-mixin))
+  (comm:get-socket-peer-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket))))
+
+(defmethod remote-port ((socket ssl::ssl-stream-mixin))
+  (multiple-value-bind (host port)
+      (comm:get-socket-peer-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket)))
+    (declare (ignore host))
+    port))
+
+(defmethod local-host ((socket ssl::ssl-stream-mixin))
+  (multiple-value-bind (host port)
+      (comm:get-socket-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket)))
+    (declare (ignore port))
+    host))
+
+(defmethod local-port ((socket ssl::ssl-stream-mixin))
+  (multiple-value-bind (host port)
+      (comm:get-socket-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket)))
+    (declare (ignore host))
+    port))
+    
