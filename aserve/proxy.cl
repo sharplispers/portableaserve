@@ -1,4 +1,4 @@
-;; -*- mode: common-lisp; package: net.aserve -*-
+;; -*- mode: lisp; package: net.aserve -*-
 ;;
 ;; proxy.cl
 ;;
@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.1 2001/08/06 03:42:31 neonsquare Exp $
+;; $Id: proxy.cl,v 1.2 2001/08/09 10:27:58 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -1085,7 +1085,7 @@ cached connection = ~s~%" cond cached-connection))
   (let ((name (format nil "~d-cache-cleaner" (incf *thread-index*))))
     (setf (pcache-cleaner pcache)
       (mp:process-run-function 
-       name
+       name #-allegro nil
        #'(lambda (server)
 	   (let ((*wserver* server)
 		 (pcache (wserver-pcache server)))
@@ -1118,7 +1118,7 @@ cached connection = ~s~%" cond cached-connection))
 	   #'(lambda (req ent)
 	       #+allegro (gc)
 	       #+cmu (ext:gc)
-	       #+lispworks (gc-if-needed)
+	       #+lispworks (hcl:gc-if-needed)
 	       (display-proxy-cache-statistics req ent pcache)))
   
   (publish :path "/cache-entries-global-gc"
@@ -2649,7 +2649,7 @@ cached connection = ~s~%" cond cached-connection))
      :plist ',(uri-plist self)
      :string ,(net.uri::uri-string self)
      ; bug is missing ' in parsed-path value
-     :parsed-path ',(net.uri::.uri-parsed-path self)))
+     :parsed-path ',(net.uri::uri-parsed-path self)))
 ;)
 
 (defun save-proxy-cache (filename &key (server *wserver*))
