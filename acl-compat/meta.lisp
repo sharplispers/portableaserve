@@ -209,6 +209,11 @@
 (defun disable-meta-syntax()
 	(copy-readtable *saved-readtable* *readtable*))
 
+#+mcl ;MCL won't compile to a file without this.
+(defmethod make-load-form ((m meta) &optional env)
+  (declare (ignore env))
+  `(make-meta :char ,(meta-char m) :form ',(meta-form m)) )
+
 
 (provide 'meta)
 
