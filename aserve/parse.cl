@@ -25,7 +25,7 @@
 ;;
 
 ;;
-;; $Id: parse.cl,v 1.1 2001/08/06 03:42:25 neonsquare Exp $
+;; $Id: parse.cl,v 1.2 2001/08/30 09:16:05 ljosa Exp $
 
 ;; Description:
 ;;   parsing and encoding code  
@@ -340,7 +340,9 @@
 	   then (format *debug-stream* "early eof reading response after ~d bytes~%" i)
 		(return nil) ; eof - failure
 		)
-	(if* echo then (write-char (code-char ch) *debug-stream*))
+	(if* echo 
+	   then (write-char (code-char ch) *debug-stream*)
+		(force-output *debug-stream*))
 	(setf (aref buff i) ch)
 	(incf i)
 	(case state

@@ -1,3 +1,30 @@
+2001-08-15  John Foderaro  <jkf@tiger.franz.com>
+1.2.5
+	* main.cl - incf version number for new release
+
+2001-08-09  John Foderaro  <jkf@tiger.franz.com>
+
+	*  publish.cl - added :filter functionality to publish-directory
+	*  test/t-aserve.cl - test filters in publish-directory
+
+2001-08-08  John Foderaro  <jkf@tiger.franz.com>
+
+	*  publish.cl - allow list of index files to be specified in
+		for each directory-entity.
+	    - specify a catch-all compute-response-stream method so 
+	      users adding new entity type don't have to do so.
+
+2001-08-08  jkf  <jkf@main.verada.com>
+
+	* publish.cl - fix for when no body is given with-http-body
+		and thus a string-output-stream is not created.
+
+2001-07-30    <jkf@DEEDEE>
+1.2.4
+	* main.cl: fix get-multipart-* to correspond to rfc2046
+		and thus it will work with the Opera browser which 
+		generates legal (but unusual) kinds of boundary markers
+
 2001-07-19  John Foderaro  <jkf@tiger.franz.com>
 1.2.3
 	* publish.cl 

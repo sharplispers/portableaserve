@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.1 2001/08/06 03:42:36 neonsquare Exp $
+;; $Id: publish.cl,v 1.2 2001/08/30 09:16:05 ljosa Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -119,6 +119,17 @@
     :initarg :cache-p
     :initform nil
     :accessor cache-p)   
+   
+   ; list of name of files that can be used to index this directory
+   (indexes   :initarg :indexes
+	      :initform nil
+	      :accessor directory-entity-indexes)
+   
+   ; filter is nil or a function of   req ent filename
+   ; which can process the request or return nil
+   (filter    :initarg :filter
+	      :initform nil
+	      :accessor directory-entity-filter)
     
    
    )
@@ -506,6 +517,8 @@
 			       locator
 			       remove
 			       authorizer
+			       (indexes '("index.html" "index.htm"))
+			       filter
 			       )
   
   ;; make a whole directory available
@@ -522,6 +535,8 @@
 		       :host host
 		       :port port
 		       :authorizer authorizer
+		       :indexes indexes
+		       :filter filter
 		       )))
     
   (dolist (entpair (locator-info locator))
@@ -966,11 +981,9 @@
   t	; we've handled it
   )
 
-	      
-		
 (defmethod process-entity ((req http-request) (ent directory-entity))
   ;; search for a file in the directory and then create a file
-  ;; entity for it so we can track last modified and stu
+  ;; entity for it so we can track last modified.
   
   ; remove the prefix and tack and append to the given directory
   
@@ -1000,18 +1013,19 @@
 	 then ; not present
 	      (return-from process-entity nil)
        elseif (eq :directory type)
-	 then ; we have to try index.html and index.htm
+	 then ; Try the indexes (index.html, index.htm, or user-defined).
+	      ; tack on a trailing slash if there isn't one already.
 	      (if* (not (eq #\/ (schar realname (1- (length realname)))))
 		 then (setq realname (concatenate 'string realname "/")))
+
+	      (setf redir-to 
+		(dolist (index (directory-entity-indexes ent) 
+			  ; no match to index file, give up
+			  (return-from process-entity nil))
+		  (if* (eq :file (excl::filesys-type
+				  (concatenate 'string realname index)))
+		     then (return index))))
 	      
-	      (if* (eq :file (excl::filesys-type
-			      (concatenate 'string realname "index.html")))
-		 then (setq redir-to "index.html")
-	       elseif (eq :file (excl::filesys-type
-				 (concatenate 'string realname "index.htm")))
-		 then (setq redir-to "index.htm")
-		 else ; failure
-		      (return-from process-entity nil))
        elseif (not (eq :file type))
 	 then  ; bizarre object
 	      (return-from process-entity nil)))
@@ -1032,6 +1046,9 @@
 			       redir-to))
 			     
 		(with-http-body (req ent))))
+     elseif (and (directory-entity-filter ent)
+		 (funcall (directory-entity-filter ent) req ent realname))
+       thenret ; processed by the filter
        else ;; ok realname is a file.
 	    ;; create an entity object for it, publish it, and dispatch on it
       
@@ -1213,10 +1230,15 @@
       
       (if* (and post-headers
 		(eq time :post)
-		(member :string-output-stream strategy :test #'eq))
+		(member :string-output-stream strategy :test #'eq)
+		)
 	 then ; must get data to send from the string output stream
-	      (setq content (get-output-stream-string 
-			     (request-reply-stream req)))
+	      (setq content 
+		(if* (request-reply-stream req)
+			then (get-output-stream-string 
+			      (request-reply-stream req))
+		   else ; no stream created since no body given
+			""))
 	      (setf (request-reply-content-length req) (length content)))
       	
       (if* (and send-headers
@@ -1315,7 +1337,7 @@
   ;;
   (setf (request-reply-stream req) (request-socket req)))
 
-(defmethod compute-response-stream ((req http-request) (ent computed-entity))
+(defmethod compute-response-stream ((req http-request) (ent entity))
   ;; may have to build a string-output-stream
   (if* (member :string-output-stream (request-reply-strategy req) :test #'eq)
      then (setf (request-reply-stream req) (make-string-output-stream))
