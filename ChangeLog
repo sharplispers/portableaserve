@@ -1,3 +1,8 @@
+2002-07-19  Rudi Schlatte  <rudi@constantly.at>
+
+	* contrib/session.lisp (Module): New file, contributed by
+	Brendan Burns to Franz's opensource list
+
 2002-07-07  Rudi Schlatte  <rudi@constantly.at>
 
 * cmucl version now uses asdf instead of mk-defsystem:
