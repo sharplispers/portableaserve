@@ -164,7 +164,10 @@ streams and handled by their close methods."
           port))))
 
 (defun socket-control (stream &key output-chunking output-chunking-eof input-chunking)
-  (declare (ignore stream output-chunking output-chunking-eof input-chunking))
-  (warn "SOCKET-CONTROL function not implemented."))
+  (declare (ignore stream))
+  (warn "SOCKET-CONTROL function not implemented.")
+  (when (or output-chunking output-chunking-eof input-chunking)
+    (error "Chunking is not yet supported in cmucl. Restart the server with chunking off.")))
+
 
 (provide 'acl-socket)
