@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: decode.cl,v 1.5 2002/06/09 11:35:01 rudi Exp $
+;; $Id: decode.cl,v 1.6 2002/07/26 13:45:54 desoi Exp $
 
 ;; Description:
 ;;   decode/encode code
@@ -457,7 +457,7 @@
   ;; Buffer is a string, which gets returned
   `(let ((,buffer-var (make-string ,size)))
      (macrolet ((cvt-buf-to-string (x &key external-format end)
-		  (declare (ignore external-format))
+		  (declare (ignore external-format end))
 		  x)
 		(set-buf-elt (buf i char)
 		  `(setf (schar ,buf ,i) ,char))
