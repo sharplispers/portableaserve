@@ -13,7 +13,7 @@
 
 (shadowing-import '(
                     mp:*current-process*
-                    mp::process-preset
+                ;    mp::process-preset
                     mp::process-reset
                     mp:process-interrupt
                     mp::process-name
@@ -28,7 +28,7 @@
                     ))
 
 (export '(          *current-process*
-                    process-preset
+                 ;   process-preset
                     process-reset
                     process-interrupt
                     process-name
@@ -92,27 +92,45 @@ process-add-run-reason, process-revoke-run-reason.")
   (setf (process-run-reasons process)
         (pushnew object (process-run-reasons process))))
 
-;;;
-;;; Note from JSC: PROCESS-RUN-FUNCTION should be changed to be more similar
-;;;                to the ACL API.
-;;;                I have at least removed the keywords argument here.
-;;;                Initial-bindings should be included too (!)
-;;;
-
 (defun process-run-function (name-or-options preset-function &rest preset-arguments)
   (let ((process (ctypecase name-or-options
                    (string (make-process :name name-or-options))
                    (list (apply #'make-process name-or-options)))))
-    (apply #'mp::process-preset process preset-function preset-arguments)
+    (apply #'acl-mp::process-preset process preset-function preset-arguments)
     process))
 
-;;;
-;;; Note from JSC: This need "initial-bindings" support too
-;;;
+(defun process-preset (process preset-function &rest arguments)
+  (mp:process-preset process #'(lambda () (apply-with-bindings preset-function
+							       arguments
+							       (process-initial-bindings process)))))
+
+(defvar *process-initial-bindings* (make-hash-table :test #'eq))
+
+(defun process-initial-bindings (process)
+  (gethash process *process-initial-bindings*))
+
+(defun (setf process-initial-bindings) (bindings process)
+  (setf (gethash process *process-initial-bindings*) bindings))
+
+
+;;;                          ;;;
+;;; Contributed by Tim Moore ;;;
+;;;	                     ;;;
+(defun apply-with-bindings (function args bindings)
+  (if bindings
+      (progv
+	  (mapcar #'car bindings)
+	  (mapcar #'(lambda (binding)
+		      (eval (cdr binding))))
+	(apply function args))
+      (apply function args)))
+
 (defun make-process (&key (name "Anonymous") reset-action run-reasons arrest-reasons (priority 0) quantum
                           resume-hook suspend-hook initial-bindings run-immediately)
   (declare (ignore priority quantum reset-action resume-hook suspend-hook run-immediately))
-  (mp:make-process nil :name name))
+  (let ((process (mp:make-process nil :name name)))
+    (setf (process-initial-bindings process) initial-bindings)
+    process))
 
 (defun process-kill (process)
   (mp:destroy-process process))
