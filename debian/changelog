@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2002.12.02) unstable; urgency=low
+
+  * New upstream
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Mon,  2 Dec 2002 09:57:40 -0700
+
 cl-portable-aserve (1.2.12c+cvs2002.11.07) unstable; urgency=low
 
   * Adds clisp support

@@ -25,15 +25,15 @@
 ;;;; relevant functions.
 ;;;;
 #-mcl
-(in-package "USER")
+(in-package :user)
 
 ;;;; CND - 6/3/2001
 (defpackage nregex
-  (:use "COMMON-LISP")
+  (:use #:common-lisp)
   (:export 
-		"REGEX"
-		"REGEX-COMPILE"
-		))
+   #:regex
+   #:regex-compile
+  ))
 
 ;;;; CND - 6/3/2001
 (in-package :nregex)

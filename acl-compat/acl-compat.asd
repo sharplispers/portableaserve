@@ -31,6 +31,7 @@
 
 (defmethod perform ((operation load-op) (component gray-streams))
   ;; vanilla cmucl
+  #+common-lisp-controller (require 'cmucl-graystream)
   #+(and cmu (not common-lisp-controller) (not gray-streams))
   (progn (load "library:subsystems/gray-streams-library")
          (pushnew :gray-streams *features*)))
@@ -109,7 +110,7 @@ lisp-system"))
 	       (:file "nregex")
                (:file "packages" :depends-on ("nregex"))
 	       #+mcl (:file "mcl-timers")
-               #-lispworks (:file "lw-buffering" :depends-on ("packages"))
+               #+portable-gray-stream (:file "lw-buffering" :depends-on ("packages"))
 	       (:unportable-cl-source-file "acl-mp"
  		      :depends-on ("packages" "acl-socket"
                                    ;"acl-mp-package"
@@ -136,20 +137,24 @@ lisp-system"))
 	       (:legacy-cl-source-file "chunked-stream-mixin"
 		      :depends-on ("packages"
                                    "acl-excl"
-                                   #-lispworks "lw-buffering"))
-	       #-(or allegro mcl cmu)
+                                   #+portable-gray-stream "lw-buffering"))
+	       #+(and ssl-available (not (or allegro mcl cmu)))
                (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
-	       #-(or allegro mcl cmu)
+	       #+(and ssl-available (not (or allegro mcl cmu)))
                (:file "acl-ssl-streams" :depends-on ("packages"))
                #+nil
                (:legacy-cl-source-file "md5")
                #+nil
 	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
-  #+(or (and cmu common-lisp-controller (not gray-streams)) lispworks)
+  #+(or ;;(and cmu common-lisp-controller (not gray-streams))
+     (and lispworks ssl-available))
   :depends-on
-  #+(or (and cmu common-lisp-controller (not gray-streams)) lispworks)
-  ( #+(and cmu common-lisp-controller (not gray-streams)) :cmucl-graystream
-     #+lispworks :cl-ssl)
+  #+(or ;;(and cmu common-lisp-controller (not gray-streams))
+     (and lispworks ssl-available))
+  (
+   ;;#+(and cmu common-lisp-controller (not gray-streams)) :cmucl-graystream
+     #+(and lispworks ssl-available) :cl-ssl
+       )
 
   :perform (load-op :after (op acl-compat)
 		    (pushnew :acl-compat cl:*features*))
