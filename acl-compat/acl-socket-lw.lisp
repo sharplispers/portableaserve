@@ -18,43 +18,39 @@
 
 (in-package socket)
 
-(defclass socket ()
-  ((fd :type fixnum
-       :initarg :fd
-       :reader fd)))
-
-(defmethod print-object ((socket socket) stream)
-  (print-unreadable-object (socket stream :type t :identity t)
-    (format stream "@~d" (fd socket))))
-
-(defclass server-socket (socket)
+(defclass server-socket ()
   ((element-type :type (member signed-byte unsigned-byte base-char)
 		 :initarg :element-type
 		 :reader element-type)
    (port :type fixnum
 	 :initarg :port
 	 :reader port)
-   (proc :initarg :proc
-         :reader server-socket-process)
-   (mbox :initarg :mbox
-         :reader server-socket-mbox)
-   (mbox2 :initarg :mbox2
-	  :reader server-socket-mbox2)))
+   (passive-socket :initarg :passive-socket
+	   :reader passive-socket)))
 
-(defmethod print-object ((socket server-socket) stream)
-  (print-unreadable-object (socket stream :type t :identity nil)
-    (format stream "@~d on port ~d" (fd socket) (port socket))))
+(defmethod fd ((server-socket server-socket))
+  42)
+
+(defmethod print-object ((server-socket server-socket) stream)
+  (print-unreadable-object (server-socket stream :type t :identity nil)
+    (format stream "@~d on port ~d" (fd server-socket) (port server-socket))))
 
 (defmethod accept-connection ((server-socket server-socket)
 			      &key (wait t))
-  (let ((mbox (server-socket-mbox server-socket))
-	(mbox2 (server-socket-mbox2 server-socket)))
-    (mp:mailbox-send mbox2 :foo)
-    (when (or wait (mp:mailbox-peek mbox))
-      (make-instance
-       'comm:socket-stream :direction :io
-       :socket (mp:mailbox-read mbox)
-       :element-type (element-type server-socket)))))
+  (unless wait
+    (cerror "Proceed anyway, and risk blocking." ()
+	    "Nonclocking accept-connection not implemented."))
+  (make-instance 'comm:socket-stream
+		 :socket (comm::get-fd-from-socket (passive-socket server-socket))
+		 :direction :io
+		 :element-type (element-type server-socket)))
+
+(defun %new-passive-socket (local-port)
+  (multiple-value-bind (socket error-location error-code)
+      (comm::create-tcp-socket-for-service local-port)
+    (cond (socket socket)
+	  (t (error "Passive socket creation failed: ~A (~A)" error-location
+		    error-code)))))
 
 (defun make-socket (&key (remote-host "localhost")
 			 local-port
@@ -69,28 +65,18 @@
                         (:bivalent 'unsigned-byte))))
     (ecase connect 
       (:passive
-       (let* ((mbox (mp:make-mailbox :size 1))
-	      (mbox2 (mp:make-mailbox :size 1))
-              (proc (comm:start-up-server
-                     :function (lambda (sock)
-				 (mp:mailbox-read mbox2)
-                                 (mp:mailbox-send mbox sock))
-                     :service local-port)))
-         (make-instance 'server-socket
-                        :mbox mbox
-			:mbox2 mbox2
-		        :port local-port
-                        :proc proc
-                        :fd (first (mp::process-wait-function-arguments proc))
-                        :element-type element-type)))
+       (make-instance 'server-socket
+		      :port local-port
+		      :passive-socket (%new-passive-socket local-port)
+		      :element-type element-type))
       (:active
        (comm:open-tcp-stream remote-host remote-port
 			     :direction :io
 			     :element-type element-type)))))
 
-(defmethod close ((server server-socket) &key abort)
+(defmethod close ((server-socket server-socket) &key abort)
   (declare (ignore abort))
-  (mp:process-kill (server-socket-process server)))
+  (close (passive-socket server-socket)))
 
 (declaim (ftype (function ((unsigned-byte 32)) (values simple-string))
 		ipaddr-to-dotted))
@@ -148,6 +134,7 @@
 (defun remote-port (socket-stream)
   (multiple-value-bind (host port)
       (comm:socket-stream-peer-address socket-stream)
+    (declare (ignore host))
     port))
 
 (defun local-host (socket-stream)
@@ -158,6 +145,7 @@
       (port socket-stream)
     (multiple-value-bind (host port)
         (comm:socket-stream-address socket-stream)
+      (declare (ignore host))
       port)))
 
 (defun socket-control (stream &key output-chunking output-chunking-eof input-chunking)
