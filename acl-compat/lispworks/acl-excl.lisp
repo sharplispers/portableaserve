@@ -179,21 +179,6 @@ program-controlled interception of a break."
 (defmacro without-package-locks (&body forms)
   `(progn ,@forms))
 
-(define-condition socket-error (error)
-  ((stream :initarg :stream)
-   (code :initarg :code :initform nil)
-   (action :initarg :action)
-   (identifier :initarg :identifier :initform nil))
-  (:report (lambda (e s)
-	     (with-slots (identifier code action stream) e
-	       (format s "~S (errno ~A) occured while ~A"
-		       (case identifier
-			 (:connection-refused "Connection refused")
-			 (t identifier))
-		       code action)
-	       (when stream
-		 (prin1 stream s))
-	       (format s ".")))))
 
 (defun string-to-octets (string &key (null-terminate t) (start 0)
                          end mb-vector make-mb-vector?
