@@ -377,6 +377,8 @@ program-controlled interception of a break."
             start end seq)
     (rotatef start end))
   (cond
+    ((subtypep (array-element-type seq) '(unsigned-byte 8))
+     (write-sequence seq (lisp-stream stream) :start start :end end))
     ((subtypep (array-element-type seq) 'character)
      (loop for i from start below end
             do (stream-write-char stream (aref seq i))))
