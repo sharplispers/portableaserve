@@ -24,7 +24,7 @@
 ;;;; to get working with Corman Lisp 1.42, add package statement and export
 ;;;; relevant functions.
 ;;;;
-
+#-mcl
 (in-package "USER")
 
 ;;;; CND - 6/3/2001
