@@ -111,8 +111,9 @@ obviously 0 because no chunk-data got read so far."
              (when (and (>= input-index input-limit) ; need new data
                         (not (call-next-method))) ; couldn't get it
                (error "Unexpected end-of-file while reading chunk block"))
-             (prog1 (code-char (buffer-ref input-buffer input-index))
-               (incf input-index)))
+             (prog1 #-lispworks (code-char (buffer-ref input-buffer input-index))
+                    #+lispworks (buffer-ref input-buffer input-index)
+                    (incf input-index)))
            (read-chunk-header ()
              (let ((chunk-length 0))
                (tagbody

@@ -25,7 +25,9 @@
                 (error "~A: Calling a multiprocessing function on a single-threaded sbcl build"
                        ',name))))
   (def process-interrupt (process function))
-  (def process-name (process))          ; *x
+  (defun process-name (process)         ; *x
+    (declare (ignore process))
+    "the only process")
   (def process-wait-function (process))
   (def process-whostate (process))
   (def process-wait (process))          ; *x

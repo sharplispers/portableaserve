@@ -1,3 +1,10 @@
+2003-11-27  Rudi Schlatte  <rudi@62-99-252-74.C-GMITTE.Xdsl-line.inode.at>
+
+	* chunked-stream-mixin.lisp (gray-stream:stream-fill-buffer): Fix
+	for Lispworks client mode contributed by Edi Weitz to
+	paserve-discuss list on 2003-11-25
+
+	* sbcl/acl-mp.lisp: Single-threaded "implementation" of process-name
 
 2003-09-19  Rudi Schlatte  <rudi@constantly.at>
 

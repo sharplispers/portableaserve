@@ -1,3 +1,9 @@
+2003-11-27  Rudi Schlatte  <rudi@constantly.at>
+
+	* aserve/test/t-aserve.cl: Don't assume that long-site-name
+	returns a FQDN; better fixes than just using "localhost" welcome
+	(but these will be implementation-specific, I fear...)
+
 2003-11-06  Rudi Schlatte  <rudi@constantly.at>
 
 	* aserve/htmlgen/htmlgen.cl (html-standard-print): Fix bug

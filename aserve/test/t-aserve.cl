@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: t-aserve.cl,v 1.3 2003/08/31 09:05:33 rudi Exp $
+;; $Id: t-aserve.cl,v 1.4 2003/11/27 10:08:47 rudi Exp $
 
 ;; Description:
 ;;   test iserve
@@ -223,7 +223,13 @@
 	dummy-2-contents
 	(dummy-2-name "xx2aservetest.txt")
 	(prefix-local (format nil "http://localhost:~a" port))
-	(prefix-dns   (format nil "http://~a:~a" 
+	(prefix-dns
+         ;; KLUDGE: Don't assume that long-site-name returns a valid
+         ;; hostname -- punt instead.
+         #-allegro
+         (format nil "http://localhost:~a" port)
+         #+allegro
+         (format nil "http://~a:~a" 
 			      (long-site-name)
 			      port)))
     
@@ -242,7 +248,7 @@
 			     )))
       (test nil (net.aserve::contents ent)) ; nothing cached yet
 
-      ;; 
+      ;;
       (dolist (cur-prefix (list prefix-local prefix-dns))
 	(dolist (keep-alive '(nil t))
 	  (dolist (protocol '(:http/1.0 :http/1.1))
@@ -288,7 +294,7 @@
 		  :preload nil)
     
 
-    ;; 
+    ;;
     (dolist (cur-prefix (list prefix-local prefix-dns))
       (dolist (keep-alive '(nil t))
 	(dolist (protocol '(:http/1.0 :http/1.1))
@@ -381,7 +387,7 @@
       (declare (ignore headers))
       (test 200 (and :df-test code))
       (test dummy-1-contents body :test #'equal))
-    
+
     (multiple-value-bind (body code headers)
 	(x-do-http-request (format nil "~a/checkit" prefix-dns))
       (declare (ignore headers))
