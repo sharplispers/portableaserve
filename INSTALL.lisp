@@ -78,6 +78,32 @@
   
   )
 
+
+#+mcl
+(require :mk-defsystem)
+;Portable mk-defsystem can be found here:
+;http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/~checkout~/clocc/clocc/src/defsystem-3.x/defsystem.lisp
+;Place the file or an alias to it (or the compiled file) in the MCL Library folder for require to find it.
+
+#+mcl
+(progn
+; Load logical host definitions
+(load (merge-pathnames "logical-hostnames.lisp" *load-truename*))
+
+; Load definition of ACL Compatibility system
+(load "acl-compat:acl-compat-mcl.system")
+
+; Compile and load ACL Compatibility system
+(mk:oos "ACL-COMPAT" :load :compile-during-load t) 
+
+; Load definition of Aserve system
+(load "aserve:aserve.system")
+
+; Compile and load the ASERVE system
+(mk:oos "ASERVE" :load :compile-during-load t)
+)
+
+
 #||
 ;;; To test the installation, evaluate the following:
 
