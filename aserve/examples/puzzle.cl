@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: puzzle.cl,v 1.2 2002/06/09 11:34:59 rudi Exp $
+;; $Id: puzzle.cl,v 1.3 2002/12/26 19:55:44 rudi Exp $
 
 ;; Description:
 ;;   Allegro Serve puzzle example
@@ -33,7 +33,7 @@
 
 
 (defpackage puzzle
-  (:use :common-lisp :excl))
+  (:use :common-lisp :acl-compat.excl))
 
 (in-package :puzzle)
 
