@@ -3,7 +3,7 @@
 (defpackage "ASERVE-EXAMPLE"
   (:use 
    #:COMMON-LISP 
-   #:EXCL
+   #:ACL-COMPAT.EXCL
    #:NET.HTML.GENERATOR
    #:NET.ASERVE)
   (:export

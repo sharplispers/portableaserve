@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.13 2003/08/24 12:35:00 rudi Exp $
+;; $Id: client.cl,v 1.14 2004/01/27 10:53:45 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -714,7 +714,7 @@ or \"foo.com:8000\", not ~s" proxy))
 						  else (code-char ch))
 					       net.aserve::*debug-stream*))
 				      (setf (aref buffer i) ch))))
-	      (excl::socket-chunking-end-of-file
+	      (acl-compat.excl::socket-chunking-end-of-file
 		  (cond)
 		(declare (ignore cond))
 		; remember that there is no more data left
@@ -810,8 +810,8 @@ or \"foo.com:8000\", not ~s" proxy))
 (defun get-header-line-buffer ()
   ;; return the next header line buffer
   (let (buff)
-    (excl::atomically
-      (excl::fast (setq buff (pop *response-header-buffers*))))
+    (acl-compat.excl::atomically
+      (acl-compat.excl::fast (setq buff (pop *response-header-buffers*))))
     (if* buff
        thenret
        else (make-array 400 :element-type 'character))))

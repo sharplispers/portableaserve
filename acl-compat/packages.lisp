@@ -21,7 +21,6 @@
         #+cormanlisp :excl
         #+mcl :ccl
         )
-  #-cormanlisp (:nicknames #-allegro #:excl)                   ; to be nuked later
   #+lispworks (:import-from :common-lisp #:fixnump)
   #+sbcl (:import-from :sb-int #:fixnump)
   (:export

@@ -7,6 +7,10 @@
 
 (in-package :acl-compat.excl)
 
+#-openmcl
+(defun fixnump (x)
+  (ccl::fixnump x))
+
 #+openmcl
 (defun filesys-inode (path)
   (let ((checked-path (probe-file path)))
@@ -75,45 +79,6 @@
   (declare (ignore data stream opt))
   (error "fasl-write not implemented for MCL.") )
 
-;! copied from cmu - make part of common acl-excl
-(defun write-vector (sequence stream &key start end endian-swap)
-  (declare (ignore endian-swap))
-  (check-type sequence (or string (array (unsigned-byte 8) 1)
-                           (array (signed-byte 8) 1)))
-  (write-sequence sequence stream :start start :end end))
-
-;! copied from cmu - make part of common acl-excl
-(defun string-to-octets (string &key (null-terminate t) (start 0)
-                         end mb-vector make-mb-vector?
-                         (external-format :default))
-  "This function returns a lisp-usb8-vector and the number of bytes copied."
-  (declare (ignore external-format))
-  ;; The end parameter is different in ACL's lambda list, but this
-  ;; variant lets us give an argument :end nil explicitly, and the
-  ;; right thing will happen
-  (unless end (setf end (length string)))
-  (let* ((octets-copied (if null-terminate 1 0))
-         (needed-length (if null-terminate (1+ (- end start))
-                            (- end start)))
-         (mb-vector (cond
-                      ((and mb-vector (>= (length mb-vector) needed-length))
-                       mb-vector)
-                      ((or (not mb-vector) make-mb-vector?)
-                       (make-array (list needed-length)
-                                   :element-type '(unsigned-byte 8)
-                                   :initial-element 0))
-                      (t (error "Was given a vector of length ~A, ~
-                                 but needed at least length ~A."
-                                (length mb-vector) needed-length)))))
-    (declare (type (simple-array (unsigned-byte 8) (*)) mb-vector))
-    (loop for from-index from start below end
-          for to-index upfrom 0
-          do (progn
-               (setf (aref mb-vector to-index)
-                     (char-code (aref string from-index)))
-               (incf octets-copied)))
-    (values mb-vector octets-copied)))
-
 
 (defmacro schedule-finalization (object function)
   `(ccl:terminate-when-unreachable ,object ,function))
@@ -172,5 +137,3 @@
                        (t nil)))
                 (error-stream (if (eql error-output :stream) err-stream nil)))
             (values normal-stream error-stream pid)))))))
-
-(provide 'acl-excl)

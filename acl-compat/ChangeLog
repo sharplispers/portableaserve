@@ -1,3 +1,28 @@
+2004-01-27  Rudi Schlatte  <rudi@constantly.at>
+
+	* chunked-stream-mixin.lisp: replace excl: package prefix with
+	acl-compat.excl:
+
+2004-01-26  Rudi Schlatte  <rudi@constantly.at>
+
+	* mcl/acl-excl.lisp (fixnump): new function.
+
+	* packages.lisp (:acl-compat.excl): Remove "excl" nickname.
+
+	* clisp/acl-excl.lisp (fixnump): new function.
+
+2004-01-24  Rudi Schlatte  <rudi@constantly.at>
+
+	* acl-excl-common.lisp (string-to-octets): null-terminate vector
+	when asked to.
+
+	* cmucl/acl-excl.lisp, lispworks/acl-excl.lisp, mcl/acl-excl.lisp,
+	sbcl/acl-excl.lisp, scl/acl-excl.lisp: Move write-vector,
+	string-to-octets to commmon file.
+
+	* acl-excl-common.lisp: Moved write-vector, string-to-octets from
+	implementation-specific files.
+
 2004-01-19  Rudi Schlatte  <rudi@constantly.at>
 
 	* scl/acl-excl.lisp, sbcl/acl-excl.lisp, mcl/acl-excl.lisp,

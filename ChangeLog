@@ -1,3 +1,15 @@
+2004-01-27  Rudi Schlatte  <rudi@constantly.at>
+
+	* INSTALL.lisp: clean up a bit, merge sbcl, cmu and lispworks
+	loading code.
+
+	* Replaced package prefix excl: with acl-compat.excl: throughout.
+	
+	* aserve/main.cl (connection-reset-error): Hackishly implement for
+	OpenMCL and conditionalize allegro-specific function call -- this
+	should fix stray hangs (caused by threads wanting to enter the
+	debugger) on all platforms.
+
 2004-01-21  Rudi Schlatte  <rudi@constantly.at>
 
 	* contrib/asdf.lisp: New upstream version.

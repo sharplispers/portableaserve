@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.32 2004/01/11 16:53:27 rudi Exp $
+;; $Id: main.cl,v 1.33 2004/01/27 10:53:44 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -45,14 +45,6 @@
     (require :process)
     #+ (and allegro (version>= 6)) (require :acldns) ; not strictly required but this is preferred
 )
-
-#+openmcl
-(shadowing-import 'ccl:fixnump)
-#+mcl
-(eval-when (:compile-toplevel :load-toplevel) ;mcl still gives a compiler warning if we don't have this
-  (shadowing-import 'ccl::fixnump) )
-#+clisp
-(shadowing-import 'sys::fixnump)
 
 (provide :aserve)
 
@@ -1232,7 +1224,7 @@ by keyword symbols and not by strings"
 	   :initial-bindings
 	   `((*wserver*  . ',*wserver*)
 	     #+ignore (*debug-io* . ',(wserver-terminal-io *wserver*))
-	     ,@excl:*cl-default-special-bindings*)
+	     ,@acl-compat.excl:*cl-default-special-bindings*)
            :run-reasons '(:enable))
      #'http-accept-thread)))
 
@@ -1243,7 +1235,7 @@ by keyword symbols and not by strings"
 				`((*wserver*  . ',*wserver*)
 				  #+ignore (*debug-io* . ',(wserver-terminal-io 
 						   *wserver*))
-				  ,@excl:*cl-default-special-bindings*)
+				  ,@acl-compat.excl:*cl-default-special-bindings*)
 				)))
     (acl-compat.mp:process-preset proc #'http-worker-thread)
     (push proc (wserver-worker-threads *wserver*))
@@ -1323,9 +1315,18 @@ by keyword symbols and not by strings"
   ;; return true if this is what results from a connection reset
   ;; by peer 
   (if* (typep c 'stream-error)
-     then (or (eq (stream-error-identifier c) :connection-reset)
-	      #+(and allegro unix) (eq (stream-error-code c) 32) ; sigpipe
-	      #+(and allegro aix) (eq (stream-error-code c) 73) 
+     then (or #+(or allegro lispworks)
+              (eq (stream-error-identifier c) :connection-reset)
+	      #+(and allegro unix)
+              (eq (stream-error-code c) 32) ; sigpipe
+	      #+(and allegro aix)
+              (eq (stream-error-code c) 73)
+              #+openmcl
+              (and (typep c 'ccl::simple-stream-error)
+                   (stringp (simple-condition-format-control c))
+                   (search "Connection reset by peer"
+                           (simple-condition-format-control c)
+                           :test #'char=))
 	      )))
 
 	  

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.12 2003/12/02 14:20:40 rudi Exp $
+;; $Id: proxy.cl,v 1.13 2004/01/27 10:53:44 rudi Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -1842,8 +1842,8 @@ cached connection = ~s~%" cond cached-connection))
   ;; attempt to increase the use count of this entry by one.
   ;; If successful return true.
   ;; If the entry is dead return nil
-  (excl::atomically
-    (excl::fast
+  (acl-compat.excl::atomically
+    (acl-compat.excl::fast
      (let ((val (pcache-ent-use pcache-ent)))
        (if* val
 	  then (setf (pcache-ent-use pcache-ent) 
@@ -1854,7 +1854,7 @@ cached connection = ~s~%" cond cached-connection))
   (acl-compat.mp:without-scheduling
     (let ((val (pcache-ent-use pcache-ent)))
       (if* val
-	 then (if* (and (zerop (excl::fast
+	 then (if* (and (zerop (acl-compat.excl::fast
 				(decf #-cormanlisp (the fixnum val) #+cormanlisp val)))
 			(eq (pcache-ent-state pcache-ent) :dead))
 		 then (setf (pcache-ent-use pcache-ent) nil)
@@ -2192,8 +2192,8 @@ cached connection = ~s~%" cond cached-connection))
   ;; flush all the deal items from the cache, returning
   ;; their resource
   (let (ent)
-    (excl::atomically
-     (excl::fast
+    (acl-compat.excl::atomically
+     (acl-compat.excl::fast
       (setf ent (pcache-dead-ent pcache)
 	    (pcache-dead-ent pcache) nil)))
     
@@ -2210,8 +2210,8 @@ cached connection = ~s~%" cond cached-connection))
 	     then (return-free-blocks (pcache-ent-pcache-disk ent)
 				      diskloc)))
 	(setq ent (pcache-ent-next ent)))
-      (excl::atomically 
-       (excl::fast 
+      (acl-compat.excl::atomically 
+       (acl-compat.excl::fast 
 	(decf #-cormanlisp (the fixnum (pcache-dead-items pcache)) #+cormanlisp (pcache-dead-items pcache) 
 	      #-cormanlisp (the fixnum count) #+cormanlisp count))))))
      
@@ -2315,8 +2315,8 @@ cached connection = ~s~%" cond cached-connection))
   ; If the value was nil and thus we set it to true, then
   ; we are the process responsible for loading in the data
   ;
-  (let ((flagval (excl::atomically
-		  (excl::fast 
+  (let ((flagval (acl-compat.excl::atomically
+		  (acl-compat.excl::fast 
 		   (let ((val (pcache-ent-loading-flag pcache-ent)))
 		     (if* (null val) 
 			then (setf (pcache-ent-loading-flag pcache-ent) t))
@@ -2361,8 +2361,8 @@ cached connection = ~s~%" cond cached-connection))
     
 	; insert in memory 
 	
-	(excl::atomically
-	 (excl::fast
+	(acl-compat.excl::atomically
+	 (acl-compat.excl::fast
 	  (setf (pcache-ent-disk-location pcache-ent) nil
 		(pcache-ent-pcache-disk pcache-ent) nil
 		(pcache-ent-loading-flag pcache-ent) nil)))))))

@@ -7,6 +7,9 @@
 
 (in-package :acl-compat.excl)
 
+(defun fixnump (x)
+  (sys::fixnump x))
+
 (defun stream-input-fn (stream)
   stream)
 

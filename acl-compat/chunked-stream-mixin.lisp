@@ -66,10 +66,10 @@ not yet read into the buffer, or nil if input chunking is disabled")
 (defmethod (setf input-chunking-p) (new-value (stream chunked-stream-mixin))
   (setf (slot-value stream 'chunk-input-avail) (and new-value 0)))
 
-(define-condition excl::socket-chunking-end-of-file (condition)
-  ((excl::format-arguments :initform nil :initarg :format-arguments)
-   (excl::format-control :initform "A chunking end of file occured"
-                         :initarg :format-control)))
+(define-condition acl-compat.excl::socket-chunking-end-of-file (condition)
+  ((acl-compat.excl::format-arguments :initform nil :initarg :format-arguments)
+   (acl-compat.excl::format-control :initform "A chunking end of file occured"
+                                    :initarg :format-control)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -172,7 +172,7 @@ obviously 0 because no chunk-data got read so far."
                       ;; rfc2616 indicates that input chunking is
                       ;; turned off after zero-length chunk is read
                       ;; (see section 19.4.6) -- turn off chunking
-                      (progn (signal 'excl::socket-chunking-end-of-file
+                      (progn (signal 'acl-compat.excl::socket-chunking-end-of-file
                                      :format-arguments stream)
                              (setf (input-chunking-p stream) nil)
                              ;; TODO: whoever handles

@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: examples.cl,v 1.6 2003/12/02 14:20:39 rudi Exp $
+;; $Id: examples.cl,v 1.7 2004/01/27 10:53:44 rudi Exp $
 
 ;; Description:
 ;;   Allegro iServe examples
@@ -151,7 +151,7 @@
 				  :br
 				  ))
 			 
-			 #+(and unix allegro (version>= 6 1))
+			 #+(and unix (or (and allegro (version>= 6 1)) mcl))
 			 (html
 			  "cgi tests: " 
 			  ((:a :href "cgi0") "show environment")

@@ -2,20 +2,24 @@
 
 (in-package "CL-USER")
 
-#+(and (or lispworks cmu mcl) (not asdf))
-(let ((asdf-pathname
-       (merge-pathnames (make-pathname
-                         :directory '(:relative "contrib")
-                         :name "asdf"
-                         :case :local)
-                        *load-truename*)))
-  (warn "~
+(defun ensure-asdf ()
+  #+asdf (return-from ensure-asdf t)
+  #+sbcl (require :asdf)
+  #-sbcl (let ((asdf-pathname
+                (merge-pathnames (make-pathname
+                                  :directory '(:relative "contrib")
+                                  :name "asdf"
+                                  :case :local)
+                                 *load-truename*)))
+           (warn "~
 Loading asdf from ~A ~
 ~:_(you might want to load asdf at startup ~
 ~:_and set up asdf:*central-registry* to point to your systems)" asdf-pathname)
-  (load asdf-pathname))
+           (load asdf-pathname)))
 
-#+(or lispworks cmu)
+(ensure-asdf)
+
+#-mcl
 (progn
   (flet ((find-or-load-system (system path)
            (let ((path (merge-pathnames path *load-truename*)))
@@ -69,39 +73,6 @@ Cannot find ASDF system definition for ~A ~
 
   )
 
-
-#+sbcl
-(require :asdf)
-
-#+sbcl
-(progn
-  (flet ((find-or-load-system (system path)
-           (let ((path (merge-pathnames path *load-truename*)))
-             (unless (asdf:find-system system nil)
-               (warn "~
-                      Cannot find ASDF system definition for ~A ~
-                      ~:_in asdf:*central-registry*, ~
-                      ~:_loading from file ~A. ~
-                      ~:_Hint: \"ln -sf ~A /path/to/your/systems\" ~
-                      ~:_to avoid this warning in the future."
-                     system path (namestring path))
-               (load path)))))
-    (find-or-load-system :acl-compat
-                         (make-pathname
-                          :directory '(:relative "acl-compat")
-                          :name "acl-compat" :type "asd" :case :local))
-    (find-or-load-system :htmlgen
-                         (make-pathname
-                          :directory '(:relative "aserve" "htmlgen")
-                          :name "htmlgen" :type "asd" :case :local))
-    (find-or-load-system :aserve
-                         (make-pathname
-                          :directory '(:relative "aserve")
-                          :name "aserve" :type "asd" :case :local)))
-  ;; Compile and load the ASERVE system
-  (asdf:operate 'asdf:load-op :acl-compat)
-  (asdf:operate 'asdf:load-op :htmlgen)
-  (asdf:operate 'asdf:load-op :aserve))
 
 #+mcl
 (progn

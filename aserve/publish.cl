@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.15 2003/12/02 14:20:40 rudi Exp $
+;; $Id: publish.cl,v 1.16 2004/01/27 10:53:44 rudi Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -635,8 +635,8 @@
     (if* preload
        then ; keep the content in core for fast display
 	    (with-open-file (p file :element-type #+cormanlisp 'unsigned-byte #-cormanlisp '(unsigned-byte 8))
-	      (let ((size (excl::filesys-size (stream-input-fn p)))
-		    (lastmod (excl::filesys-write-date (stream-input-fn p)))
+	      (let ((size (acl-compat.excl::filesys-size (stream-input-fn p)))
+		    (lastmod (acl-compat.excl::filesys-write-date (stream-input-fn p)))
 		    (guts))
 		(setq guts (make-array size :element-type '(unsigned-byte 8)))
 	      
@@ -1469,7 +1469,7 @@
        then ; give up right away.
 	    (return-from process-entity nil))
     
-    (let ((type (excl::filesys-type realname)))
+    (let ((type (acl-compat.excl::filesys-type realname)))
       (if* (null type)
 	 then ; not present
 	      (return-from process-entity nil)
@@ -1483,7 +1483,7 @@
 		(dolist (index (directory-entity-indexes ent) 
 			  ; no match to index file, give up
 			  (return-from process-entity nil))
-		  (if* (eq :file (excl::filesys-type
+		  (if* (eq :file (acl-compat.excl::filesys-type
 				  (concatenate 'string realname index)))
 		     then (return index))))
 	      
@@ -1636,7 +1636,7 @@
 	 else (setq root (subseq realname 0 (1+ pos))))
     
       (let ((aname (concatenate 'string root access-file)))
-	(if* (setq file-write-date (excl::file-write-date aname))
+	(if* (setq file-write-date (acl-compat.excl::file-write-date aname))
 	   then ; access file exists
 		(let ((entry (assoc aname 
 				    (directory-entity-access-file-cache ent)
@@ -1835,7 +1835,7 @@
 		 (if* (null (errorset
 			     (with-open-file (p (multi-item-data item)
 					      :direction :input)
-			       (let* ((size (excl::filesys-size 
+			       (let* ((size (acl-compat.excl::filesys-size 
 					     (stream-input-fn p)))
 				      (contents
 				       (make-array size 
