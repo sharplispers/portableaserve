@@ -85,7 +85,8 @@ streams and handled by their close methods."
   (declare (ignore abort))
   (unix:unix-close (fd server)))
 
-(declaim (ftype (function ((unsigned-byte 32)) (values simple-string))
+(declaim (ftype (function ((unsigned-byte 32) &key (:values t))
+                          (values simple-string))
 		ipaddr-to-dotted))
 (defun ipaddr-to-dotted (ipaddr &key values)
   (declare (type (unsigned-byte 32) ipaddr))
