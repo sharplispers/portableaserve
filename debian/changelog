@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.5b-4) unstable; urgency=low
+
+  * Fixing lintian bugs
+
+ -- Stig E Sandoe <stig@users.sourceforge.net>  Sat, 13 Oct 2001 15:11:03 +0200
+
 cl-portable-aserve (1.2.5b-3) unstable; urgency=low
 
   * Minor fix on debian-package type.
