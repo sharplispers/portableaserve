@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: htmlgen.cl,v 1.5 2002/12/03 14:44:36 rudi Exp $
+;; $Id: htmlgen.cl,v 1.6 2003/11/06 22:36:29 rudi Exp $
 
 ;; Description:
 ;;   html generator
@@ -463,7 +463,7 @@
 	 (html-print-subst ff subst stream)))
      (if* (html-process-has-inverse ent)
 	then ; end the form
-	     (write-html-string (format nil "</~a>" (html-process-key ent)))))))
+	     (write-html-string (format nil "</~a>" (html-process-key ent)) stream)))))
      
   
   

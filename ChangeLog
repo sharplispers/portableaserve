@@ -1,3 +1,9 @@
+2003-11-06  Rudi Schlatte  <rudi@constantly.at>
+
+	* aserve/htmlgen/htmlgen.cl (html-standard-print): Fix bug
+	reported by Sean Ross to portableaserve-help (2003-11-06): output
+	the closing tags to the given stream, not standard-output
+
 2003-08-31  Rudi Schlatte  <rudi@constantly.at>
 
 	* aserve/test/t-aserve.cl: First steps for activating test code,
