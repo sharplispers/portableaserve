@@ -167,14 +167,14 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
 (meta:disable-meta-syntax))
 
-(defmethod uri-authority ((uri uri))
+(defun uri-authority (uri)
   "Construct the authority component out of the host and the
    port slot of an uri-object"
   (if (uri-port uri)
       (format nil "~A:~A" (uri-host uri) (uri-port uri))
     (uri-host uri)))
 
-(defmethod (setf uri-authority) ((value string) (uri uri))
+(defun (setf uri-authority) (value uri)
   "Construct the authority component out of the host and the
    port slot of an uri-object"
   (let ((colon-pos (position #\: value)))
