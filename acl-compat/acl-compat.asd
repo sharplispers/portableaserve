@@ -157,7 +157,7 @@ lisp-system"))
    (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
   ;; Implementation-specific dependencies
   #+sbcl :depends-on
-  #+sbcl (:sb-bsd-sockets)
+  #+sbcl (:sb-bsd-sockets :sb-posix)
   #+(and cmu common-lisp-controller) :depends-on
   #+(and cmu common-lisp-controller) (:cmucl-graystream)
   #+(and lispworks ssl-available) :depends-on

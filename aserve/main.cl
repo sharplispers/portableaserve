@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.31 2003/12/02 14:20:40 rudi Exp $
+;; $Id: main.cl,v 1.32 2004/01/11 16:53:27 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -225,7 +225,13 @@
 (defun getpid () (unix:getpid))
 
 #+ (and sbcl unix)
-(defun getpid () (sb-unix:unix-getpid))
+(progn
+  (defun getpid () (sb-posix:getpid))
+  (defun setuid (uid) (sb-posix:setuid uid))
+  (defun setgid (gid) (sb-posix:setgid gid))
+  (defun unix-fork () (sb-unix:unix-fork)))
+
+
 
 #+openmcl
 (defun getpid () (ccl::getpid))

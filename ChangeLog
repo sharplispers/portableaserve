@@ -1,3 +1,7 @@
+2004-01-11    <rudi@constantly.at>
+
+	* aserve/main.cl: Added setuid / setgid for sbcl.
+
 2003-12-02  Rudi Schlatte  <rudi@constantly.at>
 
 	* Update to upstream version 1.2.33

@@ -1,3 +1,7 @@
+2004-01-11    <rudi@constantly.at>
+
+	* acl-compat.asd: Load sb-posix for sbcl.
+
 2003-12-15  Rudi Schlatte  <rudi@constantly.at>
 
 	NOTE: this checkin has a reasonable chance of breaking (and mcl
