@@ -48,36 +48,6 @@
 ;;;; Comments, suggestions and bug reports to the author,
 ;;;; Christopher Double, at: chris@double.co.nz
 
-(defpackage :excl
-	(:use #:common-lisp #:nregex #:ext)
-	(:export
-         #:if*
-         #:*initial-terminal-io*
-         #:*cl-default-special-bindings*
-         #:filesys-size
-         #:filesys-write-date
-         #:stream-input-fn
-         #:match-regexp
-         #:compile-regexp
-         #:*current-case-mode*
-         #:intern*
-         #:filesys-type
-         #:errorset
-         #:atomically
-         #:fast
-         #:without-package-locks
-         #:string-to-octets
-         #:write-vector
-
-         ;; TODO: find better place for bivalent stream classes
-         #:bivalent-input-stream
-         #:bivalent-output-stream
-         #:bivalent-stream
-         #:make-bivalent-input-stream
-         #:make-bivalent-output-stream
-         #:make-bivalent-stream
-         ))
-
 (in-package :excl)
 
 (defvar if*-keyword-list '("then" "thenret" "else" "elseif"))

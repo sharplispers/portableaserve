@@ -111,16 +111,18 @@ lisp-system"))
 (defsystem acl-compat
   :components ((:gray-streams "vendor-gray-streams")
 	       (:file "nregex")
+               (:file "packages" :depends-on ("nregex"))
 	       #+mcl (:file "mcl-timers")
-	       (:file "acl-mp-package")
+	       ;;(:file "acl-mp-package")
 	       (:unportable-cl-source-file "acl-mp"
- 		      :depends-on ("acl-mp-package"
+ 		      :depends-on ("packages"
+                                   ;"acl-mp-package"
 				   #-mcl "acl-socket"
 				   #+(and mcl openmcl) "acl-socket-openmcl"
 				   #+(and mcl (not openmcl)) "acl-socket-mcl"
 				   #+mcl "mcl-timers"))
 	       (:unportable-cl-source-file "acl-excl"
-		      :depends-on ("gray-stream-package" "nregex"))
+		      :depends-on ("packages" #+nil "gray-stream-package" "nregex"))
                ;; Debian cmucl has gray stream support for
                ;; read-/write-sequence, cons.org cmucl has it
                ;; commented out in src/stream.lisp, so we leave the
@@ -128,21 +130,23 @@ lisp-system"))
                ;; cmucl-imp, tho)
 	       #+(and cmu (not common-lisp-controller))
                (:file "cmu-read-sequence")
-	       #+(and mcl (not openmcl)) (:file "acl-socket-mcl")
-	       #+(and mcl openmcl) (:file "acl-socket-openmcl")
+	       #+(and mcl (not openmcl)) (:file "acl-socket-mcl"
+                                                :depends-on ("packages"))
+	       #+(and mcl openmcl) (:file "acl-socket-openmcl"
+                                                :depends-on ("packages"))
 	       #-mcl (:unportable-cl-source-file "acl-socket"
-		      :depends-on ("acl-excl" "chunked-stream-mixin" 
+		      :depends-on ("packages" "acl-excl" "chunked-stream-mixin" 
                                    #+(and cmu (not common-lisp-controller))
                                    "cmu-read-sequence"))
-	       (:unportable-cl-source-file "acl-sys")
+	       (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
 	       (:file "meta")
 	       #+openmcl (:file "ansi-loop")
 	       (:file "uri"
 		      :depends-on ("meta" #+openmcl "ansi-loop"))
-               (:file "gray-stream-package"
-                :depends-on ("vendor-gray-streams"))
+               ;;(:file "gray-stream-package"
+               ;; :depends-on ("vendor-gray-streams"))
 	       (:legacy-cl-source-file "chunked-stream-mixin"
-		      :depends-on ("acl-excl" "gray-stream-package"))
+		      :depends-on ("packages" "acl-excl" #+nil "gray-stream-package"))
                #+nil
                (:legacy-cl-source-file "md5")
                #+nil
