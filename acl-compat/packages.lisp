@@ -147,6 +147,34 @@
    #:reap-os-subprocess
    ))
 
+
+; these are not all in the ccl package which causes an error
+#+(and mcl (not openmcl))
+(shadowing-import '(
+                    fundamental-binary-input-stream
+                    fundamental-binary-output-stream
+                    fundamental-character-input-stream
+                    fundamental-character-output-stream
+                    stream-element-type
+                    stream-listen
+                    stream-read-byte
+                    stream-read-char
+                    stream-peek-char
+                    stream-write-byte
+                    stream-write-char
+                    stream-read-char-no-hang
+                    stream-force-output
+                    stream-finish-output
+                    stream-clear-input
+                    stream-clear-output
+                    stream-line-column
+                    stream-read-sequence
+                    stream-unread-char
+                    stream-read-line
+                    stream-write-sequence
+                    stream-write-string)
+                  :ccl)
+
 #-cormanlisp
 (defpackage :gray-stream
   (:use #:common-lisp)
