@@ -147,7 +147,7 @@ lisp-system"))
                ;; Hack for old versions of cmucl that did not
                ;; implement Gray stream handling in read-sequence,
                ;; write-sequence
-	       #+(and cmu (not cmu18d) (not common-lisp-controller))
+	       #+(and cmu (not cmu18e) (not common-lisp-controller))
                (:file "cmu-read-sequence" :depends-on ("vendor-gray-streams"))
 	       (:unportable-cl-source-file "acl-socket"
 		   :depends-on ("packages" "acl-excl"
