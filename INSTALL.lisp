@@ -142,4 +142,6 @@ Cannot find ASDF system definition for ~A ~
 
 ;;; Start example server (in multiprocessing) on port 2001
 (start-server :port 2001)
+
+;MCL/OpenMCL note: chunking is not yet implemented so use (start-server :port 2001 :chunking nil)
 ||#
