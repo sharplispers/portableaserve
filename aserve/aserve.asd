@@ -80,6 +80,13 @@ indicate failure."))
 		    (pushnew :aserve cl:*features*))
   )
 
+#+allegro
+(defsystem aserve
+    :components nil
+    :perform (load-op :after (op aserve)
+		      #+common-lisp-controller (c-l-c:original-require 'aserve)
+		      #-common-lisp-controller (require 'aserve)))
+
 ;;; Logical pathname is needed by AllegroServe examples
 #+(or lispworks cmu mcl openmcl clisp sbcl)
 (setf (logical-pathname-translations "ASERVE")
