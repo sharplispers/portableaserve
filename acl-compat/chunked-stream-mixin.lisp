@@ -46,6 +46,14 @@
 
 (in-package :de.dataheaven.chunked-stream-mixin)
 
+(defun buffer-ref (buffer index)
+  #+lispworks (schar buffer index)
+  #-lispworks (aref buffer index))
+
+(defun (setf buffer-ref) (new-value buffer index)
+  #-lispworks (setf (aref buffer index) (char-code new-value))
+  #+lispworks (setf (schar buffer index) new-value))
+
 (defclass chunked-stream-mixin ()
   ((output-chunking-p :initform nil :accessor output-chunking-p)
    (chunk-input-avail :initform nil)
@@ -86,7 +94,7 @@
       (labels ((read-chunk-header ()
                  (let ((n 0))
                    (flet ((pop-char () (unless (< input-index input-limit) (call-next-method))
-                            (gray-stream::buffer-ref input-buffer input-index)
+                            (buffer-ref input-buffer input-index)
                             (incf input-index)))
                      (when real-input-limit (setf input-limit real-input-limit))
                      (tagbody
@@ -152,12 +160,13 @@
     (force-output stream)
     (gray-stream:with-stream-output-buffer (buffer index limit) stream
       (setf index +chunk-header-buffer-offset+)
-      (setf (gray-stream::buffer-ref buffer (- +chunk-header-buffer-offset+ 2)) #\Return
-            (gray-stream::buffer-ref buffer (1- +chunk-header-buffer-offset+)) #\Linefeed)
+      (setf (buffer-ref buffer (- +chunk-header-buffer-offset+ 2)) #\Return
+            (buffer-ref buffer (1- +chunk-header-buffer-offset+)) #\Linefeed)
       (decf limit 2)
       (setf (output-chunking-p stream) t))))
 
-(defmethod gray-stream:stream-flush-buffer ((stream chunked-stream-mixin))
+(defmethod gray-stream:stream-flush-buffer ((stream chunked-stream-mixin)
+                                            &optional wait)
   "When there is pending content in the output-buffer then compute the chunk-header and flush
    the buffer"
   (if (output-chunking-p stream)
@@ -167,10 +176,10 @@
                  (start (- +chunk-header-buffer-offset+ 2 (length chunk-header))))
             (loop for c across chunk-header
                   for i upfrom start
-                  do (setf (gray-stream::buffer-ref output-buffer i) c))
-            (setf (gray-stream::buffer-ref output-buffer output-index) #\Return
-                  (gray-stream::buffer-ref output-buffer (1+ output-index)) #\Linefeed)
-            (gray-stream:stream-write-buffer stream output-buffer start (+ output-index 2))
+                  do (setf (buffer-ref output-buffer i) c))
+            (setf (buffer-ref output-buffer output-index) #\Return
+                  (buffer-ref output-buffer (1+ output-index)) #\Linefeed)
+            (gray-stream:stream-write-buffer stream output-buffer start (+ output-index 2) wait)
             (setf output-index +chunk-header-buffer-offset+))))
     (call-next-method)))
 
@@ -179,7 +188,7 @@
   (unless abort
     (gray-stream:with-stream-output-buffer (output-buffer output-index output-limit) stream
                   (disable-output-chunking stream)))
-    (call-next-method))
+  (call-next-method))
 
 
 (defmethod disable-output-chunking ((stream chunked-stream-mixin))
