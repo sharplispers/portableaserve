@@ -12,7 +12,7 @@
     :licence "LLGPL"
     :default-component-class acl-file
     :components ((:file "htmlgen"))
-    #-allegro :depends-on #-allegro (acl-compat)
+    :depends-on (acl-compat)
     :perform (load-op :after (op htmlgen)
                       (pushnew :htmlgen cl:*features*)))
 

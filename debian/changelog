@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.35+cvs.2004.08.04) unstable; urgency=low
+
+  * Fix compilation on Allegro (closes:248033)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed,  4 Aug 2004 22:23:58 -0600
+
 cl-portable-aserve (1.2.35+cvs.2004.08.03) unstable; urgency=low
 
   * Convert to CLC 4 (closes:263378)

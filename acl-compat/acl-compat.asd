@@ -149,7 +149,7 @@ lisp-system"))
      #-mcl
      (:unportable-cl-source-file
       "acl-socket" :depends-on ("packages" "acl-excl"
-                                           #-mcl "chunked-stream-mixin"))
+                                           #-(or allegro (and mcl (not openmcl))) "chunked-stream-mixin"))
      #+(and mcl (not openmcl))
      (:unportable-cl-source-file "acl-socket-mcl" :depends-on ("packages"))
      #+(and mcl (not openmcl) (not carbon-compat)) 

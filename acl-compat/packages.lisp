@@ -12,17 +12,21 @@
 ;;;; package names starting with "acl-compat.".
 ;;;;
 
+(in-package :common-lisp-user)
+
 ;;; general
 (defpackage :acl-compat.excl
   (:use #:common-lisp
         #+cmu #:ext
         #+clisp #:ext
         #+sbcl #:sb-ext #+sbcl #:sb-gray
-        #+cormanlisp :excl
+        #+(or allegro cormanlisp) :excl
         #+mcl :ccl
         )
   #+lispworks (:import-from :common-lisp #:fixnump)
   #+sbcl (:import-from :sb-int #:fixnump)
+  #+allegro (:shadowing-import-from :excl #:filesys-size
+	    #:filesys-write-date #:intern* #:filesys-type #:atomically #:fast)
   (:export
    #:if*
    #:*initial-terminal-io*
@@ -41,18 +45,20 @@
    #:without-package-locks
    #:fixnump
    #+(or lispworks mcl) #:socket-error
-   #+(or lispworks mcl) #:run-shell-command
-   #+mcl #:fasl-read
-   #+mcl #:fasl-write
-   #+(or cmu scl mcl lispworks) #:string-to-octets
-   #+(or cmu scl mcl lispworks) #:write-vector
+   #+(or allegro lispworks mcl) #:run-shell-command
+   #+(or allegro mcl) #:fasl-read
+   #+(or allegro mcl) #:fasl-write
+   #+(or allegro cmu scl mcl lispworks) #:string-to-octets
+   #+(or allegro cmu scl mcl lispworks) #:write-vector
    ))
 
 
 ;; general
 (defpackage :acl-compat.mp
-  (:use :common-lisp #+cormanlisp :acl-compat-mp)
+  (:use :common-lisp #+cormanlisp :acl-compat-mp #+allegro :mp)
   (:nicknames :acl-mp #-cormanlisp :acl-compat-mp)
+  #+allegro (:shadowing-import-from :mp #:process-interrupt #:lock)
+  #+allegro (:shadowing-import-from :excl #:without-interrupts)
   (:export 
    #:*current-process*         ;*
    #:process-kill              ;*
