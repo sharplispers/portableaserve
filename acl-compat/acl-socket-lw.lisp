@@ -106,13 +106,19 @@
                                                          acc))))))
 (get-token (concatenate 'string string " ") 0 nil)))
 
-(declaim (ftype (function (string) (values (unsigned-byte 32)))
+(declaim (ftype (function (string &key (:errorp t))
+                          (values (unsigned-byte 32)))
 		dotted-to-ipaddr))
-(defun dotted-to-ipaddr (dotted &key errorp)
-  (declare (string dotted)(ignore errorp))
-  (let ((ll (string-tokens (substitute #\Space #\. dotted))))
-    (+ (ash (first ll) 24) (ash (second ll) 16)
-       (ash (third ll) 8) (fourth ll))))
+(defun dotted-to-ipaddr (dotted &key (errorp t))
+  (declare (string dotted))
+  (if errorp
+      (let ((ll (string-tokens (substitute #\Space #\. dotted))))
+	(+ (ash (first ll) 24) (ash (second ll) 16)
+	   (ash (third ll) 8) (fourth ll)))
+    (ignore-errors 
+      (let ((ll (string-tokens (substitute #\Space #\. dotted))))
+	(+ (ash (first ll) 24) (ash (second ll) 16)
+	   (ash (third ll) 8) (fourth ll))))))
 
 (defun ipaddr-to-hostname (ipaddr &key ignore-cache)
   (multiple-value-bind (name)
