@@ -19,6 +19,7 @@
         #+clisp #:ext
         #+sbcl #:sb-ext #+sbcl #:sb-gray
         #+cormanlisp :excl
+        #+mcl :ccl
         )
   #-cormanlisp (:nicknames #-allegro #:excl)                   ; to be nuked later
   #+lispworks (:import-from :common-lisp #:fixnump)
@@ -44,8 +45,8 @@
    #+(or lispworks mcl) #:run-shell-command
    #+mcl #:fasl-read
    #+mcl #:fasl-write
-   #+(or cmu scl lispworks) #:string-to-octets
-   #+(or cmu scl lispworks) #:write-vector
+   #+(or cmu scl mcl lispworks) #:string-to-octets
+   #+(or cmu scl mcl lispworks) #:write-vector
    ))
 
 

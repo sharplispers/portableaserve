@@ -1,4 +1,6 @@
-2004-01-11    <rudi@constantly.at>
+2004-01-11  Rudi Schlatte  <rudi@constantly.at>
+
+	* aserve/cgi.cl: Frob package references to acl-compat ones.
 
 	* aserve/main.cl: Added setuid / setgid for sbcl.
 

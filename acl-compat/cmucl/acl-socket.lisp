@@ -63,6 +63,7 @@ client wanted to initiate a connection and wait is nil."
 			 remote-port
 			 (connect :active)
 			 (format :text)
+                         (reuse-address t)
 			 &allow-other-keys)
   "Return a stream connected to remote-host if connect is :active, or
 something listening on local-port that can be fed to accept-connection
@@ -82,7 +83,7 @@ to read about the missing parts."
       (:passive
          (make-instance 'server-socket
 		        :port local-port
-                        :fd (ext:create-inet-listener local-port :stream :reuse-address t)
+                        :fd (ext:create-inet-listener local-port :stream :reuse-address reuse-address)
                         :element-type element-type
                         :stream-type format))
       (:active

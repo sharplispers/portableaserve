@@ -50,6 +50,7 @@
                     remote-port
                     (connect :active)
                     (format :text)
+                    (reuse-address t)
                     &allow-other-keys)
   "Return a stream connected to remote-host if connect is :active, or
 something listening on local-port that can be fed to accept-connection
@@ -68,7 +69,7 @@ to read about the missing parts."
         (socket (make-instance 'inet-socket :type :stream :protocol :tcp)))
     (ecase connect
       (:passive
-       (setf (sockopt-reuse-address socket) t)
+       (setf (sockopt-reuse-address socket) reuse-address)
        (socket-bind socket #(0 0 0 0) local-port)
        (socket-listen socket 10)        ;Arbitrarily chosen backlog value
        (make-instance 'server-socket

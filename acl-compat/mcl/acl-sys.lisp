@@ -2,17 +2,16 @@
 (in-package :acl-compat.system)
 
 
-; none of this stuff now; maybe with OS X
-
 (defun command-line-arguments ()
-  nil)
-  ;system:*line-arguments-list*)
+  #+openmcl (ccl::command-line-arguments)
+  #-openmcl nil)
 
 (defun command-line-argument (n)
-  (declare (ignore n))
-  nil)
-  ;(nth n system:*line-arguments-list*))
+  #+openmcl (nth n (command-line-arguments))
+  #-openmcl nil)
 
+;;; On acl, reap-os-subprocess is needed for (run-shell-command ...
+;;; :wait nil), but not on OpenMCL.
 (defun reap-os-subprocess (&key (wait nil))
   (declare (ignore wait))
   nil)

@@ -36,8 +36,7 @@
 (defclass server-socket ()
   ((socket :initarg :socket :reader socket
            :initform (error "No value supplied for socket"))
-   (port :type fixnum
-	 :initarg :port
+   (port :initarg :port
 	 :reader port
          :initform (error "No value supplied for port"))))
 

@@ -1,4 +1,23 @@
-2004-01-11    <rudi@constantly.at>
+2004-01-11  Rudi Schlatte  <rudi@constantly.at>
+
+	* packages.lisp (defpackage acl-compat.excl): Export some symbols
+	for mcl, too
+
+	* mcl/acl-excl.lisp (run-shell-command): Implement (largely
+	untested for now, needed for cgi support)
+
+	* mcl/acl-sys.lisp (command-line-argument,
+	command-line-arguments): Implement for OpenMCL
+
+	* mcl/acl-mp.lisp (wait-for-input-available): Implement.  Needed
+	for cgi support.
+
+	* mcl/acl-socket-openmcl.lisp (server-socket): Remove :type slot
+	argument.
+
+	* sbcl/acl-socket.lisp (make-socket): Add reuse-address argument.
+
+	* cmucl/acl-socket.lisp (make-socket): Add reuse-address argument.
 
 	* acl-compat.asd: Load sb-posix for sbcl.
 

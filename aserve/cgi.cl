@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: cgi.cl,v 1.4 2003/08/24 12:35:00 rudi Exp $
+;; $Id: cgi.cl,v 1.5 2004/01/11 17:20:33 rudi Exp $
 
 ;; Description:
 ;;   common gateway interface (running external programs)
@@ -218,8 +218,8 @@
 	   then (ignore-errors (close from-script-error-stream)))
 	(if* pid
 	   then ;; it may be bad to wait here...
-		(mp:with-timeout (60) ; ok w-t
-		  (sys:reap-os-subprocess :pid pid :wait t)))))))
+		(acl-compat.mp:with-timeout (60) ; ok w-t
+		  (acl-compat.sys:reap-os-subprocess :pid pid :wait t)))))))
 
 
 (defun read-script-data (req ent stream error-stream error-fcn timeout)
@@ -287,7 +287,7 @@
 			then (return))
 		     
 		     (let ((active
-			    (mp:wait-for-input-available 
+			    (acl-compat.mp:wait-for-input-available 
 			     (mapcar #'car active-streams)
 			     :timeout timeout)))
 		       
@@ -336,7 +336,7 @@
 	      ; this loop is for searching for a valid header
 	      
 	      (let ((active
-		     (mp:wait-for-input-available 
+		     (acl-compat.mp:wait-for-input-available 
 		      (mapcar #'car active-streams) :timeout timeout)))
 		
 		(if* (null active)

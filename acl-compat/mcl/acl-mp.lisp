@@ -17,6 +17,7 @@
    ccl:process-preset
    #-openmcl-native-threads ccl:process-run-reasons
    ccl:process-wait
+   ccl:process-wait-with-timeout
    ccl:without-interrupts))
 )
 
@@ -30,6 +31,7 @@
    process-preset
    process-run-reasons
    process-wait
+   process-wait-with-timeout
    without-interrupts))
 )
 
@@ -165,3 +167,17 @@ See the functions process-plist, (setf process-plist).")
     #+openmcl-native-threads (ccl:process-enable process)
     #-openmcl-native-threads (process-add-run-reason process :enable)
     process))
+
+;;; Busy-waiting ...
+(defun wait-for-input-available (streams
+                                 &key (wait-function #'ccl:stream-listen)
+                                 whostate timeout)
+  (let ((collected-fds nil))
+    (flet ((collect-fds ()
+             (setf collected-fds
+                   (remove-if-not wait-function streams))))
+      
+      (if timeout
+          (process-wait-with-timeout (or whostate "Waiting for input") timeout #'collect-fds)
+          (process-wait (or whostate "Waiting for input") #'collect-fds)))
+    collected-fds))
