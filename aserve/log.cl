@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: log.cl,v 1.5 2002/10/24 13:26:56 rudi Exp $
+;; $Id: log.cl,v 1.6 2002/12/03 14:44:38 rudi Exp $
 
 ;; Description:
 ;;   iserve's logging
@@ -54,15 +54,14 @@
 	   (str (format
 		 nil
 		 "~a: ~2,'0d/~2,'0d/~2,'0d - ~2,'0d:~2,'0d:~2,'0d - ~a~%"
-		 (acl-mp:process-name #+allegro sys:*current-process*
-                                      #-allegro acl-mp:*current-process*)
+		 (acl-compat.mp:process-name acl-compat.mp:*current-process*)
 		 cmonth cday (mod cyear 100)
 		 chour cmin csec
 		 message))
 	   (lock #+allegro (getf (excl::stream-property-list stream) :lock)
                  #-allegro nil))
       (if* lock
-	 then (acl-mp:with-process-lock (lock)
+	 then (acl-compat.mp:with-process-lock (lock)
 		(if* (open-stream-p stream)
 		   then (write-sequence str stream)
 			(finish-output stream)))
@@ -84,7 +83,7 @@
 	   (lock #+allegro (getf (excl::stream-property-list stream) :lock)
                  #-allegro nil))
       (if* lock
-	 then (acl-mp:with-process-lock (lock)
+	 then (acl-compat.mp:with-process-lock (lock)
 		(setq stream (vhost-error-stream
 			      (wserver-default-vhost
 			       *wserver*)))
@@ -99,14 +98,14 @@
 
 (defun log-timed-out-request-read (socket)
   (logmess (format nil "No request read from address ~a" 
-		   (acl-socket:ipaddr-to-dotted (acl-socket:remote-host socket)))))
+		   (acl-compat.socket:ipaddr-to-dotted (acl-compat.socket:remote-host socket)))))
 
 
 
 (defmethod log-request ((req http-request))
   ;; after the request has been processed, write out log line
   (if* *enable-logging*
-     then (let* ((ipaddr (acl-socket:remote-host (request-socket req)))
+     then (let* ((ipaddr (acl-compat.socket:remote-host (request-socket req)))
 		 (time   (request-reply-date req))
 		 (code   (let ((obj (request-reply-code req)))
 			   (if* obj
@@ -127,7 +126,7 @@
 	    (macrolet ((do-log ()
 			 '(progn (format stream
 				  "~a - - [~a] ~s ~s ~s~%"
-				  (acl-socket:ipaddr-to-dotted ipaddr)
+				  (acl-compat.socket:ipaddr-to-dotted ipaddr)
 				  (maybe-universal-time-to-date time)
 				  (request-raw-request req)
 				  code
@@ -135,7 +134,7 @@
 			   (force-output stream))))
 			 
 	      (if* lock
-		 then (acl-mp:with-process-lock (lock)
+		 then (acl-compat.mp:with-process-lock (lock)
 			; in case stream switched out while we weren't busy
 			; get the stream again
 			(setq stream (vhost-log-stream (request-vhost req)))
@@ -150,9 +149,9 @@
   ;;
   (brief-logmess 
    (format nil "~a ~d ~a ~a~@[ ~s~]"
-	   (or (getf (acl-mp:process-property-list acl-mp:*current-process*)
+	   (or (getf (acl-compat.mp:process-property-list acl-compat.mp:*current-process*)
 		     'short-name)
-	       (acl-mp:process-name acl-mp:*current-process*))
+	       (acl-compat.mp:process-name acl-compat.mp:*current-process*))
 	   level
 	   action
 	   (if* (stringp uri) 

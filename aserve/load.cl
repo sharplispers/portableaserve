@@ -1,13 +1,15 @@
 ;; load in aserve
 ;;
-;; $Id: load.cl,v 1.2 2002/06/09 11:35:01 rudi Exp $
+;; $Id: load.cl,v 1.3 2002/12/03 14:44:38 rudi Exp $
 ;;
 
 (defvar *loadswitch* :compile-if-needed)
 (defparameter *aserve-root* (directory-namestring *load-truename*))
 
 (defparameter *aserve-files* 
+    ;; this list is in cl/src/sys/make.cl as well... keep in sync
     '("htmlgen/htmlgen"
+      "packages"
       "macs"
       "main"
       "headers"
@@ -119,7 +121,7 @@
 ;; examples.
 ;;
 (defun makeapp ()
-  (run-shell-command "rm -fr aserveserver")
+  (run-shell-command "rm -fr aserveserver" :show-window :hide)
   (make-aserve.fasl)
   (generate-application
    "aserveserver"
@@ -152,7 +154,9 @@
 (defun make-distribution ()
   ;; make a distributable version of aserve
   (run-shell-command 
-   (format nil "rm -fr ~aaserve-dist" *aserve-root*))
+   (format nil "rm -fr ~aaserve-dist" *aserve-root*)
+   :show-window :hide
+   )
    
   (run-shell-command 
    (format nil "mkdir ~aaserve-dist ~aaserve-dist/doc ~aaserve-dist/examples ~aaserve-dist/test"
@@ -160,14 +164,16 @@
 	   *aserve-root*
 	   *aserve-root*
 	   *aserve-root*
-	   ))
+	   )
+   :show-window :hide)
   
   (run-shell-command 
    (format nil "mkdir ~aaserve-dist/test/testdir ~aaserve-dist/test/testdir/suba ~aaserve-dist/test/testdir/subb"
 	   *aserve-root*
 	   *aserve-root*
 	   *aserve-root*
-	   ))
+	   )
+   :show-window :hide)
    
   (copy-files-to *aserve-files* "aserve.fasl" :root *aserve-root*)
   
@@ -226,7 +232,8 @@
   ;;
     
   (run-shell-command 
-   (format nil "rm -fr ~aaserve-src" *aserve-root*))
+   (format nil "rm -fr ~aaserve-src" *aserve-root*)
+   :show-window :hide)
     
   (run-shell-command 
    (format nil "mkdir ~aaserve-src ~aaserve-src/~a ~aaserve-src/~a/htmlgen "
@@ -237,7 +244,8 @@
 	   
 	   *aserve-root*
 	   dist-name
-	   ))
+	   )
+   :show-window :hide)
   
   (run-shell-command 
    (format nil "mkdir ~aaserve-src/~a/doc ~aaserve-src/~a/examples ~aaserve-src/~a/test"
@@ -250,7 +258,8 @@
 	   *aserve-root*
 	   dist-name
 	   
-	   ))
+	   )
+   :show-window :hide)
   (run-shell-command 
    (format nil "mkdir ~aaserve-src/~a/test/testdir ~aaserve-src/~a/test/testdir/suba ~aaserve-src/~a/test/testdir/subb"
 	   *aserve-root*
@@ -262,7 +271,8 @@
 	   *aserve-root*
 	   dist-name
 	   
-	   ))
+	   )
+   :show-window :hide)
   
   (run-shell-command 
    (format nil "mkdir  ~aaserve-src/~a/test/testdir/subc ~aaserve-src/~a/test/testdir/subd"
@@ -272,7 +282,8 @@
 	   *aserve-root*
 	   dist-name
 	   
-	   ))
+	   )
+   :show-window :hide)
   (run-shell-command 
    (format nil "mkdir ~aaserve-src/~a/test/testdir/suba/subsuba ~aaserve-src/~a/test/testdir/suba/subd "
 	   *aserve-root*
@@ -280,7 +291,8 @@
 	   
 	   *aserve-root*
 	   dist-name
-	   ))
+	   )
+   :show-window :hide)
 	   
   (dolist (file (append (mapcar #'(lambda (file) (format nil "~a.cl" file))
 				*aserve-files*)
@@ -298,11 +310,13 @@
    (format nil "(cd ~aaserve-src ; tar cfz ~a.tgz ~a)"
 	   *aserve-root*
 	   aserve-version-name
-	   aserve-version-name))
+	   aserve-version-name)
+   :show-window :hide)
   (run-shell-command 
    (format nil "cp ~aaserve-src/~a.tgz /net/cobweb/home/ftp/pub/aserve"
 	   *aserve-root*
-	   aserve-version-name)))
+	   aserve-version-name)
+   :show-window :hide))
 
 (defun publish-docs ()
   ;; copy documentation to the external web site
@@ -310,8 +324,10 @@
    (format nil "cp ~adoc/htmlgen.html ~adoc/aserve.html ~adoc/tutorial.html /net/cobweb/www/opensource/devel/www/aserve"
 	   *aserve-root*
 	   *aserve-root*
-	   *aserve-root*))
-  (run-shell-command "rsh cobweb bin/sync-a-opensource"))
+	   *aserve-root*)
+   :show-window :hide)
+  (run-shell-command "rsh cobweb bin/sync-a-opensource"
+		     :show-window :hide))
 	   
 	    
   

@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: decode.cl,v 1.6 2002/07/26 13:45:54 desoi Exp $
+;; $Id: decode.cl,v 1.7 2002/12/03 14:44:38 rudi Exp $
 
 ;; Description:
 ;;   decode/encode code
@@ -82,7 +82,7 @@
 ;	such that
 ;	    alphanumerics are unchanged
 ;	    space turns into "+"
-;	    newline turns into "%0d%0a"
+;	    linefeed turns into "%0d%0a"
 ;           The following characters don't have to be encoded:
 ;		- _ . ! ~ * ' (  )
 ;           Everything else must be escaped.  While the escaping
@@ -219,7 +219,7 @@
 
 
 (defun uridecode-string (str &key (external-format 
-                                   *default-aserve-external-format*))
+				      *default-aserve-external-format*))
   ;; decoded the uriencoded string, returning possibly the
   ;; same string
   ;;
@@ -260,7 +260,7 @@
       (dolist (ch '(#\- #\_ #\. #\! #\~ #\* #\' #\(  #\)))
 	(setf (svref res (char-code ch)) nil))
       
-      ; note: character needing special handling are space and newline
+      ; note: character needing special handling are space and linefeed
       (setf (svref res #.(char-code #\space)) 0)
       (setf (svref res #.(char-code #\linefeed)) 5)
       
@@ -352,7 +352,7 @@
 		       then ; space -> +
 			    (setf (schar ret to) #\+)
 			    (incf to)
-		     elseif (eq code #.(char-code #\newline))
+		     elseif (eq code #.(char-code #\linefeed))
 		       then (dolist (nch '(#\% #\0 #\d #\% #\0 #\a))
 			      (setf (schar ret to) nch)
 			      (incf to))
@@ -480,7 +480,7 @@
 
 (defun un-hex-escape (given spacep
 		      &key (external-format 
-                            *default-aserve-external-format*))
+				      *default-aserve-external-format*))
   ;; convert a string with %xx hex escapes into a string without
   ;; if spacep it true then also convert +'s to spaces
   ;;
@@ -500,7 +500,7 @@
 	((>= i len))
       (let ((ch (schar given i)))
 	(if* (eq ch #\%) 
-	   then ; check for %0a%0d which is to be converted to #\newline
+	   then ; check for %0a%0d which is to be converted to #\linefeed
 		(if* (and (< (+ i 5) len) ; enough chars left
 			  (do ((xi (+ i 1) (+ xi 1))
 			       (end (+ i 6))
@@ -511,7 +511,7 @@
 						  (car pattern)))
 			       then (return nil))))
 		   then ; we are looking at crlf, turn into
-			; newline
+			; lindfeed
 			(incf count 5)	; 5 char shrinkage
 			(incf i 5)
 		   else (incf count 2) 
@@ -548,7 +548,7 @@
 		      (if* (and (eq newchar #\linefeed)
 				(> to 0)
 				(eq (buf-elt str (1- to)) #\return))
-			 then ; replace return by newline
+			 then ; replace return by linefeed
 			      (decf to))
 		      
 		      (set-buf-elt str to newchar))

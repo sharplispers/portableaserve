@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.8 2002/10/24 13:26:56 rudi Exp $
+;; $Id: client.cl,v 1.9 2002/12/03 14:44:38 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -39,39 +39,11 @@
 
 
 
-(defpackage :net.aserve.client 
-  (:use :net.aserve :excl :common-lisp)
-  (:export 
-   #:client-request  ; class
-   #:client-request-close
-   #:client-request-cookies
-   #:client-request-headers
-   #:client-request-protocol
-   #:client-request-read-sequence
-   #:client-request-response-code
-   #:client-request-response-comment
-   #:client-request-socket
-   #:client-request-uri
-   #:client-response-header-value
-   #:cookie-item
-   #:cookie-item-expires
-   #:cookie-item-name
-   #:cookie-item-path
-   #:cookie-item-secure
-   #:cookie-item-value
-   #:cookie-jar     ; class
-   #:do-http-request
-   #:make-http-client-request
-   #:read-client-response-headers
-   ))
+
 
 
 
 (in-package :net.aserve.client)
-
-
-
-
 
 
 
@@ -142,7 +114,7 @@
 		     (let ((thisch (schar ,buffer ,i)))
 		       (if* (eq thisch #\return)
 			  then (let ((ans (buf-substr start ,i ,buffer)))
-				 (incf ,i)  ; skip to newline
+				 (incf ,i)  ; skip to linefeed
 				 (return ans))
 			elseif (eq thisch #\linefeed)
 			  then (return (buf-substr start ,i ,buffer))))
@@ -180,8 +152,7 @@
 			&rest args
 			&key 
 			(method  :get)
-			;; HTTP/1.1 requires chunked encoding
-			(protocol  #-cmu :http/1.1 #+cmu :http/1.0)
+			(protocol  :http/1.1)
 			(accept "*/*")
 			content
 			content-type
@@ -199,7 +170,7 @@
 			ssl		; do an ssl connection
 			skip-body ; fcn of request object
 			)
-  (declare (ignorable format))          ; We are always binary, anyways.
+  
   ;; send an http request and return the result as four values:
   ;; the body, the response code, the headers and the uri 
   (let ((creq (make-http-client-request 
@@ -340,9 +311,7 @@
 
 (defun make-http-client-request (uri &key 
 				     (method  :get)  ; :get, :post, ....
-				 ;; HTTP/1.1 requires chunked encoding
-				     (protocol  #-cmu :http/1.1
-						#+cmu :http/1.0)
+				     (protocol  :http/1.1)
 				     keep-alive 
 				     (accept "*/*") 
 				     cookies  ; nil or a cookie-jar
@@ -398,14 +367,14 @@
 		 then (error "proxy arg should have form \"foo.com\" ~
 or \"foo.com:8000\", not ~s" proxy))
 	      
-	      (setq sock (acl-socket:make-socket :remote-host phost
+	      (setq sock (acl-compat.socket:make-socket :remote-host phost
 					     :remote-port pport
 					     :format :bivalent
 					     :type net.aserve::*socket-stream-type*
 					     :nodelay t
 					     )))
        else (setq sock 
-	      (acl-socket:make-socket :remote-host host
+	      (acl-compat.socket:make-socket :remote-host host
 				  :remote-port port
 				  :format :bivalent
 				  :type 
@@ -415,7 +384,7 @@ or \"foo.com:8000\", not ~s" proxy))
 				  ))
 	    (if* ssl
 	       then (setq sock
-		      (funcall 'acl-socket::make-ssl-client-stream sock)))
+		      (funcall 'acl-compat.socket::make-ssl-client-stream sock)))
 	    )
 
     #+(and allegro (version>= 6 0))
@@ -529,12 +498,15 @@ or \"foo.com:8000\", not ~s" proxy))
     ; going to block doing the write we start another process do the
     ; the write.  
     (if* content
-       then (net.aserve::if-debug-action 
-	     :xmit
-	     (format net.aserve::*debug-stream*
-		     "client sending content of ~d bytes"
-		     (length content)))
-	    (write-sequence content sock))
+       then ; content can be a vector a list of vectors
+	    (if* (atom content) then (setq content (list content)))
+	    (dolist (cont content)
+	      (net.aserve::if-debug-action 
+	       :xmit
+	       (format net.aserve::*debug-stream*
+		       "client sending content of ~d bytes"
+		       (length cont)))
+	      (write-sequence cont sock)))
     
     
     (force-output sock)
@@ -639,7 +611,7 @@ or \"foo.com:8000\", not ~s" proxy))
 				     creq :transfer-encoding))
 	     then ; data will come back in chunked style
 		  (setf (client-request-bytes-left creq) :chunked)
-		  (acl-socket:socket-control (client-request-socket creq)
+		  (acl-compat.socket:socket-control (client-request-socket creq)
 					 :input-chunking t)
 	   elseif (setq val (client-response-header-value
 			     creq :content-length))
@@ -771,7 +743,7 @@ or \"foo.com:8000\", not ~s" proxy))
 
 (defun read-socket-line (socket buffer max)
   ;; read the next line from the socket.
-  ;; the line may end with a newline or a return, newline, or eof
+  ;; the line may end with a linefeed or a return, linefeed, or eof
   ;; in any case don't put that the end of line characters in the buffer
   ;; return the number of characters in the buffer which will be zero
   ;; for an empty line.
@@ -793,7 +765,7 @@ or \"foo.com:8000\", not ~s" proxy))
 			)
 	 elseif (eq ch #\return)
 	   thenret ; ignore
-	 elseif (eq ch #\newline)
+	 elseif (eq ch #\linefeed)
 	   then ; end of the line,
 		(return i)
 	 elseif (< i max)
@@ -813,14 +785,14 @@ or \"foo.com:8000\", not ~s" proxy))
   ;; return the next header line buffer
   (let (buff)
     (excl::atomically
-      (setq buff (pop *response-header-buffers*)))
+      (excl::fast (setq buff (pop *response-header-buffers*))))
     (if* buff
        thenret
        else (make-array 400 :element-type 'character))))
 
 (defun put-header-line-buffer (buff &optional buff2)
   ;; put back up to two buffers
-  (acl-mp:without-scheduling
+  (acl-compat.mp:without-scheduling
     (push buff *response-header-buffers*)
     (if* buff2 then (push buff2 *response-header-buffers*))))
 

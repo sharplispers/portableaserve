@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: headers.cl,v 1.3 2002/06/09 11:35:01 rudi Exp $
+;; $Id: headers.cl,v 1.4 2002/12/03 14:44:38 rudi Exp $
 
 ;; Description:
 ;;   header parsing
@@ -440,7 +440,7 @@
 			       (return)
 			  else (incf i)))))
 	
-	    (1 ; skip to eol ( a newline in this case)
+	    (1 ; skip to eol ( a linefeed in this case)
 	     (if* (>= i end) then (return))
 	     (loop
 	       (setq ch (aref buff i))
@@ -457,7 +457,7 @@
 	     (if* (null beginhv) then (setq beginhv i))
 	     (loop
 	       (setq ch (aref buff i))
-	       (if* (eq ch #.(char-int #\newline))
+	       (if* (eq ch #.(char-int #\linefeed))
 		  then (incf i)
 		       (return))
 	       (incf i)

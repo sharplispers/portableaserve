@@ -3,11 +3,11 @@
 ;; parse.cl
 ;;
 ;;
-;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA
+;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA 
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
-;; the GNU Lesser General Public License as published by
+;; the GNU Lesser General Public License as published by 
 ;; the Free Software Foundation, as clarified by the AllegroServe
 ;; prequel found in license-allegroserve.txt.
 ;;
@@ -25,10 +25,10 @@
 ;;
 
 ;;
-;; $Id: parse.cl,v 1.8 2002/10/24 13:25:25 rudi Exp $
+;; $Id: parse.cl,v 1.9 2002/12/03 14:44:37 rudi Exp $
 
 ;; Description:
-;;   parsing and encoding code
+;;   parsing and encoding code  
 
 ;;- This code in this file obeys the Lisp Coding Standard found in
 ;;- http://www.franz.com/~jkf/coding_standards.html
@@ -52,14 +52,14 @@
 
 (defun allocate-parseobj ()
   (let (res)
-    (acl-mp:without-scheduling 
+    (acl-compat.mp:without-scheduling 
       (if* (setq res (pop *parseobjs*))
 	 then (setf (parseobj-next res) 0)
 	      res
 	 else (make-parseobj)))))
 
 (defun free-parseobj (po)
-  (acl-mp:without-scheduling
+  (acl-compat.mp:without-scheduling
     (push po *parseobjs*)))
 
 (defun add-to-parseobj (po start end)

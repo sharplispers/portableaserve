@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.9 2002/10/24 13:26:56 rudi Exp $
+;; $Id: publish.cl,v 1.10 2002/12/03 14:44:37 rudi Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -1245,8 +1245,8 @@
 	      
 		(unwind-protect 
 		    (progn
-		      (let ((size  (excl::filesys-size (stream-input-fn p)))
-			    (lastmod (excl::filesys-write-date 
+		      (let ((size  (acl-compat.excl::filesys-size (stream-input-fn p)))
+			    (lastmod (acl-compat.excl::filesys-write-date 
                                       (stream-input-fn p)))
 			    (buffer (make-array 1024 
 						:element-type '(unsigned-byte 8))))
@@ -2098,7 +2098,7 @@
       
       (if* (and send-headers chunked-p (eq time :pre))
 	 then (force-output sock)
-	      (acl-socket:socket-control sock :output-chunking t))
+	      (acl-compat.socket:socket-control sock :output-chunking t))
       
       
       ; if we did post-headers then there's a string input
@@ -2108,7 +2108,7 @@
       
       ;; if we're chunking then shut that off
       (if* (and chunked-p (eq time :post))
-	 then (acl-socket:socket-control sock :output-chunking-eof t)
+	 then (acl-compat.socket:socket-control sock :output-chunking-eof t)
 	      ; in acl5.0.1 the output chunking eof didn't send 
 	      ; the final crlf, so we do it here
 	      #+(and allegro (not (version>= 6)))

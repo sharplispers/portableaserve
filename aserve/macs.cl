@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: macs.cl,v 1.5 2002/06/24 12:32:14 rudi Exp $
+;; $Id: macs.cl,v 1.6 2002/12/03 14:44:38 rudi Exp $
 
 ;; Description:
 ;;   useful internal macros
@@ -42,8 +42,6 @@
 
 ;; macros used by iserve
 
-(defpackage :net.aserve
-  (:use :common-lisp :excl :net.html.generator :net.uri))
 
 (in-package :net.aserve)
 
@@ -209,7 +207,7 @@
 #-(and allegro (version>= 6 1))
 (defmacro with-timeout-local ((time &rest actions) &rest body)
   ;; same as with-timeout 
-  `(acl-mp:with-timeout (,time ,@actions) ,@body))   ; ok w-t
+  `(acl-compat.mp:with-timeout (,time ,@actions) ,@body))   ; ok w-t
 
 
 #+(and allegro (version>= 6 1))

@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: htmlgen.cl,v 1.4 2002/07/26 13:39:58 desoi Exp $
+;; $Id: htmlgen.cl,v 1.5 2002/12/03 14:44:36 rudi Exp $
 
 ;; Description:
 ;;   html generator
@@ -36,7 +36,7 @@
 
 
 (defpackage :net.html.generator
-  (:use :common-lisp :excl)
+  (:use :common-lisp :acl-compat.excl)
   (:export #:html 
 	   #:html-print
 	   #:html-print-subst
@@ -562,7 +562,7 @@
       ;; must use <!--   --> syntax
       (declare (ignore ent args argsp))
       `(progn (write-html-string "<!--" *html-stream*)
-	      ,@body
+	      (html ,@body)
 	      (write-html-string "-->" *html-stream*)))
   
   #'(lambda (ent cmd args form stream)

@@ -55,7 +55,8 @@ indicate failure."))
 
 #+(or lispworks cmu mcl openmcl clisp)
 (defsystem aserve
-  :components ((:acl-file "macs")
+  :components ((:acl-file "packages")
+               (:acl-file "macs" :depends-on ("packages"))
                (:legacy-acl-source-file "main"
                       :depends-on ("macs"))
                (:acl-file "headers"

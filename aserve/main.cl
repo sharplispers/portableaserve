@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.22 2002/11/20 12:21:26 neonsquare Exp $
+;; $Id: main.cl,v 1.23 2002/12/03 14:44:37 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -33,130 +33,11 @@
 ;;-
 
 
-(defpackage :net.aserve
-  (:use :common-lisp :excl :net.html.generator :net.uri)
-  (:export
-   #:authorize
-   #:authorizer
-   #:base64-decode
-   #:base64-encode
-   #:compute-strategy
-   #:computed-entity
-   ;; don't export, these should be private
-   ; #:debug-off		
-   ; #:debug-on			
-   #:denied-request
-   #:enable-proxy
-   #:ensure-stream-lock
-   #:entity-plist
-   #:failed-request
-   #:form-urlencoded-to-query
-   #:function-authorizer ; class
-   #:function-authorizer-function
-   #:get-basic-authorization
-   #:get-cookie-values
-   #:get-all-multipart-data
-   #:get-multipart-header
-   #:get-multipart-sequence
-   #:get-request-body
-   #:handle-request
-   #:handle-uri		; add-on component..
-   #:header-slot-value
-   #:http-request  	; class
-   #:locator		; class
-   #:location-authorizer  ; class
-   #:location-authorizer-patterns
-   #:map-entities
-   #:parse-multipart-header
-   #:password-authorizer  ; class
-   #:process-entity
-   #:publish
-   #:publish-file
-   #:publish-directory
-   #:publish-multi
-   #:publish-prefix
-   #:query-to-form-urlencoded
-   #:reply-header-slot-value 
-   #:run-cgi-program
-   #:set-basic-authorization
-   #:standard-locator
-   #:unpublish-locator
-   #:vhost
-   #:vhost-log-stream
-   #:vhost-error-stream
-   #:vhost-names
-   #:vhost-plist
 
-   #:request-method
-   #:request-protocol
-
-   #:request-protocol-string
-   #:request-query
-   #:request-query-value
-   #:request-raw-request
-   #:request-raw-uri
-   #:request-socket
-   #:request-uri
-   #:request-wserver
-   
-   #:request-reply-code
-   #:request-reply-date
-   #:request-reply-content-length
-   #:request-reply-content-type
-   #:request-reply-plist
-   #:request-reply-protocol-string
-   #:request-reply-strategy
-   #:request-reply-stream
-   
-   #:set-cookie-header
-   #:shutdown
-   #:split-into-words
-   #:start
-   #:uridecode-string
-   #:uriencode-string
-   #:unpublish
-   #:url-argument
-   #:url-argument-alist
-   #:with-http-response
-   #:with-http-body
-   
-   #:wserver
-   #:wserver-default-vhost
-   #:wserver-enable-chunking
-   #:wserver-enable-keep-alive
-   #:wserver-external-format
-   #:wserver-filters
-   #:wserver-locators
-   #:wserver-io-timeout
-   #:wserver-log-function
-   #:wserver-log-stream
-   #:wserver-response-timeout
-   #:wserver-socket
-   #:wserver-vhosts
-
-   #:*aserve-version*
-   #:*default-aserve-external-format*
-   #:*http-io-timeout*
-   #:*http-response-timeout*
-   #:*mime-types*
-   #:*response-accepted*
-   #:*response-bad-request*
-   #:*response-continue*
-   #:*response-created*
-   #:*response-found*
-   #:*response-internal-server-error*
-   #:*response-not-found*
-   #:*response-not-modified*
-   #:*response-ok*
-   #:*response-moved-permanently*
-   #:*response-see-other*
-   #:*response-temporary-redirect*
-   #:*response-unauthorized*
-   #:*wserver*))
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 23))
+(defparameter *aserve-version* '(1 2 24))
 
 #+allegro
 (eval-when (eval load)
@@ -165,10 +46,6 @@
     #+ (and allegro (version>= 6)) (require :acldns) ; not strictly required but this is preferred
 )
 
-;#+lispworks
-;(import 'cl::fixnump)
-#+cmu
-(import 'ext:fixnump)
 #+openmcl
 (shadowing-import 'ccl:fixnump)
 #+mcl
@@ -261,7 +138,7 @@
   `(if* (member ,kind *debug-current* :test #'eq)
       then (write-sequence 
 	    (concatenate 'string
-	      (format nil "d> (~a): " (acl-mp:process-name acl-mp:*current-process*))
+	      (format nil "d> (~a): " (acl-compat.mp:process-name acl-compat.mp:*current-process*))
 	      (format nil ,@args))
 	    *debug-stream*)))
 
@@ -277,7 +154,7 @@
 		  (write-sequence
 		   (concatenate 'string 
 		     (format nil "x>(~a): " 
-			     (acl-mp:process-name acl-mp:*current-process*))
+			     (acl-compat.mp:process-name acl-compat.mp:*current-process*))
 		     (format nil ,@(cdr args)))
 		   *debug-stream*))))
 
@@ -373,11 +250,12 @@
 ; user response functions can use this to find the current wserver object.
 (defvar *wserver*)   
 
+
 ; type of socket stream built.
 ; :hiper is possible in acl6
 (defvar *socket-stream-type* 
-  #+(and allegro (version>= 6)) :hiper
-  #-(and allegro (version>= 6)) :stream
+    #+(and allegro (version>= 6)) :hiper
+    #-(and allegro (version>= 6)) :stream
 )
 
 ;; specials from other files
@@ -549,7 +427,7 @@
     (format stream "port ~a" 
 	    (let ((sock (wserver-socket wserver)))
 	      (if* sock 
-		 then (acl-socket:local-port sock)
+		 then (acl-compat.socket:local-port sock)
 		 else "-no socket-")))))
      
 
@@ -618,7 +496,7 @@
 	 ;(format t "timeout is ~d~%" ,g-timeout)
 	 (compute-strategy ,g-req ,g-ent ,g-format)
 	 (up-to-date-check ,g-check-modified ,g-req ,g-ent)
-	 (acl-mp::with-timeout ((if* (and (fixnump ,g-timeout)  ; ok w-t
+	 (acl-compat.mp::with-timeout ((if* (and (fixnump ,g-timeout)  ; ok w-t
 				      (> ,g-timeout 0))
 			       then ,g-timeout
 			       else 9999999)
@@ -686,10 +564,10 @@ Problems with protocol may occur." (ef-name ef)))))
 ; safe versions during multiprocessing
 
 (defmacro atomic-incf (var)
-  `(acl-mp:without-scheduling (incf ,var)))
+  `(acl-compat.mp:without-scheduling (incf ,var)))
 
 (defmacro atomic-decf (var)
-  `(acl-mp:without-scheduling (decf ,var)))
+  `(acl-compat.mp:without-scheduling (decf ,var)))
 
 
 ;;;;;;;;; end macros
@@ -1054,6 +932,7 @@ by keyword symbols and not by strings"
 		   debug-stream  ; stream to which to send debug messages
 		   accept-hook
 		   ssl		 ; enable ssl
+		   ssl-password ; for ssl: pswd to decode priv key in cert
 		   os-processes  ; to fork and run multiple instances
 		   (external-format nil efp); to set external format
 		   )
@@ -1063,7 +942,9 @@ by keyword symbols and not by strings"
   ;; return the server object
   #-unix
   (declare (ignore setuid setgid))
-  
+  #-(and allegro (version>= 6 2 beta)) 
+  (declare (ignore ssl-password))
+
   (declare (ignore debug))  ; for now
 
   (if* debug-stream 
@@ -1086,8 +967,10 @@ by keyword symbols and not by strings"
 	  
 	  (setq accept-hook 
 	    #'(lambda (socket)
-		(funcall 'acl-socket::make-ssl-server-stream socket
-			 :certificate ssl)))
+		(funcall 'acl-compat.socket::make-ssl-server-stream socket
+			 :certificate ssl
+			 #+(and allegro (version>= 6 2 beta)) :certificate-password 
+			 #+(and allegro (version>= 6 2 beta)) ssl-password)))
 	  (setq chunking nil) ; doesn't work well through ssl
 	  (if* (not port-p)
 	     then ; ssl defaults to port 443
@@ -1147,7 +1030,7 @@ by keyword symbols and not by strings"
   
 
   
-  (let* ((main-socket (acl-socket:make-socket :connect :passive
+  (let* ((main-socket (acl-compat.socket:make-socket :connect :passive
 					  :local-port port
 					  :local-host host
 					  :reuse-address t
@@ -1225,15 +1108,15 @@ by keyword symbols and not by strings"
     (if* proc
        then ; we want this thread gone and the socket closed 
 	    ; so that we can reopen it if we want to.
-	    (acl-mp:process-kill proc)
-	    (acl-mp:process-allow-schedule)
+	    (acl-compat.mp:process-kill proc)
+	    (acl-compat.mp:process-allow-schedule)
 	    (let ((oldsock (wserver-socket server)))
 	      (if* oldsock then (ignore-errors (close oldsock))))
 	    (setf (wserver-accept-thread server) nil)))
   
   (dolist (th (wserver-worker-threads server))
-    (acl-mp:process-kill th)
-    (acl-mp:process-allow-schedule))
+    (acl-compat.mp:process-kill th)
+    (acl-compat.mp:process-allow-schedule))
   
   (setf (wserver-worker-threads server) nil)
   
@@ -1256,9 +1139,9 @@ by keyword symbols and not by strings"
     (unwind-protect
 	(loop
 	  (restart-case
-	      (let ((sock (acl-socket:accept-connection main-socket))
+	      (let ((sock (acl-compat.socket:accept-connection main-socket))
 		    (localhost))
-		(if* (not (member (setq localhost (acl-socket:local-host sock))
+		(if* (not (member (setq localhost (acl-compat.socket:local-host sock))
 				  ipaddrs))
 		   then ; new ip address by which this machine is known
 			(push localhost ipaddrs)
@@ -1274,7 +1157,7 @@ by keyword symbols and not by strings"
 		(socket:set-socket-options sock :nodelay t)
 		
 		#+io-timeout
-		(acl-socket:socket-control 
+		(acl-compat.socket:socket-control 
 		 sock 
 		 :read-timeout (wserver-io-timeout *wserver*)
 		 :write-timeout (wserver-io-timeout *wserver*))
@@ -1298,7 +1181,7 @@ by keyword symbols and not by strings"
   
   ; create accept thread
   (setf (wserver-accept-thread *wserver*)
-    (acl-mp:process-run-function 
+    (acl-compat.mp:process-run-function 
      (list :name (format nil "aserve-accept-~d" (incf *thread-index*))
 	   :initial-bindings
 	   `((*wserver*  . ',*wserver*)
@@ -1309,17 +1192,17 @@ by keyword symbols and not by strings"
 
 (defun make-worker-thread ()
   (let* ((name (format nil "~d-aserve-worker" (incf *thread-index*)))
-	 (proc (acl-mp:make-process :name name
+	 (proc (acl-compat.mp:make-process :name name
 				:initial-bindings
 				`((*wserver*  . ',*wserver*)
 				  #+ignore (*debug-io* . ',(wserver-terminal-io 
 						   *wserver*))
 				  ,@excl:*cl-default-special-bindings*)
 				)))
-    (acl-mp:process-preset proc #'http-worker-thread)
+    (acl-compat.mp:process-preset proc #'http-worker-thread)
     (push proc (wserver-worker-threads *wserver*))
     (atomic-incf (wserver-free-workers *wserver*))
-    (setf (getf (acl-mp:process-property-list proc) 'short-name) 
+    (setf (getf (acl-compat.mp:process-property-list proc) 'short-name) 
       (format nil "w~d" *thread-index*))
     ))
 
@@ -1335,7 +1218,7 @@ by keyword symbols and not by strings"
     ;; need to restrict the print level
     (loop
 
-      (let ((sock (car (acl-mp:process-run-reasons acl-mp:*current-process*))))
+      (let ((sock (car (acl-compat.mp:process-run-reasons acl-compat.mp:*current-process*))))
 	#-allegro
 	(when (eq sock :kill) (return))
 	(restart-case
@@ -1373,7 +1256,7 @@ by keyword symbols and not by strings"
 	      :report "Abandon this request and wait for the next one"
 	    nil))
 	(atomic-incf (wserver-free-workers *wserver*))
-	(acl-mp:process-revoke-run-reason acl-mp:*current-process* sock))
+	(acl-compat.mp:process-revoke-run-reason acl-compat.mp:*current-process* sock))
     
       )))
 
@@ -1401,7 +1284,7 @@ by keyword symbols and not by strings"
 
 	(loop
 	  (handler-case
-	      (let ((sock (acl-socket:accept-connection main-socket))
+	      (let ((sock (acl-compat.socket:accept-connection main-socket))
 		    (localhost))
 		
 		; optional.. useful if we find that sockets aren't being
@@ -1412,14 +1295,14 @@ by keyword symbols and not by strings"
 			 #'check-for-open-socket-before-gc))
 		
 		; track all the ipaddrs by which we're reachable
-		(if* (not (member (setq localhost (acl-socket:local-host sock))
+		(if* (not (member (setq localhost (acl-compat.socket:local-host sock))
 				  ipaddrs))
 		   then ; new ip address by which this machine is known
 			(push localhost ipaddrs)
 			(setf (wserver-ipaddrs *wserver*) ipaddrs))
 		
 		#+io-timeout
-		(acl-socket:socket-control 
+		(acl-compat.socket:socket-control 
 		 sock 
 		 :read-timeout (wserver-io-timeout *wserver*)
 		 :write-timeout (wserver-io-timeout *wserver*))
@@ -1455,9 +1338,9 @@ by keyword symbols and not by strings"
 			   
 			    (setq workers (wserver-worker-threads server))
 			    (incf looped))
-		    (if* (null (acl-mp:process-run-reasons (car workers)))
+		    (if* (null (acl-compat.mp:process-run-reasons (car workers)))
 		       then (atomic-decf (wserver-free-workers server))
-			    (acl-mp:process-add-run-reason (car workers) sock)
+			    (acl-compat.mp:process-add-run-reason (car workers) sock)
 			    (pop workers)
 			    (return) ; satisfied
 			    )
@@ -1476,7 +1359,7 @@ by keyword symbols and not by strings"
 		 then (logmess "accept: too many errors, bailing")
 		      (return-from http-accept-thread nil)))))
       (ignore-errors (progn
-		       (acl-mp:without-scheduling
+		       (acl-compat.mp:without-scheduling
 			 (if* (eql (wserver-socket server) main-socket)
 			    then (setf (wserver-socket server) nil)))
 		       (close main-socket))))))
@@ -1565,7 +1448,7 @@ by keyword symbols and not by strings"
   ;; do a force-output but don't get hung up if we get blocked on output
   ;; this happens enough with sockets that it's a real concern
   ; 30 seconds is enough time to wait
-  (with-timeout-local (30)
+  (with-timeout-local (30) 
     (force-output stream)))
 
   
@@ -2151,7 +2034,6 @@ by keyword symbols and not by strings"
 		     
 
 
-
 (defmethod get-multipart-sequence ((req http-request)
 				   buffer
 				   &key (start 0)
@@ -2167,11 +2049,11 @@ by keyword symbols and not by strings"
   ;; Since external-format not used in all versions
   (declare (ignorable external-format ef-spec))
 
-#|  #-(and allegro (version>= 6 0 pre-final 1))
+  #-(and allegro (version>= 6 0 pre-final 1))
   (if* ef-spec
      then (warn "~
 For this version of Lisp, external-format is ignored ~
-in get-multipart-sequence"))|#
+in get-multipart-sequence"))
 
   (let* ((mp-info (getf (request-reply-plist req) 'mp-info))
 	 mpbuffer 
@@ -2181,6 +2063,7 @@ in get-multipart-sequence"))|#
 	 text-mode
 	 after)
 
+    
     (typecase buffer
       ((array (unsigned-byte 8) (*))
        )
@@ -2213,6 +2096,7 @@ in get-multipart-sequence"))|#
 		 (setf (mp-info-after mp-info) after)
 		 (setq cur (mp-info-cur mp-info)) ; scan-forward can change
 		 )
+	 
 	 (if* (> pos cur)
 	    then ; got something to return
 		 (let* ((tocopy (min (- end start) (- pos cur)))
@@ -2227,7 +2111,7 @@ in get-multipart-sequence"))|#
 			      mpbuffer
 			      :string buffer
 			      :start cur
-			      :end (+ cur tocopy)
+			      :end pos 
 			      :string-start start
 			      :string-end (length buffer)
 			      :external-format external-format
@@ -2241,8 +2125,16 @@ in get-multipart-sequence"))|#
 			   (dotimes (i tocopy)
 			     (setf (aref buffer (+ start i))
 			       (aref mpbuffer (+ cur i)))))
-		   (setf (mp-info-cur mp-info) (+ cur tocopy))
-		   (return-from get-multipart-sequence (+ start items)))
+		   (if* (zerop items)
+		      then ; didn't find enough bytes to make 
+			   ; a character
+			   (if* (null (shift-buffer-up-and-read mp-info))
+			      then ; no more bytes available
+				   (return-from get-multipart-sequence nil))
+			   ; loop around
+		      else (setf (mp-info-cur mp-info) (+ cur tocopy))
+			   (return-from get-multipart-sequence 
+			     (+ start items))))
 	  elseif (eq kind :partial)
 	    then  ; may be a boundary, can't tell
 		 (if* (null (shift-buffer-up-and-read mp-info))
@@ -2785,7 +2677,7 @@ in get-multipart-sequence"))|#
   ;; size
   (let (to-return)
     ;; force new ones to be allocated
-    (acl-mp:without-scheduling 
+    (acl-compat.mp:without-scheduling 
       (let ((buffers (sresource-data sresource)))
 	(if* size
 	   then ; must get one of at least a certain size
@@ -2821,7 +2713,7 @@ in get-multipart-sequence"))|#
   ;; return a resource to the pool
   ;; we silently ignore nil being passed in as a buffer
   (if* buffer 
-     then (acl-mp:without-scheduling
+     then (acl-compat.mp:without-scheduling
 	    ;; if debugging
 	    (if* (member buffer (sresource-data sresource) :test #'eq)
 	       then (error "freeing freed buffer"))
@@ -2877,7 +2769,7 @@ in get-multipart-sequence"))|#
 	    digit (- (char-code ch) #.(char-code #\0)))
       
       (case state
-	(:pre (if* (member ch '(#\space #\tab #\newline #\linefeed #\return) :test #'eq)
+	(:pre (if* (member ch '(#\space #\tab #\linefeed #\return) :test #'eq)
 		 then (incf i)
 		 else (setq state :number-first)))
 	(:number-first
@@ -2894,7 +2786,7 @@ in get-multipart-sequence"))|#
 	    else (setq state :post)))
 	
 	(:post 
-	 (if* (member ch '(#\space #\tab #\newline #\linefeed #\return) :test #'eq)
+	 (if* (member ch '(#\space #\tab #\linefeed #\return) :test #'eq)
 	    then (incf i)
 	    else (return-from string-to-number nil)))))))
 	
