@@ -13,6 +13,7 @@
 ;;;; cmucl downloaded from cons.org, where Gray stream support resides
 ;;;; in the subsystems/ directory.
 
+
 #+cmu
 (progn
 
@@ -84,6 +85,20 @@ indicate failure."))
    "This is for files which contain lisp-system dependent code. Until now those
 are marked by a -system postfix but we could later change that to a directory per
 lisp-system"))
+
+(defmethod perform ((op load-op) (c unportable-cl-source-file))
+  (#+cmu ext:without-package-locks
+   #-(or cmu) progn
+     (call-next-method)))
+
+(defmethod perform ((op compile-op) (c unportable-cl-source-file))
+  (#+cmu ext:without-package-locks
+   #-(or cmu) progn
+     (call-next-method)))
+
+(defmethod source-file-type ((c unportable-cl-source-file) (s module))
+  "lisp")
+
 
 (defun lisp-system-shortname ()
   #+allegro :allegro #+lispworks :lispworks #+cmu :cmucl
