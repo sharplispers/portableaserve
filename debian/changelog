@@ -1,3 +1,10 @@
+cl-portable-aserve (1.2.12c+cvs2002.10.16) unstable; urgency=low
+
+  * Add reader conditional on .asd files so that defsystem is only read
+  for compatible implementations.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 16 Oct 2002 01:42:32 -0600
+
 cl-portable-aserve (1.2.12c+cvs2002.10.15) unstable; urgency=low
 
   * Add cl-htmlgen to Depends: for cl-aserve

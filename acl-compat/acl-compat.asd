@@ -110,6 +110,7 @@ lisp-system"))
 
 ;;;; system
 
+#+(or lispworks cmu mcl openmcl)
 (defsystem acl-compat
   :components ((:gray-streams "vendor-gray-streams")
 	       (:file "nregex")

@@ -7,6 +7,7 @@
 (defclass acl-file (cl-source-file) ())
 (defmethod asdf::source-file-type ((c acl-file) (s module)) "cl")
 
+#+(or lispworks cmu mcl openmcl)
 (defsystem htmlgen
   :components ((:acl-file "htmlgen"))
   #-allegro :depends-on #-allegro (acl-compat)

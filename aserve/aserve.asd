@@ -11,6 +11,7 @@
 (defclass acl-file (cl-source-file) ())
 (defmethod asdf::source-file-type ((c acl-file) (s module)) "cl")
 
+#+(or lispworks cmu mcl openmcl)
 (defsystem aserve
   :components ((:acl-file "macs")
                (:acl-file "main"
