@@ -2,7 +2,7 @@
 
 (in-package "CL-USER")
 
-#+(and (or lispworks cmu) (not asdf))
+#+(and (or lispworks cmu mcl) (not asdf))
 (let ((asdf-pathname
        (merge-pathnames (make-pathname
                          :directory '(:relative "contrib")
@@ -79,11 +79,11 @@ Cannot find ASDF system definition for ~A ~
            (let ((path (merge-pathnames path *load-truename*)))
              (unless (asdf:find-system system nil)
                (warn "~
-Cannot find ASDF system definition for ~A ~
-~:_in asdf:*central-registry*, ~
-~:_loading from file ~A. ~
-~:_Hint: \"ln -sf ~A /path/to/your/systems\" ~
-~:_to avoid this warning in the future."
+                      Cannot find ASDF system definition for ~A ~
+                      ~:_in asdf:*central-registry*, ~
+                      ~:_loading from file ~A. ~
+                      ~:_Hint: \"ln -sf ~A /path/to/your/systems\" ~
+                      ~:_to avoid this warning in the future."
                      system path (namestring path))
                (load path)))))
     (find-or-load-system :acl-compat
@@ -104,28 +104,24 @@ Cannot find ASDF system definition for ~A ~
   (asdf:operate 'asdf:load-op :aserve))
 
 #+mcl
-(require :make)
-;Portable mk-defsystem can be found here:
-;http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/~checkout~/clocc/clocc/src/defsystem-3.x/defsystem.lisp
-
-#+mcl
 (progn
-; Load logical host definitions
-(load (merge-pathnames "logical-hostnames.lisp" *load-truename*))
+  ; Load logical host definitions
+  (load (merge-pathnames "logical-hostnames.lisp" *load-truename*))
+    
+  (unless (asdf:find-system :acl-compat nil)
+    (load "acl-compat:acl-compat.asd"))
+  
+  (unless (asdf:find-system :htmlgen nil)
+    (load "aserve:htmlgen;htmlgen.asd"))
+  
+  (unless (asdf:find-system :aserve nil)
+    (load "aserve:aserve.asd"))
+  
+  ; Compile and load the ASERVE system - loads the other systems also
+  (let ((ccl:*warn-if-redefine* nil))   ;defines a few vars in more than one file
+    (asdf:operate 'asdf:load-op :aserve) )
+  )
 
-; Load definition of ACL Compatibility system
-(load "acl-compat:acl-compat-mcl.system")
-
-; Compile and load ACL Compatibility system
-(mk:oos "ACL-COMPAT" :load :compile-during-load t)
-
-; Load definition of Aserve system
-(load "aserve:aserve-mcl.system")
-
-; Compile and load the ASERVE system
-(let ((ccl:*warn-if-redefine* nil)) ;defines a few vars in more than one file
-  (mk:oos "ASERVE" :load :compile-during-load t) )
-)
 
 
 #||

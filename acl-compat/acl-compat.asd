@@ -111,17 +111,35 @@ lisp-system"))
 ;standard MCL make-load-form is not ansi compliant because of CLIM
 #+(and mcl (not openmcl)) (require :ansi-make-load-form)
 
-#+(or lispworks cmu scl sbcl mcl openmcl clisp allegro)
+;want to include it with the rest - but I'm afraid ... maybe later
+#+(or mcl openmcl)
+(defsystem acl-compat
+   :components ((:file "nregex")
+                (:file "mcl-timers")
+                (:file "acl-mp-mcl" :depends-on ("mcl-timers"))
+                #-openmcl (:file "acl-socket-mcl")
+                #+(and (not openmcl) (not carbon-compat)) 
+                (:file "mcl-stream-fix" :depends-on ("acl-socket-mcl"))
+                
+                #+openmcl (:file "acl-socket-openmcl")
+                (:file "acl-excl-mcl" :depends-on ("nregex"))
+                (:file "acl-sys-mcl")
+                (:file "meta")
+                (:file "uri" :depends-on ("meta")))
+   :perform (load-op :after (op acl-compat)
+		     (pushnew :acl-compat cl:*features*)))
+
+
+#+(or lispworks cmu scl sbcl clisp allegro)
 (defsystem acl-compat
   :components ((:gray-streams "vendor-gray-streams")
 	       (:file "nregex")
                (:file "packages" :depends-on ("nregex"))
-	       #+mcl (:file "mcl-timers")
                #-lispworks (:file "lw-buffering" :depends-on ("packages"))
 	       (:unportable-cl-source-file "acl-mp"
  		      :depends-on ("packages" "acl-socket"
                                    ;"acl-mp-package"
-				   #+mcl "mcl-timers"))
+                                   ))
 	       (:unportable-cl-source-file "acl-excl"
 		      :depends-on ("packages" "nregex"))
                ;; Debian cmucl has gray stream support for
