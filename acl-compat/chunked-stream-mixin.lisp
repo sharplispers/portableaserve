@@ -181,14 +181,15 @@ obviously 0 because no chunk-data got read so far."
                       input-limit))))
                (t
                 ;; We are in the middle of a chunk; re-fill buffer
-                (let ((bytes-read (call-next-method)))
-                  (if bytes-read
-                      (progn
-                        (setf real-input-limit input-limit
-                              input-limit (min real-input-limit chunk-input-avail)
-                              chunk-input-avail (max 0 (- chunk-input-avail bytes-read)))
-                        input-limit)
-                    (error "Unexpected end-of-file in the middle of a chunk")))))))))
+                (if (call-next-method)
+                    (progn
+                      (setf real-input-limit input-limit)
+                      (setf input-limit
+                            (min real-input-limit chunk-input-avail))
+                      (setf chunk-input-avail
+                            (max 0 (- chunk-input-avail real-input-limit)))
+                      input-limit)
+                    (error "Unexpected end-of-file in the middle of a chunk"))))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;

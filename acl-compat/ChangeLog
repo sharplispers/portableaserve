@@ -1,5 +1,10 @@
 2003-11-27  Rudi Schlatte  <rudi@constantly.at>
 
+	* chunked-stream-mixin.lisp (gray-stream:stream-fill-buffer):
+	LispWorks refill-buffer does not always return the amount of
+	bytes read (reported by Edi Weitz to paserve-discuss
+	2003-11-26).  Treat its return value as a boolean.
+
 	* lw-buffering.lisp (stream-fill-buffer): Remove cmucl-specific
 	read-n-bytes call because it does block after all :(
 

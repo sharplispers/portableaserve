@@ -1,6 +1,7 @@
 *.wfasl
 *.ufsl
 *.fasl
+*.nfasl
 *.fas
 *.lib
 *.x86f
