@@ -34,7 +34,7 @@
 ;;;;  91616 Neusitz         
 ;;;;  GERMANY               
 ;;;;
-;;;; Nürnberg, 01.Jul.2001 Jochen Schmidt
+;;;; Nuernberg, 01.Jul.2001 Jochen Schmidt
 ;;;;
 
 

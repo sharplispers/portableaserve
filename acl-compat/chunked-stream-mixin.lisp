@@ -34,7 +34,7 @@
 ;;;;  91616 Neusitz         
 ;;;;  GERMANY               
 ;;;;
-;;;; Nürnberg, 08.Apr.2002 Jochen Schmidt
+;;;; Nuernberg, 08.Apr.2002 Jochen Schmidt
 ;;;;
 
 (in-package :cl-user)
