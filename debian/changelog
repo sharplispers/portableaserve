@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2002.10.15) unstable; urgency=low
+
+  * Add cl-htmlgen to Depends: for cl-aserve
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue, 15 Oct 2002 16:55:57 -0600
+
 cl-portable-aserve (1.2.12c+cvs2002.10.10) unstable; urgency=low
 
   * Test and remove any old symlinks by pre-offical versions of this package
