@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2002.10.10) unstable; urgency=low
+
+  * Test and remove any old symlinks by pre-offical versions of this package
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Thu, 10 Oct 2002 09:27:42 -0600
+
 cl-portable-aserve (1.2.12c+cvs2002.10.09) unstable; urgency=low
 
   * Push package name onto features after .asd load-op
