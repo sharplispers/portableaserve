@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: decode.cl,v 1.2 2001/08/09 08:30:45 neonsquare Exp $
+;; $Id: decode.cl,v 1.3 2001/12/28 15:55:27 neonsquare Exp $
 
 ;; Description:
 ;;   decode/encode code
@@ -119,7 +119,8 @@
      else (svref *uri-encode* code)))
 
 #+allegro
-(defun uriencode-string (str &key (external-format :latin1-base))
+(defun uriencode-string (str &key (external-format
+                                     *default-aserve-external-format*))
   ;; encode the given string using uri encoding.
   ;; It may return the same string if no encoding need be done
   ;;
@@ -166,11 +167,12 @@
 		 ;; We use mb-to-string for 5.0.1 compatibility.
 		 ;; octets-to-string is generally prefered after 6.0.
 		 (mb-to-string newmbvec
-			       :external-format :latin1-base
+			       :external-format :latin1-base ;;bug?
 			       :end (+ len (* 2 count)))))))))
 
 #-allegro
-(defun uriencode-string (str &key (external-format :latin1-base))
+(defun uriencode-string (str &key (external-format 
+                                   *default-aserve-external-format*))
   ;; encode the given string using uri encoding.
   ;; It may return the same string if no encoding need be done
   ;;
@@ -214,7 +216,8 @@
           newstr)))))
 
 
-(defun uridecode-string (str &key (external-format :latin1-base))
+(defun uridecode-string (str &key (external-format
+                                   *default-aserve-external-format*))
   ;; decoded the uriencoded string, returning possibly the
   ;; same string
   ;;
@@ -263,7 +266,8 @@
       res))
 
 
-(defun query-to-form-urlencoded (query &key (external-format :latin1-base))
+(defun query-to-form-urlencoded (query &key (external-format
+                                             *default-aserve-external-format*))
   ;; query is a list of conses, each of which has as its 
   ;; car the query name and as its cdr the value.  A value of
   ;; nil means we encode  name=   and nothing else
@@ -302,7 +306,8 @@
 		  `(aref ,buf ,i)))
        ,@body)))
 
-(defun encode-form-urlencoded (str &key (external-format :latin1-base))
+(defun encode-form-urlencoded (str &key (external-format
+                                         *default-aserve-external-format*))
   ;; encode the given string using form-urlencoding
   
   ;; a x-www-form-urlencoded string consists of a sequence 
@@ -380,11 +385,17 @@
   
   
 
-(defun form-urlencoded-to-query (str &key (external-format :latin1-base))
+(defun form-urlencoded-to-query (str &key (external-format 
+                                           *default-aserve-external-format*))
   ;; decode the x-www-form-urlencoded string returning a list
   ;; of conses, the car being the name and the cdr the value, for
   ;; each form element.  This list is called a query list.
   ;;
+
+  (if* (not (typep str 'simple-array))
+     then ; we need it to be a simple array for the code below to work
+	  (setq str (copy-seq str)))
+
   (let ((res nil)
 	(max (length str)))
     
@@ -457,7 +468,8 @@
        ,@body)))
 
 (defun un-hex-escape (given spacep
-		      &key (external-format :latin1-base))
+		      &key (external-format
+                            *default-aserve-external-format*))
   ;; convert a string with %xx hex escapes into a string without
   ;; if spacep it true then also convert +'s to spaces
   ;;

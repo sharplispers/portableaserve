@@ -4,11 +4,13 @@
 ;; Written by Rudi Schlatte, based on the work done by Jochen Schmidt
 ;; for Lispworks and net.lisp in the port library of CLOCC.
 
-(defpackage socket
+(defpackage acl-socket
   (:use "MP" "COMMON-LISP")
+  #+cl-ssl (:import-from :ssl "MAKE-SSL-CLIENT-STREAM" "MAKE-SSL-SERVER-STREAM")
   (:export make-socket accept-connection
    ipaddr-to-dotted dotted-to-ipaddr ipaddr-to-hostname lookup-hostname
-   remote-host remote-port local-host local-port socket-control))
+   remote-host remote-port local-host local-port socket-control #+cl-ssl make-ssl-client-stream #+cl-ssl make-ssl-server-stream)
+  (:nicknames socket))
 
 (in-package socket)
 
@@ -28,6 +30,10 @@
    (port :type fixnum
 	 :initarg :port
 	 :reader port)))
+
+#+cl-ssl
+(defmethod make-ssl-server-stream ((lisp-stream system:lisp-stream) &rest options)
+  (apply #'make-ssl-server-stream (system:fd-stream-fd lisp-stream) options))
 
 (defmethod print-object ((socket server-socket) stream)
   (print-unreadable-object (socket stream :type t :identity nil)

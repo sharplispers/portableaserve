@@ -25,7 +25,7 @@
 ;;
 
 ;;
-;; $Id: parse.cl,v 1.2 2001/08/30 09:16:05 ljosa Exp $
+;; $Id: parse.cl,v 1.3 2001/12/28 15:55:27 neonsquare Exp $
 
 ;; Description:
 ;;   parsing and encoding code  
@@ -340,9 +340,15 @@
 	   then (format *debug-stream* "early eof reading response after ~d bytes~%" i)
 		(return nil) ; eof - failure
 		)
+
+	; enable this if things are really messed
+	; up and you need to see characters as they come in
+	#+ignore
 	(if* echo 
 	   then (write-char (code-char ch) *debug-stream*)
 		(force-output *debug-stream*))
+
+
 	(setf (aref buff i) ch)
 	(incf i)
 	(case state
@@ -378,7 +384,10 @@
 			(if* (not (eq (aref buff i) #.(char-code #\return)))
 			   then (incf i)))
 		; i points to the [cr] lf
-		
+                (if* echo
+                     then (write-sequence buff *debug-stream*
+                                          :start 0
+                                          :end i))
 		(return i))))))
 
 	  
@@ -664,6 +673,24 @@
 			(if* (>= start end)
 			   then (add-to-parseobj po st start)
 				(return))
+                 elseif (eq ch #\")
+		   then ; double quoted value.. skip over this
+			(loop
+			  (incf start)
+			  (if* (>= start end)
+			     then (return)
+			     else (setq ch (schar str start))
+				  (if* (eq ch #\")
+				     then (return)
+				   elseif (eq ch #\\)
+				     then ; single char quote
+					  (incf start)
+					  (if* (>= start end)
+					     then (return)))))
+			(if* (>= start end)
+			   then (add-to-parseobj po st start)
+				(return)
+			   else (incf start))
 		   else (incf start)))))
     po))
 

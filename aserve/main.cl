@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.9 2001/09/04 02:59:47 neonsquare Exp $
+;; $Id: main.cl,v 1.10 2001/12/28 15:55:27 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -68,12 +68,18 @@
    #:publish-directory
    #:query-to-form-urlencoded
    #:reply-header-slot-value 
+   #:run-cgi-program
    #:set-basic-authorization
    #:standard-locator
    #:unpublish-locator
+   #:vhost
+   #:vhost-log-stream
+   #:vhost-error-stream
+   #:vhost-names
 
    #:request-method
    #:request-protocol
+
    #:request-protocol-string
    #:request-query
    #:request-query-value
@@ -105,15 +111,22 @@
    #:with-http-body
    
    #:wserver
+   #:wserver-default-vhost
    #:wserver-enable-chunking
    #:wserver-enable-keep-alive
+   #:wserver-external-format
    #:wserver-filters
    #:wserver-locators
+   #:wserver-io-timeout
    #:wserver-log-function
    #:wserver-log-stream
+   #:wserver-response-timeout
    #:wserver-socket
+   #:wserver-vhosts
 
    #:*aserve-version*
+   #:*default-aserve-external-format*
+   #:*http-io-timeout*
    #:*http-response-timeout*
    #:*mime-types*
    #:*response-accepted*
@@ -133,7 +146,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 5 :a))
+(defparameter *aserve-version* '(1 2 12 :a))
 
 #+allegro
 (eval-when (eval load)
@@ -151,10 +164,11 @@
 
 (defparameter *aserve-version-string*
     ;; for when we need it in string format
-    (format nil "~d.~d.~d" 
+    (format nil "~d.~d.~d.~a" 
 	    (car *aserve-version*)
 	    (cadr *aserve-version*)
-	    (caddr *aserve-version*)))
+	    (caddr *aserve-version*)
+            (cadddr *aserve-version*)))
 	    
 ;;;;;;;  debug support 
 
@@ -227,8 +241,11 @@
   ;; do the format to *debug-stream* if the kind of this info
   ;; is matched by the value of *debug-current*
   `(if* (member ,kind *debug-current* :test #'eq)
-      then (format *debug-stream* "d> (~a): " (mp:process-name mp:*current-process*))
-	   (format *debug-stream* ,@args)))
+      then (write-sequence 
+	    (concatenate 'string
+	      (format nil "d> (~a): " (mp:process-name mp:*current-process*))
+	      (format nil ,@args))
+	    *debug-stream*)))
 
 
 (defmacro format-dif (debug-key &rest args)
@@ -237,9 +254,14 @@
   ;; do the format and then send to *initial-terminal-io*
   `(progn (format ,@args)
 	  (if* (member ,debug-key *debug-current* :test #'eq)
-	     then (format *debug-stream* "x>(~a): " 
-			  (mp:process-name mp:*current-process*))
-		  (format *debug-stream* ,@(cdr args)))))
+	     then ; do extra consing to ensure that it all be written out 
+		  ; at once
+		  (write-sequence
+		   (concatenate 'string 
+		     (format nil "x>(~a): " 
+			     (mp:process-name mp:*current-process*))
+		     (format nil ,@(cdr args)))
+		   *debug-stream*))))
 
 (defmacro if-debug-action (kind &rest body)
   ;; only do if the debug value is high enough
@@ -290,6 +312,10 @@
   (fli:define-foreign-function (unix-kill "kill" :source)
                                ((pid :int) (sig :int))
                                :result-type :int
+                               :language :ansi-c)
+    (fli:define-foreign-function (unix-signal "signal" :source)
+                               ((sig :int) (hdl :int))
+                               :result-type :void
                                :language :ansi-c))
 
 #+(and cmu unix)
@@ -299,12 +325,32 @@
   (alien:def-alien-routine "getpid" integer)
   (alien:def-alien-routine ("fork" unix-fork) integer)
   (alien:def-alien-routine ("kill" unix-kill) integer (pid integer) (sig integer))
+  (alien:def-alien-routine ("signal" unix-signal) void (sig integer) (hdl integer))
 )
 
 
 ;; more specials
 (defvar *max-socket-fd* 0) ; the maximum fd returned by accept-connection
 (defvar *aserve-debug-stream* nil) ; stream to which to seen debug messages
+(defvar *default-aserve-external-format* :latin1-base) 
+(defvar *worker-request*)  ; set to current request object
+
+(defvar *read-request-timeout* 20)
+(defvar *read-request-body-timeout* 60)
+(defvar *http-response-timeout* 
+    #+io-timeout 300 ; 5 minutes for timeout if we support i/o timeouts
+    #-io-timeout 120 ; 2 minutes if we use this for i/o timeouts too.
+    )
+
+; this is only useful on acl6.1 where we do timeout on I/O operations
+(defvar *http-io-timeout* 60)
+
+; usually set to the default server object created when aserve is loaded.
+; users may wish to set or bind this variable to a different server
+; object so it is the default for publish calls.
+; Also bound to the current server object in accept threads, thus
+; user response functions can use this to find the current wserver object.
+(defvar *wserver*)   
 
 ; type of socket stream built.
 ; :hiper is possible in acl6
@@ -322,6 +368,7 @@
     ;; indexed by header-number, holds the keyword naming this header
     )
     
+(defvar *not-modified-entity*) ; used to send back not-modified message
 
 	
 ;;;;;;;;;;;;;  end special vars
@@ -386,6 +433,38 @@
     :initarg :accept-hook
     :initform nil
     :accessor wserver-accept-hook)
+
+   (external-format
+    ;; used to bind *default-aserve-external-format* in each thread
+    :initarg :external-format
+    :initform :latin1-base
+    :accessor wserver-external-format)
+
+   (vhosts
+    ;; map names to vhost objects
+    :initform (make-hash-table :test #'equalp)
+    :accessor wserver-vhosts)
+   
+   (default-vhost
+       ;; vhost representing situations with no virtual host
+       :initarg :default-vhost
+     :initform (make-instance 'vhost)
+     :accessor wserver-default-vhost)
+
+   (response-timeout
+    ;; seconds a response is allowed to take before it gives up
+    :initarg :response-timeout
+    :initform *http-response-timeout*
+    :accessor wserver-response-timeout)
+   
+   (io-timeout
+    ;; seconds an I/O operation to an http client is allowed to take
+    ;; before an error is signalled.  This is only effective on
+    ;; acl6.1 or newer.
+    :initarg :io-timeout
+    :initform *http-io-timeout*
+    :accessor wserver-io-timeout)
+
    
    ;;
    ;; -- internal slots --
@@ -456,16 +535,27 @@
 		 else "-no socket-")))))
      
      
-     
+;;;;; virtual host class
+(defclass vhost ()
+  ((log-stream :accessor vhost-log-stream
+	       :initarg :log-stream
+	       :initform *standard-output*)
+   (error-stream :accessor vhost-error-stream
+		 :initarg :error-stream
+		 :initform *standard-output*)
+   (names :accessor vhost-names
+	  :initarg :names
+	  :initform nil)))          
 
 
 ;;;;;; macros 
 
 (defmacro with-http-response ((req ent
-				&key (timeout '*http-response-timeout*)
+				&key timeout
 				     (check-modified t)
 				     (response '*response-ok*)
 				     content-type
+                                     format
 				     )
 			       &rest body)
   ;;
@@ -475,16 +565,22 @@
   (let ((g-req (gensym))
 	(g-ent (gensym))
 	(g-timeout (gensym))
+        (g-format (gensym))
 	(g-check-modified (gensym)))
-    `(let ((,g-req ,req)
+    `(let* ((,g-req ,req)
 	   (,g-ent ,ent)
-	   (,g-timeout ,timeout)
+           (,g-format ,format)
+	   (,g-timeout ,(or timeout
+
+                            `(or
+                              (entity-timeout ,g-ent)
+                              (wserver-response-timeout *wserver*))))
 	   (,g-check-modified ,check-modified)
 	   )
        (catch 'with-http-response
-	 (compute-strategy ,g-req ,g-ent)
+	 (compute-strategy ,g-req ,g-ent ,g-format)
 	 (up-to-date-check ,g-check-modified ,g-req ,g-ent)
-	 (mp::with-timeout ((if* (and (fixnump ,g-timeout)
+	 (mp::with-timeout ((if* (and (fixnump ,g-timeout)  ; ok w-t
 				      (> ,g-timeout 0))
 			       then ,g-timeout
 			       else 9999999)
@@ -508,25 +604,25 @@ External-format `~s' passed to make-http-client-request filters line endings.
 Problems with protocol may occur." (ef-name ef)))))
 
 (defmacro with-http-body ((req ent
-			   &key format headers (external-format :latin1-base))
+			   &key headers 
+                                (external-format
+                                 *default-aserve-external-format*))
 			  &rest body)
   (declare (ignorable external-format))
   (let ((g-req (gensym))
 	(g-ent (gensym))
-	(g-format (gensym))
 	(g-headers (gensym))
 	#+allegro(g-external-format (gensym))
 	)
     `(let ((,g-req ,req)
 	   (,g-ent ,ent)
-	   (,g-format ,format)
 	   (,g-headers ,headers)
 ;	   #+(and allegro (version>= 6 0 pre-final 1))
 	   #+allegro
 	   (,g-external-format (find-external-format ,external-format))
 	   )
-       (declare #+allegro (ignore-if-unused ,g-req ,g-ent ,g-format ,g-external-format)
-	        #-allegro (ignorable ,g-req ,g-ent ,g-format))
+       (declare #+allegro (ignore-if-unused ,g-req ,g-ent ,g-external-format)
+	        #-allegro (ignorable ,g-req ,g-ent))
        ,(if* body 
 	   then `(compute-response-stream ,g-req ,g-ent))
        (if* ,g-headers
@@ -768,6 +864,11 @@ by keyword symbols and not by strings"
    (raw-request  ;; the actual command line from the browser
     :initarg :raw-request
     :reader request-raw-request)
+
+   (vhost  ;; the virtual host to which this request is directed
+    :initarg :vhost
+    :initform (wserver-default-vhost *wserver*)
+    :accessor request-vhost)
    
    ;;
    ;; -- internal slots --
@@ -887,16 +988,8 @@ by keyword symbols and not by strings"
 (defvar *crlf* (make-array 2 :element-type 'character :initial-contents
 			   '(#\return #\linefeed)))
 
-(defvar *read-request-timeout* 20)
-(defvar *read-request-body-timeout* 60)
-(defvar *http-response-timeout* 120) ; amount of time for an http response
-
 (defvar *thread-index*  0)      ; globalcounter to gen process names
 
-; usually set to the default server object created when aserve is loaded.
-; users may wish to set or bind this variable to a different server
-; object so it is the default for publish calls.
-(defvar *wserver*)   
 
 				    
 			      
@@ -916,12 +1009,13 @@ by keyword symbols and not by strings"
 		   accept-hook
 		   ssl		 ; enable ssl
 		   os-processes  ; to fork and run multiple instances
+                   (external-format nil efp); to set external format
 		   )
   ;; -exported-
   ;;
   ;; start the web server
   ;; return the server object
-  #+mswindows
+  #-unix
   (declare (ignore setuid setgid))
   
   (declare (ignore debug))  ; for now
@@ -934,6 +1028,8 @@ by keyword symbols and not by strings"
   
   (if* (eq server :new)
      then (setq server (make-instance 'wserver)))
+
+  (if* efp then (setf (wserver-external-format server) external-format))
 
   (if* ssl
      then (if* (pathnamep ssl)
@@ -1041,7 +1137,7 @@ by keyword symbols and not by strings"
 		        #+allegro
 		        (excl::unix-signal 15 0) ; let term kill it
 		        #-allegro 
-		        (net.aserve::unix-kill 15 0)
+		        (net.aserve::unix-signal 15 0)
 			(setq is-a-child t 
 			      children nil)
 			(return) ; exit dotimes 
@@ -1109,7 +1205,8 @@ by keyword symbols and not by strings"
   ;; do all the serving on the main thread so it's easier to
   ;; debug problems
   (let ((main-socket (wserver-socket *wserver*))
-	(ipaddrs (wserver-ipaddrs *wserver*)))
+	(ipaddrs (wserver-ipaddrs *wserver*))
+        (*default-aserve-external-format* (wserver-external-format *wserver*)))
     (unwind-protect
 	(loop
 	  (restart-case
@@ -1126,6 +1223,13 @@ by keyword symbols and not by strings"
 		   then (schedule-finalization 
 			 sock 
 			 #'check-for-open-socket-before-gc))
+
+		#+io-timeout
+		(socket:socket-control 
+		 sock 
+		 :read-timeout (wserver-io-timeout *wserver*)
+		 :write-timeout (wserver-io-timeout *wserver*))
+
 		(process-connection sock))
 	    
 	    (:loop ()  ; abort out of error without closing socket
@@ -1157,8 +1261,7 @@ by keyword symbols and not by strings"
 
 	#-allegro
 	(mp:process-run-function (format nil "aserve-accept-~d" (incf *thread-index*))
-				 nil #'http-accept-thread)  
-	))
+				 nil #'http-accept-thread)))
 
 (defun make-worker-thread ()
   (mp:without-scheduling
@@ -1177,6 +1280,7 @@ by keyword symbols and not by strings"
      (mp:process-preset proc #'http-worker-thread)
      #-allegro
      (setf (mp:process-run-reasons proc) nil)
+
      (push proc (wserver-worker-threads *wserver*))
      (atomic-incf (wserver-free-workers *wserver*))
      (setf (getf #+allegro (mp:process-property-list proc) 
@@ -1187,7 +1291,11 @@ by keyword symbols and not by strings"
 
 (defun http-worker-thread ()
   ;; made runnable when there is an socket on which work is to be done
-  (let ((*print-level* 5))
+  (let ((*print-level* 5)
+        (*worker-request* nil)
+	(*default-aserve-external-format* 
+	 (wserver-external-format *wserver*))
+        )
     ;; lots of circular data structures in the caching code.. we 
     ;; need to restrict the print level
     (loop
@@ -1199,9 +1307,17 @@ by keyword symbols and not by strings"
 	    (if* (not (member :notrap *debug-current* :test #'eq))
 	       then (handler-case (process-connection sock)
 		      (error (cond)
-			(logmess (format nil "~s: got error ~a~%" 
-					 (mp:process-name mp:*current-process*)
-					 cond))))
+			(logmess 
+                         (format nil "~agot error ~a~%" 
+                                 (if* *worker-request*
+                                      then (format
+                                            nil
+                                            "while processing command ~s~%"
+                                            (request-raw-request
+                                             *worker-request*))
+                                      else "")
+                                 cond
+                                 ))))
 	       else (process-connection sock))
 	  (abandon ()
 	      :report "Abandon this request and wait for the next one"
@@ -1243,6 +1359,12 @@ by keyword symbols and not by strings"
 		   then ; new ip address by which this machine is known
 			(push localhost ipaddrs)
 			(setf (wserver-ipaddrs *wserver*) ipaddrs))
+
+                #+io-timeout
+		(socket:socket-control 
+		 sock 
+		 :read-timeout (wserver-io-timeout *wserver*)
+		 :write-timeout (wserver-io-timeout *wserver*))
 		
 		; another useful test to see if we're losing file
 		; descriptors
@@ -1358,11 +1480,14 @@ by keyword symbols and not by strings"
 		  ; end this connection by closing socket
 		  (return-from process-connection nil)
 	     else ;; got a request
+                  (setq *worker-request* req)
+
 		  (handle-request req)		  
 		  (force-output-noblock (request-socket req))
 		  
 		  (log-request req)
 		  
+                  (setq *worker-request* nil)
 		  (free-req-header-block req)
 		  
 		  (let ((sock (request-socket req)))
@@ -1382,7 +1507,7 @@ by keyword symbols and not by strings"
   ;; do a force-output but don't get hung up if we get blocked on output
   ;; this happens enough with sockets that it's a real concern
   ; 30 seconds is enough time to wait
-  (mp:with-timeout (30) 
+  (with-timeout-local (30) 
     (force-output stream)))
 
   
@@ -1476,6 +1601,13 @@ by keyword symbols and not by strings"
 				   then (setf (uri-port uri) port)))
 			
 			(setf (uri-scheme uri) :http)  ; always http
+                        
+                        ;; set virtual host in the request
+			(let ((vhost 
+			       (gethash host (wserver-vhosts *wserver*))))
+			  (setf (request-vhost req)
+			        (or vhost (wserver-default-vhost *wserver*))))
+
 			))))
 	  
 	    
@@ -1678,11 +1810,20 @@ by keyword symbols and not by strings"
 
 
 (defparameter *crlf-crlf-usb8*
+  ;; the correct way to end a block of headers
     (make-array 4 :element-type '(unsigned-byte 8)
 		:initial-contents
 		(list #.(char-code #\return)
 		      #.(char-code #\linefeed)
 		      #.(char-code #\return)
+		      #.(char-code #\linefeed))))
+
+(defparameter *lf-lf-usb8*
+    ;; the incorrect way to end a block of headers but still found
+    ;; in some Unix apps
+    (make-array 2 :element-type '(unsigned-byte 8)
+		:initial-contents
+		(list #.(char-code #\linefeed)
 		      #.(char-code #\linefeed))))
 
 (defmethod get-multipart-header ((req http-request))
@@ -1990,26 +2131,13 @@ by keyword symbols and not by strings"
        
 		     
 		     
-						
-						
-					 
-					 
-	   
-	   
-	       
-		       
-	       
-  
-  
-    
-
-
-
 (defmethod get-multipart-sequence ((req http-request)
 				   buffer
 				   &key (start 0)
 					(end (length buffer))
-					(external-format :latin1-base ef-spec))
+					(external-format 
+                                         *default-aserve-external-format*
+                                         ef-spec))
   ;; fill the buffer with the chunk of data.
   ;; start at 'start' and go no farther than (1- end) in the buffer
   ;; return the index of the first character not placed in the buffer.
@@ -2122,14 +2250,12 @@ in get-multipart-sequence"))|#
 
 
 
-
-		      
 	      
 (defun read-sequence-with-timeout (string length sock timeout)
   ;; read length bytes into sequence, timing out after timeout
   ;; seconds
   ;; return nil if things go wrong.
-  (mp:with-timeout (timeout nil)
+  (with-timeout-local (timeout nil)
     (let ((got 0))
       (loop
 	(let ((this (rational-read-sequence string sock :start got)))
@@ -2156,6 +2282,7 @@ in get-multipart-sequence"))|#
 	   then (debug-format :info "eof on socket~%")
 		(free-request-buffer buffer)
 		(return-from read-sock-line nil))
+
       	(setq ch (code-char ch))
 	(if* (eq ch #\linefeed)
 	   then (if* (eq prevch #\return)
@@ -2198,7 +2325,7 @@ in get-multipart-sequence"))|#
 				  
 (defmethod request-query ((req http-request) &key (post t) (uri t)
 						  (external-format
-						   :latin1-base))
+						   *default-aserve-external-format*))
   ;; decode if necessary and return the alist holding the
   ;; args to this url.  In the alist items the value is the 
   ;; cdr of the alist item.

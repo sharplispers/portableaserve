@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: log.cl,v 1.1 2001/08/06 03:42:26 neonsquare Exp $
+;; $Id: log.cl,v 1.2 2001/12/28 15:55:27 neonsquare Exp $
 
 ;; Description:
 ;;   iserve's logging
@@ -82,8 +82,8 @@
 			     (excl::socket-bytes-written 
 			      (request-socket req))))
 	
-		(stream (wserver-log-stream
-			 (request-wserver req))))
+		(stream (vhost-log-stream
+			 (request-vhost req))))
     
 	    (format stream
 		    "~a - - [~a] ~s ~s ~s~%"

@@ -70,6 +70,7 @@
 		"ATOMICALLY"
 		"FAST"
 		"SOCKET-ERROR"
+                "RUN-SHELL-COMMAND"
 		))
 
 (in-package :excl)
@@ -201,5 +202,15 @@
 	       (when stream
 		 (prin1 stream s))
 	       (format s ".")))))
+
+#|
+(defun run-shell-command ()
+  (with-open-stream (s (open-pipe "/bin/sh"
+                                  :direction :io
+                                  :buffered nil))
+    (loop for var in environment
+          do (format stream "~A=~A~%" (car var) (cdr var)))
+|#
+  
 
 (provide 'acl-excl)

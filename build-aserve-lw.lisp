@@ -11,7 +11,8 @@
 
 (deliver #'net.aserve::start-cmd
 	 (merge-pathnames "aserve-lw" *load-truename*)
-	 0
+	0 
 	 :multiprocessing t
 	 :keep-pretty-printer t
-	 :keep-clos :no-empty))
+	 :keep-clos t
+	))

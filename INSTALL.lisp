@@ -49,6 +49,11 @@
 ; Load logical host definitions
 (load (merge-pathnames "logical-hostnames.lisp" *load-truename*))
 
+;(load "/home/jsc/work/src/cl-ssl/logical-hostnames.lisp")
+;(load "cl-ssl:cl-ssl.system")
+;(mk:oos :cl-ssl :compile)
+;(pushnew :cl-ssl *features*)
+
 ; Load definition of ACL Compatibility system
 (load "acl-compat:acl-compat.system")
 
@@ -72,12 +77,12 @@
 (in-package :aserve-example)
 
 ;; This option enables extended debug message output
-;(net.aserve::debug-on :info)
+(net.aserve::debug-on :info)
 
 ;; This option enables to enter the debugger if an
 ;; error occurs. (instead of simply logging and ignoring it)
 
-;(net.aserve::debug-on :notrap)
+(net.aserve::debug-on :notrap)
 
 ; Start example server (in multiprocessing) on port 2001
-(start-server :port 2001)
+;(start-server :port 2001)

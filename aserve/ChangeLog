@@ -1,3 +1,107 @@
+2001-10-16  John Foderaro  <jkf@tiger.franz.com>
+1.2.12
+	
+>>>	* incompatible change:  the format argument to with-http-body
+	  has been moved to with-http-response. 
+	  The format argument to with-http-body was ignored, but on
+	  with-http-response it will be obeyed and will override
+	  the format specified in the entity.
+	    
+	  The internal generic function compute-strategy now takes
+	  three arguments.  This function isn't part of the 
+	  external interface to AllegroServe but some users have
+	  specialized it.
+
+2001-10-15  John Foderaro  <jkf@tiger.franz.com>
+
+	* add timeout value to each entity object to serve as a default
+	  that's checked before the wserver-response-timeout.
+	* add a timeout argument to publish functions to set this 
+	  entity timeout value.
+	* add a publisher argument to publish-directory so users can 
+	  control what kind of entity is created when the real file is
+	  eventually found.
+
+2001-10-12  John Foderaro  <jkf@tiger.franz.com>
+
+	* using socket stream i/o timeouts in acl6.1
+	* moved the *http-response-timeout* to a slot in the wserver
+	  object so it can be server dependent.
+	* documented timeouts in aserve.html
+	* added timeout test to t-aserve.cl but disabled running them
+	  by default since they take a long time.
+
+2001-10-10  John Foderaro  <jkf@tiger.franz.com>
+1.2.11
+	* upgraded support for virtual hosts, introducting
+	  an object to denote a virtual host so that each
+	  virtual host can do its own logging.
+	  See aserve.html for details on Virtual Hosts.
+
+2001-10-08  John Foderaro  <jkf@tiger.franz.com>
+
+	* publish.cl - publish-directory must pass on host info
+		to the publish-files that it does.
+	            - unpublish takes a :server argument
+
+2001-09-29  John Foderaro  <jkf@tiger.franz.com>
+
+	* cgi.cl - fix bug where content-length was specified wrong
+
+2001-09-21  John Foderaro  <jkf@tiger.franz.com>
+1.2.10
+	* added ability to run cgi programs
+	  new file cgi.cl
+
+2001-09-20  John Foderaro  <jkf@tiger.franz.com>
+
+	* examples/examples.cl - add commentary to some of the links
+	to make them clearer
+
+2001-09-20  Kevin Layer  <layer@crikey>
+
+	* makefile: split `clean' into `clean' and `cleanall', the latter
+	which removes aserve-src.
+	* makefile (clean): add `r' to `rm'
+
+2001-09-18  Kevin Layer  <layer@crikey>
+1.2.9
+
+	* makefile: add build and srcdist rules; have make clean remove
+	aserve-src
+	* load.cl: parameterize make-src-distributions's directory name
+
+2001-09-12  John Foderaro  <jkf@tiger.franz.com>
+1.2.8
+	* client.cl: add :skip-body to do-http-request. add test for this.
+	* decode.cl: fix form-urlencoded-to-query so that it can
+		handle a non simple string (which can be returned under
+	        certain circumstances from get-request-body)
+
+2001-08-28  John Foderaro  <jkf@tiger.franz.com>
+1.2.7
+	* take the default value for the external-format
+	  argument from *default-aserve-external-format*.  
+	  net.aserve:start sets the value of *default-aserve-external-foramt*
+	  in worker threads.
+
+	* parse.cl (split-string): don't get confused by commas inside
+		a double quoted header parameter value.
+
+2001-08-24  John Foderaro  <jkf@tiger.franz.com>
+
+	*  when an error occurs in the worker thread  print the command line
+	   for the request that got the error.
+
+2001-08-16  John Foderaro  <jkf@tiger.franz.com>
+1.2.6
+	* main.cl - try harder to prevent debug output from multiple
+	    threads from getting jumbled up on the console
+	* publish.cl - do a keep-alive connection if the data is a binary
+	    stream as long as we know the content length.
+	    Add a new internal entity type so that returns of 
+	    "304 - Not Modified" can do keep alives too.
+
 2001-08-15  John Foderaro  <jkf@tiger.franz.com>
 1.2.5
 	* main.cl - incf version number for new release

@@ -99,8 +99,8 @@
 	 :function
 	 (let ((selector 0)) ; chose one of two pictures
 	   #'(lambda (req ent)
-	       (with-http-response (req ent)
-		 (with-http-body (req ent :format :binary)
+	       (with-http-response (req ent :format :binary)
+		 (with-http-body (req ent)
 		   ; here is where you would generate the picture.
 		   ; we're just reading it from a file in this example
 		   (let ((stream (request-reply-stream req)))
@@ -538,17 +538,18 @@
 		 (html "done")))))
 
 
-(defun start-server (&key (port 80) (ssl nil))
-  (declare (ignore ssl))
-
+(defun start-server (&key (port 80) (ssl #+cl-ssl t #-cl-ssl nil))
   (mp:process-run-function "aserve-example" nil
 			   #'(lambda ()
 			       (start :server *wserver* 
 				      :port port 
 				      :listeners 5 
+                                      :ssl (and ssl "/home/jsc/ssl/server.pem")
 				      :chunking #+lispworks t #-lispworks nil 
-				      :keep-alive #+lispworks t #-lispworks nil)))
-  )
+				      :keep-alive #+lispworks t #-lispworks nil
+                                      )
+))
+ ) 
 
 (defun start-simple-server (&key (port 80) ssl)
 	(start :server *wserver* :port port :chunking nil :listeners 0) :ssl ssl)
