@@ -25,6 +25,8 @@
         )
   #+lispworks (:import-from :common-lisp #:fixnump)
   #+sbcl (:import-from :sb-int #:fixnump)
+  #+sbcl (:import-from :sb-ext #:without-package-locks)
+  #+cmu (:import-from :ext #:without-package-locks)
   #+allegro (:shadowing-import-from :excl #:filesys-size
 	    #:filesys-write-date #:intern* #:filesys-type #:atomically #:fast)
   (:export
