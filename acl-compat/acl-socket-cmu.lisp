@@ -81,11 +81,15 @@ streams and handled by their close methods."
 
 (declaim (ftype (function ((unsigned-byte 32)) (values simple-string))
 		ipaddr-to-dotted))
-(defun ipaddr-to-dotted (ipaddr)
+(defun ipaddr-to-dotted (ipaddr &key values)
   (declare (type (unsigned-byte 32) ipaddr))
-  (format nil "~d.~d.~d.~d"
-	  (logand #xff (ash ipaddr -24)) (logand #xff (ash ipaddr -16))
-	  (logand #xff (ash ipaddr -8)) (logand #xff ipaddr)))
+  (let ((a (logand #xff (ash ipaddr -24)))
+	(b (logand #xff (ash ipaddr -16)))
+	(c (logand #xff (ash ipaddr -8)))
+	(d (logand #xff ipaddr)))
+    (if values
+	(values a b c d)
+      (format nil "~d.~d.~d.~d" a b c d))))
 
 (defun string-tokens (string)
   (labels ((get-token (str pos1 acc)
@@ -99,13 +103,16 @@ streams and handled by their close methods."
 (declaim (ftype (function (string &key (:errorp t))
                           (values (unsigned-byte 32)))
 		dotted-to-ipaddr))
-(defun dotted-to-ipaddr (dotted &key errorp)
-  (declare (string dotted)
-           (ignore errorp))
-  (ignore-errors ;; needed by authorize.cl
-    (let ((ll (string-tokens (substitute #\Space #\. dotted))))
-      (+ (ash (first ll) 24) (ash (second ll) 16)
-         (ash (third ll) 8) (fourth ll)))))
+(defun dotted-to-ipaddr (dotted &key (errorp t))
+  (declare (string dotted))
+  (if errorp
+      (let ((ll (string-tokens (substitute #\Space #\. dotted))))
+	(+ (ash (first ll) 24) (ash (second ll) 16)
+	   (ash (third ll) 8) (fourth ll)))
+    (ignore-errors 
+      (let ((ll (string-tokens (substitute #\Space #\. dotted))))
+	(+ (ash (first ll) 24) (ash (second ll) 16)
+	   (ash (third ll) 8) (fourth ll))))))
 
 (defun ipaddr-to-hostname (ipaddr &key ignore-cache)
   (when ignore-cache
