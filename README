@@ -3,16 +3,20 @@ README --
 This is a short description of what you will find
 in the subdirectories of this archive
 
- ./acl-compat/         Several ACL compatibility hacks
- ./aserve/             The AServe source
+ ./acl-compat/            Several ACL compatibility hacks
+ ./aserve/                The AServe source
+ ./debian/                Debian package files
  ./logical-hostnames.lisp Some logical-pathname-translations needed by defsys
  ./README                 This file
- ./INSTALL.lisp           Quick installation 
+ ./README.cmucl           Additional documentation for CMU Common Lisp
+ ./INSTALL.lisp           Quick installation
  
- The quick-installation script compiles and loads Portable AllegroServe
- and the file ASERVE:example.cl. After loading an instance of the
- AllegroServe server is started to serve the examples of ASERVE:example.cl
- on http://localhost:2001
+ The quick-installation script compiles and loads Portable AllegroServe.
+
+ Loading the file aserve:example.cl and evaluating
+ (aserve-example::start-server :port 2001) starts an 
+ AllegroServe server on http://localhost:2001 that shows off some of
+ the things possible with AllegroServe.
 
 
 Regards,
