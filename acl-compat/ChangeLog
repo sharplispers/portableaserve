@@ -1,5 +1,12 @@
 2003-05-13  Rudi Schlatte  <rudi@constantly.at>
 
+	* cmucl/acl-sys.lisp, cmucl/acl-socket.lisp, cmucl/acl-excl.lisp:
+	Use correct package names in in-package forms (Reported by Johan
+	Parin)
+
+	* packages.lisp (acl-compat.system): Add nickname acl-compat.sys,
+	remove commented-out nicknames.
+
 	* lispworks/acl-sys.lisp: push MSWINDOWS onto *features* if
 	appropriate (Thanks to Alain Picard for the report).
 

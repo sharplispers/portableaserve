@@ -128,7 +128,7 @@
 
 
 (defpackage acl-compat.system
-  #+nil (:nicknames :sys :system)
+  (:nicknames :acl-compat.sys)
   (:use :common-lisp) 
   (:export
    #:command-line-arguments

@@ -48,7 +48,7 @@
 ;;;; Comments, suggestions and bug reports to the author,
 ;;;; Christopher Double, at: chris@double.co.nz
 
-(in-package :excl)
+(in-package :acl-compat.excl)
 
 (defvar if*-keyword-list '("then" "thenret" "else" "elseif"))
 

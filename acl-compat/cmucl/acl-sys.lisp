@@ -1,4 +1,4 @@
-(in-package :sys)
+(in-package :acl-compat.system)
 
 (ignore-errors
 (export 'command-line-arguments)
