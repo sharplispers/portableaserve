@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.13 2002/02/15 01:17:39 neonsquare Exp $
+;; $Id: main.cl,v 1.14 2002/02/22 15:28:52 desoi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -159,6 +159,8 @@
 (import 'cl::fixnump)
 #+cmu
 (import 'ext:fixnump)
+#+mcl
+(import 'ccl:fixnump)
 
 (provide :aserve)
 
