@@ -67,7 +67,8 @@
 		"INTERN*"
 		"FILESYS-TYPE"
 		"ERRORSET"
-        "ATOMICALLY"
+		"ATOMICALLY"
+		"FAST"
 		))
 
 (in-package :excl)
@@ -179,5 +180,9 @@
 
 (defmacro atomically (&body forms)
   `(mp:without-preemption ,@forms))
+
+(defmacro fast (&body forms)
+  `(locally (declare (speed 3) (safety 0) (debug 0))
+	    ,@forms))
 
 (provide 'acl-excl)

@@ -65,7 +65,8 @@
 		"INTERN*"
 		"FILESYS-TYPE"
 		"ERRORSET"
-        "ATOMICALLY"
+		"ATOMICALLY"
+		"FAST"
 		))
 
 (in-package :excl)
@@ -182,5 +183,9 @@
   ;; fixxme: did I get the arglist right?  only invocation I have seen
   ;; is (excl::unix-signal 15 0) in net.aserve:start
   (unix:unix-kill pid signal))
+
+(defmacro fast (&body forms)
+  `(locally (declare (speed 3) (safety 0) (debug 0))
+	    ,@forms))
 
 (provide 'acl-excl)
