@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: examples.cl,v 1.4 2002/07/16 20:13:00 rudi Exp $
+;; $Id: examples.cl,v 1.5 2002/12/03 16:34:07 rudi Exp $
 
 ;; Description:
 ;;   Allegro iServe examples
@@ -35,7 +35,7 @@
 
 ;; examples of web pages
 (defpackage #:net.aserve.examples ;; aserve example
-  (:use #:common-lisp #:excl #:net.html.generator #:net.aserve))
+  (:use #:common-lisp #:acl-compat.excl #:net.html.generator #:net.aserve))
 
 (in-package #:net.aserve.examples)
 
@@ -154,6 +154,8 @@
 			  ((:a :href "cgi2") "redirect")
 			  ", "
 			  ((:a :href "cgi3") "set status to unauthorized request"))
+			 :hr
+			 ((:img :src "aservepowered.gif")) " <-- feel free to use this image on your AllegroServe-based web site"
 			 ))))))
 			     
 
@@ -223,6 +225,9 @@
 
 
 (publish-file :path "/aservelogo.gif" :file (example-file "aservelogo.gif")
+	      :content-type "image/gif")
+
+(publish-file :path "/aservepowered.gif" :file (example-file "aservepowered.gif")
 	      :content-type "image/gif")
 
 ;; this is a demonstration of how you can return a jpeg 
