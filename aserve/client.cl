@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.2 2001/12/28 15:55:27 neonsquare Exp $
+;; $Id: client.cl,v 1.3 2002/02/01 22:56:49 neonsquare Exp $
 
 ;; Description:
 ;;   http client code.
@@ -257,7 +257,7 @@
 		     (client-request-uri creq))))
 	  
           ;; read the body of the response
-	  (let* ((atype '(unsigned-byte 8))
+	  (let* ( ; (atype '(unsigned-byte 8)) ; JSC: We do not need to set this all over and over
 		 ans
 		 res
 		 (start 0)
@@ -266,7 +266,7 @@
 
 	    (loop
               (if* (null ans)
-		 then (setq ans (make-array 1024 :element-type atype)
+		 then (setq ans (make-array 1024 :element-type '(unsigned-byte 8)) ; was atype)
 			    start 0))
 		
 	
@@ -287,7 +287,7 @@
 	    (if* res
 	       then ; multiple items
 		    (let* ((total-size (+ (* 1024 (length res)) start))
-			   (bigarr (make-array total-size :element-type atype)))
+			   (bigarr (make-array total-size :element-type '(unsigned-byte 8)))); was atype)))
 		      (let ((sstart 0))
 			(dolist (arr (reverse res))
 			  (replace bigarr arr :start1 sstart)
@@ -779,26 +779,29 @@ or \"foo.com:8000\", not ~s" proxy))
   ;; return the number of characters in the buffer which will be zero
   ;; for an empty line.
   ;; on eof return nil
-  ;;
+
+  ;; JSC Note: This function is only used for reading headers. Therefore we
+  ;;           are safe in always doing CODE->CHAR conversions here.
+
+  ;; JSC 01.Feb.2002: Rewritten because it got too ugly
+  ;; with this character conversion. The original approach would have lead either
+  ;; to unneeded conversions or double (null ch) checking. 
+
   (let ((i 0))
-    (loop
-      (let ((ch (read-char socket nil nil)))
-	(if* (null ch)
-	   then ; eof from socket
-		(if* (> i 0)
-		   then ; actually read some stuff first
-			(return i)
-		   else (return nil) ; eof
-			)
-	 elseif (eq ch #\return)
-	   thenret ; ignore
-	 elseif (eq ch #\newline)
-	   then ; end of the line,
-		(return i)
-	 elseif (< i max)
-	   then ; ignore characters beyone line end
-		(setf (schar buffer i) ch)
-		(incf i))))))
+    (loop 
+     (let ((ch (read-byte socket nil nil)))
+          
+        (when (null ch) ; eof from socket
+          (if (> i 0)
+              (return i)   ; actually read some stuff first
+            (return nil))) ; eof
+
+        (setf ch (code-char ch))
+        (cond ((eql ch #\return)) ; ignore CR
+              ((eql ch #\newline) (return i)) ; end of line
+              ((< i max) ; ignore characters beyond line end
+               (setf (schar buffer i) ch)
+               (incf i)))))))
 		
 		
     
