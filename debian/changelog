@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2003.08.09) unstable; urgency=low
+
+  * Use CMUCL graystream (closes:203860)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat,  9 Aug 2003 19:08:51 -0600
+
 cl-portable-aserve (1.2.12c+cvs2003.07.29) unstable; urgency=low
 
   * Update dependencies to move package into testing

@@ -168,12 +168,14 @@ lisp-system"))
                (:legacy-cl-source-file "md5")
                #+nil
 	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
+  
   #+sbcl :depends-on
   #+sbcl (:sb-bsd-sockets)
-  #+(and lispworks ssl-available)
-  :depends-on
-  #+(and lispworks ssl-available)
-  (:cl-ssl)
+  #+(and cmu common-lisp-controller) :depends-on
+  #+(and cmu common-lisp-controller) (:cmucl-graystream)
+  #+(and lispworks ssl-available) :depends-on
+  #+(and lispworks ssl-available) (:cl-ssl)
+  
   :perform (load-op :after (op acl-compat)
 		    (pushnew :acl-compat cl:*features*))
   )
