@@ -22,9 +22,17 @@
                 :reader stream-type
                 :initform (error "No value supplied for stream-type"))))
 
+(defclass datagram-socket (server-socket)
+  ())
+
+
 (defmethod print-object ((socket server-socket) stream)
   (print-unreadable-object (socket stream :type t :identity nil)
     (format stream "listening on port ~d" (port socket))))
+
+(defmethod print-object ((socket datagram-socket) stream)
+  (print-unreadable-object (socket stream :type t :identity nil)
+    (format stream "datagram socket listening on port ~d" (port socket))))
 
 (defgeneric accept-connection (socket &key wait))
 (defmethod accept-connection ((server-socket server-socket)
@@ -45,7 +53,37 @@
             stream))
       nil))
 
-(defun make-socket (&key (remote-host "localhost")
+(defmethod receive-from ((socket datagram-socket) size &key buffer extract)
+  (multiple-value-bind (rbuf len address port)
+      (socket-receive (socket socket) buffer size)
+    (declare (ignore port))
+    (let ((buf
+	   (if (not extract) 
+	       rbuf
+	     (subseq rbuf 0 len)))) ;; FIXME: am I right?
+      (when buffer
+	  (replace buffer buf :end2 len))
+      (values
+       (if buffer buffer buf)
+       len
+       address))))
+
+(defmethod send-to ((socket datagram-socket) buffer size &key remote-host remote-port)
+  (let* ((rhost (typecase remote-host
+		  (string (lookup-hostname remote-host))
+		  (otherwise remote-host)))
+	 (s (socket socket))
+	 (stream (progn
+		   (socket-connect s rhost remote-port)
+		   (socket-make-stream s :input t :output t :buffering :none))))
+    (write-sequence buffer stream)
+    size))
+    
+     
+
+(defun make-socket (&key 
+		    (type :stream)
+		    (remote-host "localhost")
                     local-port
                     remote-port
                     (connect :active)
@@ -66,8 +104,22 @@ to read about the missing parts."
 			(:text 'base-char)
 			(:binary 'signed-byte)
                         (:bivalent 'unsigned-byte)))
-        (socket (make-instance 'inet-socket :type :stream :protocol :tcp)))
+        (socket 
+	 (if (eq type :datagram)
+	     (progn
+	       (setf connect :passive-udp)
+	       (make-instance 'inet-socket :type :datagram :protocol :udp))
+	   (make-instance 'inet-socket :type :stream :protocol :tcp))))
     (ecase connect
+      (:passive-udp
+       (setf (sockopt-reuse-address socket) reuse-address)
+       (if local-port
+	   (socket-bind socket #(0 0 0 0) local-port))
+       (make-instance 'datagram-socket
+                      :port (nth-value 1 (socket-name socket))
+                      :socket socket
+                      :element-type element-type
+                      :stream-type format))
       (:passive
        (setf (sockopt-reuse-address socket) reuse-address)
        (if local-port
