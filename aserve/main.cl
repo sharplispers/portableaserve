@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.16 2002/04/08 14:34:10 desoi Exp $
+;; $Id: main.cl,v 1.17 2002/04/08 20:56:37 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -146,7 +146,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 12 :b))
+(defparameter *aserve-version* '(1 2 12 :c))
 
 #+allegro
 (eval-when (eval load)
@@ -1234,8 +1234,8 @@ by keyword symbols and not by strings"
 		 sock 
 		 :read-timeout (wserver-io-timeout *wserver*)
 		 :write-timeout (wserver-io-timeout *wserver*))
-
-		(process-connection sock))
+		(process-connection sock)
+		)
 	    
 	    (:loop ()  ; abort out of error without closing socket
 	      nil)))
@@ -1471,7 +1471,6 @@ by keyword symbols and not by strings"
   ;; another request.
   ;; When this function returns the given socket has been closed.
   ;;
-  
   ; run the accept hook on the socket if there is one
   (let ((ahook (wserver-accept-hook *wserver*)))
     (if* ahook then (setq sock (funcall ahook sock))))
@@ -1530,7 +1529,6 @@ by keyword symbols and not by strings"
 (defun read-http-request (sock)
   ;; read the request from the socket and return and http-request
   ;; object
-  
   (let ((buffer (get-request-buffer))
 	(req)
 	(end)
@@ -1544,7 +1542,6 @@ by keyword symbols and not by strings"
 	    ;
 	    ; we handle the case of a blank line before the command
 	    ; since the spec says that we should (even though we don't have to)
-      
 	    (multiple-value-setq (buffer end)
 	      (read-sock-line sock buffer 0))
       
@@ -2181,6 +2178,7 @@ in get-multipart-sequence"))|#
        )
       ((array character (*))
        (setq text-mode t))
+      (string (setq text-mode t))
       (t 
        (error 
 	"This function only accepts (array (unsigned-byte 8)) or character arrays")))

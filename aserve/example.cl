@@ -540,19 +540,17 @@
 
 (defun start-server (&key (port 80) (ssl #+cl-ssl t #-cl-ssl nil))
   (acl-mp:process-run-function "aserve-example" 
-			   #'(lambda ()
-			       (start :server *wserver* 
-				      :port port 
-				      :listeners 5 
-                                      :ssl (and ssl "/home/jsc/ssl/server.pem")
-				      :chunking #+lispworks t #-lispworks nil 
-				      :keep-alive #+lispworks t #-lispworks nil
-                                      )
-))
- ) 
+			       #'(lambda ()
+			           (start :server *wserver* 
+				          :port port 
+				          :listeners 5 
+                                          :ssl (and ssl "/home/jsc/ssl/server.pem")
+				          :chunking #+lispworks t #-lispworks nil 
+				          :keep-alive #+lispworks t #-lispworks nil
+                                          ))))
 
 (defun start-simple-server (&key (port 80) ssl)
-	(start :server *wserver* :port port :chunking nil :listeners 0) :ssl ssl)
+  (start :server *wserver* :port port :chunking nil :keep-alive nil :listeners 0) :ssl ssl)
 
 
 
