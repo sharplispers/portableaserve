@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.3 2001/08/09 08:04:17 neonsquare Exp $
+;; $Id: main.cl,v 1.4 2001/08/09 09:53:44 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -1038,7 +1038,10 @@ by keyword symbols and not by strings"
 		(if* (zerop (setq child (unix-fork)))
 		   then ; we're a child, let the *lisp-listener* go 
 			; catatonic
-			(excl::unix-signal 15 0) ; let term kill it
+		        #+allegro
+		        (excl::unix-signal 15 0) ; let term kill it
+		        #-allegro 
+		        (net.aserve::unix-kill 15 0)
 			(setq is-a-child t 
 			      children nil)
 			(return) ; exit dotimes 
