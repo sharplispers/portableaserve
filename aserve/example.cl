@@ -542,7 +542,11 @@
 	(declare (ignore ssl))
 	(mp:process-run-function "aserve-example" nil
 		#'(lambda ()
-			(start :server *wserver* :port port :listeners 5 :chunking nil :keep-alive nil)))
+			(start :server *wserver* 
+			       :port port 
+			       :listeners 5 
+			       :chunking #+lispworks t #-lispworks nil 
+			       :keep-alive #+lispworks t #-lispworks nil)))
 )
 
 (defun start-simple-server (&key (port 80) ssl)

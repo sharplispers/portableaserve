@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.6 2001/08/30 09:16:05 ljosa Exp $
+;; $Id: main.cl,v 1.7 2001/08/31 01:18:36 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -1509,8 +1509,7 @@ by keyword symbols and not by strings"
       ("CONNECT " . :connect)))
   
 
-	    
-
+#+obsolete	    
 (defmethod get-request-body ((req http-request))
   ;; return a string that holds the body of the http-request
   ;;  cache it for later too
@@ -1521,15 +1520,13 @@ by keyword symbols and not by strings"
 		    (header-slot-value-integer req :content-length)
 		  (if* believe-it
 		     then ; we know the length
-			  (prog1 (let ((ret #+allegro (make-string length)
-					    #-allegro (make-array length 
-								  :element-type 
-								  '(unsigned-byte 8))))
+  		          (prog1 (let ((ret (make-string length)))
 				   (read-sequence-with-timeout 
 				    ret length 
 				    (request-socket req)
 				    *read-request-body-timeout*)
 				   ;; TODO: implement bivalent rational-read-sequence
+                                   #+ignore
 				   (loop :with result = (make-string length)
 				         :for i :from 0 :below length
 					 :do (setf (aref result i) (code-char (aref ret i)))
@@ -1581,7 +1578,92 @@ by keyword symbols and not by strings"
 	   else "" ; no body
 		))))
 
+(defmethod get-request-body ((req http-request))
+  ;; return a string that holds the body of the http-request
+  ;;  cache it for later too
+  (or (request-request-body req)
+      (setf (request-request-body req)
+	(if* (member (request-method req) '(:put :post))
+	   then (multiple-value-bind (length believe-it)
+		    (header-slot-value-integer req :content-length)
+		  (if* believe-it
+		     then ; we know the length
+  		          (prog1 (let ((ret (make-string length)))
+				   (read-sequence-with-timeout 
+				    ret length 
+				    (request-socket req)
+				    *read-request-body-timeout*))
+			    (let ((ch (read-char-no-hang (request-socket req)
+							 nil nil)))
+			      (if* (eq ch #\return)
+				 then ; now look for linefeed
+				      (setq ch (read-char-no-hang 
+						(request-socket req) nil nil))
+				      (if* (eq ch #\linefeed)
+					 thenret 
+					 else (unread-char 
+					       ch (request-socket req)))
+			       elseif ch
+				 then (unread-char ch (request-socket req)))))
+				      	      
+		     else ; no content length given
+			  
+			  (if* (equalp "keep-alive" 
+				       (header-slot-value req :connection))
+			     then ; must be no body
+				  ""
+			     else ; read until the end of file
+				  (mp:with-timeout 
+				      (*read-request-body-timeout* 
+				       nil)
+				    (let ((ans (make-array 
+						2048 
+						:element-type 'character
+						:fill-pointer 0))
+					  (sock (request-socket req))
+					  (ch))
+				      (loop (if* (eq :eof 
+						     (setq ch (read-char 
+							       sock nil :eof)))
+					       then (return  ans)
+					       else (vector-push-extend ch ans))))))))
+	   else "" ; no body
+		))))
 
+;; This is intented to be a bit more maintainable than the original
+(defmethod get-request-body ((req http-request))
+  "Return and cache the body of the http-request as string"
+  (labels ((accept-char (char stream)
+	     (let ((c (read-char-no-hang stream nil nil)))
+	       (cond ((eql c char))
+		     (t (unread-char c stream)))))
+	   
+	   (read-body-with-content-length (length stream)
+	     (prog1 (let ((ret (make-string length)))
+		      (read-sequence-with-timeout 
+		       ret length stream *read-request-body-timeout*))
+		      
+		      ;; Chop CRLF for buggy browsers like Netscape
+		      (every #'(lambda (c) (accept-char c stream))
+			     '(#\return #\linefeed))))
+	   
+	   (read-body-without-content-length (stream)
+	     (mp:with-timeout (*read-request-body-timeout* nil)
+	       (if (equalp "keep-alive" (header-slot-value req :connection))
+		   "" ; no body
+		   (loop with result = (make-array 2048 :element-type 'character :fill-pointer 0)
+			 for c = (read-char stream nil :eof)
+			 do (vector-push-extend c result)
+			 finally (return result))))))
+
+    (or (request-request-body req)
+	(setf (request-request-body req)
+	      (multiple-value-bind (length believe-it) 
+		  (header-slot-value-integer req :content-length)
+		(cond ((not (member (request-method req) '(:put :post))) "") ; no body
+		      (believe-it (read-body-with-content-length length (request-socket req)))
+		      (t (read-body-without-content-length (request-socket req)))))))))
+		    
 
 ;; multipart code
 ;; used when enctype=multipart/form-data is used
