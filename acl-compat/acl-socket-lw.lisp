@@ -37,7 +37,9 @@
    (proc :initarg :proc
          :reader server-socket-process)
    (mbox :initarg :mbox
-         :reader server-socket-mbox)))
+         :reader server-socket-mbox)
+   (mbox2 :initarg :mbox2
+	  :reader server-socket-mbox2)))
 
 (defmethod print-object ((socket server-socket) stream)
   (print-unreadable-object (socket stream :type t :identity nil)
@@ -45,7 +47,9 @@
 
 (defmethod accept-connection ((server-socket server-socket)
 			      &key (wait t))
-  (let ((mbox (server-socket-mbox server-socket)))
+  (let ((mbox (server-socket-mbox server-socket))
+	(mbox2 (server-socket-mbox2 server-socket)))
+    (mp:mailbox-send mbox2 :foo)
     (when (or wait (mp:mailbox-peek mbox))
       (make-instance
        'comm:socket-stream :direction :io
@@ -66,12 +70,15 @@
     (ecase connect 
       (:passive
        (let* ((mbox (mp:make-mailbox :size 1))
+	      (mbox2 (mp:make-mailbox :size 1))
               (proc (comm:start-up-server
-                     :function (lambda (sock) 
+                     :function (lambda (sock)
+				 (mp:mailbox-read mbox2)
                                  (mp:mailbox-send mbox sock))
                      :service local-port)))
          (make-instance 'server-socket
                         :mbox mbox
+			:mbox2 mbox2
 		        :port local-port
                         :proc proc
                         :fd (first (mp::process-wait-function-arguments proc))
