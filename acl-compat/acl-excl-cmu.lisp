@@ -260,7 +260,10 @@ program-controlled interception of a break."
 
 ;; stream-unread-char
 
-;; stream-read-char-no-hang
+(defmethod stream-read-char-no-hang ((stream bivalent-input-stream))
+  (if (listen (lisp-stream stream))
+      (code-char (read-byte (lisp-stream stream)))
+      nil))
 
 ;; stream-peek-char
 
