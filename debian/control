@@ -9,16 +9,18 @@ Package: cl-aserve
 Architecture: all
 Depends: common-lisp-controller (>= 3.36), cl-acl-compat
 Description: Portable Aserve
- Aserve done in a portable fashion
+ A portable version of AllegroServe which is a web application server
+ for Common Lisp programs.
 
 Package: cl-acl-compat
 Architecture: all
 Depends: common-lisp-controller (>= 3.36)
 Description: Compatibility layer for Allegro Common Lisp
- A thin compatibility-layer that emulates ACL.
+ A thin compatibility-layer that emulates Allegro Common Lisp. It is used
+ to support a number of Allegro's open-source packages.
 
 Package: cl-htmlgen
 Architecture: all
 Depends: common-lisp-controller (>= 3.36)
 Description: HTML generation library for Common Lisp programs
- A flexible library for generate HTML from Common Lisp programs.
+ A flexible library to generate HTML from Common Lisp programs.

@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2002.10.06) unstable; urgency=low
+
+  * Expand package descriptions (closes: 163598)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun,  6 Oct 2002 20:07:13 -0600
+
 cl-portable-aserve (1.2.12c+cvs2002.09.22) unstable; urgency=low
 
   * New upstream release
