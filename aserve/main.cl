@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.36 2004/02/17 12:48:44 rudi Exp $
+;; $Id: main.cl,v 1.37 2004/03/16 20:37:42 kevinrosenberg Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -2502,7 +2502,7 @@ in get-multipart-sequence"))
 
 (defsetf request-query-value 
     (key req &key (post t) (uri t) 
-		  (test #'equal) (external-format 
+		  (test '#'equal) (external-format 
 				  *default-aserve-external-format*))
     (newvalue)
   ;; make it appear that the query alist contains this extra key/value
