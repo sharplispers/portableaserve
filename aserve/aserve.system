@@ -3,12 +3,10 @@
 (in-package "CL-USER")
 
 (mk:defsystem "ASERVE"
-  :source-pathname "aserve:"
-  :components (#|
-               (:module "htmlgen"
+  :source-pathname (translate-logical-pathname "aserve:")
+  :source-extension "cl"
+  :components ((:module "htmlgen"
                         :components ((:file "htmlgen")))
-               |#
-               (:file "htmlgen")
                (:file "macs")
                (:file "main"
                       :depends-on ("macs"))
