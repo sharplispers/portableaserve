@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2002.12.17) unstable; urgency=low
+
+  * New upstream 
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue, 17 Dec 2002 23:02:12 -0700
+
 cl-portable-aserve (1.2.12c+cvs2002.12.11) unstable; urgency=low
 
   * Move htmlgen.html to cl-htmlgen package
