@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: chat.cl,v 1.2 2002/06/09 11:34:59 rudi Exp $
+;; $Id: chat.cl,v 1.3 2002/12/26 19:28:49 rudi Exp $
 
 ;; Description:
 ;;   aserve chat program
@@ -481,11 +481,11 @@
   ;; useful function for starting chat standalone where the 
   ;; port and home arguments are required
   
-  (if* (not (eql 5 (length (sys:command-line-arguments))))
-     then (format t "use: ~s  port  home~%" (sys:command-line-argument 0))
+  (if* (not (eql 5 (length (acl-compat.system:command-line-arguments))))
+     then (format t "use: ~s  port  home~%" (acl-compat.system:command-line-argument 0))
           (exit 1))
 
-  (let ((port (read-from-string (nth 3 (sys:command-line-arguments))))
+  (let ((port (read-from-string (nth 3 (acl-compat.system:command-line-arguments))))
         (home (nth 4 (sys:command-line-arguments))))
     (start-chat :port port :home home)
     (loop (sleep 9999999))))

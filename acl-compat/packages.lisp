@@ -21,6 +21,7 @@
         )
   (:nicknames #:excl)                   ; to be nuked later
   #+lispworks (:import-from :common-lisp #:fixnump)
+  #+sbcl (:import-from :sb-int #:fixnump)
   (:export
    #:if*
    #:*initial-terminal-io*
@@ -88,7 +89,6 @@
    #:wait-for-input-available
    ))
 
-#+(or lispworks cmu)
 (defpackage :de.dataheaven.chunked-stream-mixin
   (:use :common-lisp)
   (:export #:chunked-stream-mixin
@@ -147,6 +147,7 @@
                 #:stream-listen
                 #:stream-read-byte
                 #:stream-read-char
+                #:stream-peek-char
                 #:stream-write-byte
                 #:stream-write-char
                 #:stream-read-char-no-hang

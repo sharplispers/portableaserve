@@ -1,3 +1,20 @@
+2002-12-26  Rudi Schlatte  <rudi@constantly.at>
+
+	* meta.lisp: Switch to new-style eval-when times
+
+	* lw-buffering.lisp: Switch to new-style eval-when times
+	(defstruct buffer-state): Add type declarations
+	(stream-fill-buffer): Remove bug for non-cmucl case (need
+	unblocking read-sequence)
+
+	* chunked-stream-mixin.lisp: Add defgeneric forms
+
+	* acl-socket-sbcl.lisp: Enable chunked transfer encoding support
+
+2002-12-23  Rudi Schlatte  <rudi@constantly.at>
+
+	* packages.lisp, acl-sys-sbcl.lisp: Various sbcl fixes
+
 2002-12-18  Rudi Schlatte  <rudi@constantly.at>
 
 	* packages.lisp: Add package definition of

@@ -8,12 +8,12 @@
 (defvar *default-input-buffer-size* 8192)
 (defvar *default-output-buffer-size* 8192)
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defstruct buffer-state 
-    (input-buffer (make-array *default-input-buffer-size* :element-type '(unsigned-byte 8)))
+    (input-buffer (make-array *default-input-buffer-size* :element-type '(unsigned-byte 8)) :type (simple-array (unsigned-byte 8) (*)))
     (input-index nil)
     (input-limit *default-input-buffer-size* :type fixnum)
-    (output-buffer (make-array *default-output-buffer-size* :element-type '(unsigned-byte 8)))
+    (output-buffer (make-array *default-output-buffer-size* :element-type '(unsigned-byte 8)) :type (simple-array (unsigned-byte 8) (*)))
     (output-index 0)
     (output-limit *default-output-buffer-size* :type fixnum)))
 
@@ -114,8 +114,13 @@
     (let* ((read-bytes
             #+cmu (system:read-n-bytes (native-lisp-stream stream)
                                        buffer 0 limit nil)
-            #-cmu (read-sequence buffer (native-lisp-stream stream)
-                                 :start 0 :end limit)))
+            ;; TODO: Replace with implementation-specific unblocking
+            ;; read-sequence call
+            #-cmu (loop for n-read from 0 below limit
+                        while (listen (native-lisp-stream stream))
+                        do (setf (aref buffer n-read)
+                                 (read-byte (native-lisp-stream stream)))
+                        count t)))
       (if (zerop read-bytes)
           nil
           (setf index 0

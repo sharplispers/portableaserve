@@ -60,9 +60,11 @@
    (chunk-input-avail :initform nil)
    (real-input-limit :initform 0)))
 
+(defgeneric input-chunking-p (stream))
 (defmethod input-chunking-p ((stream chunked-stream-mixin))
   (not (null (slot-value stream 'chunk-input-avail))))
 
+(defgeneric (setf input-chunking-p) (new-value stream))
 (defmethod (setf input-chunking-p) (new-value (stream chunked-stream-mixin))
   (setf (slot-value stream 'chunk-input-avail) (and new-value 0)))
 
@@ -77,6 +79,7 @@
 
 ;; Input chunking is not tested so far!
 
+(defgeneric initialize-input-chunking (stream))
 (defmethod initialize-input-chunking ((stream chunked-stream-mixin))
   "This method initializes input chunking. The real-input-limit is nil in the beginnings
    because it got not saved yet. Chunk-input-avail is obviously 0 because no chunk-data
@@ -149,6 +152,7 @@
 ;; by a LF
 (defconstant +chunk-header-buffer-offset+ 6)
 
+(defgeneric initialize-output-chunking (stream))
 (defmethod initialize-output-chunking ((stream chunked-stream-mixin))
   "This method initializes output chunking. Actual contents in the output-buffer
    get flushed first. A chunk has a header at the start and a CRLF at the end.
@@ -187,11 +191,11 @@
 
 (defmethod close ((stream chunked-stream-mixin) &key abort)
   (unless abort
-    (gray-stream:with-stream-output-buffer (output-buffer output-index output-limit) stream
-                  (disable-output-chunking stream)))
+    (disable-output-chunking stream))
   (call-next-method))
 
 
+(defgeneric disable-output-chunking (stream))
 (defmethod disable-output-chunking ((stream chunked-stream-mixin))
   "When we disable chunking we first try to write out a last pending chunk and after that
    reset the buffer-state to normal mode. To end the game we write out a chunk-header with

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.24 2002/12/17 14:49:57 rudi Exp $
+;; $Id: main.cl,v 1.25 2002/12/26 19:28:49 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -1085,7 +1085,7 @@ by keyword symbols and not by strings"
 				; allow zombies to die
 				(sleep 2)
 				(loop (if* (null
-					    (sys:reap-os-subprocess :wait nil))
+					    (acl-compat.system:reap-os-subprocess :wait nil))
 					 then (return))))
 			    (wserver-shutdown-hooks server)))))
     
@@ -1374,7 +1374,7 @@ by keyword symbols and not by strings"
 (defun start-cmd ()
   ;; start using the command line arguments
   (let ((port 8001))
-    (do* ((args (cdr (sys:command-line-arguments)) (cdr args))
+    (do* ((args (cdr (acl-compat.system:command-line-arguments)) (cdr args))
 	  (arg (car args) (car args)))
 	((null args))
       (if* (equal "-f" arg)

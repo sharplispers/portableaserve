@@ -6,7 +6,7 @@
 ;;;; IF* macro placed in the public domain by John Foderaro.
 ;;;; See: http://www.franz.com/~jkf/ifstar.txt
 ;;;;
-;;;; Further modified by Rudi Schlatte for cmucl, taking Jochen
+;;;; Further modified by Rudi Schlatte for sbcl, taking Jochen
 ;;;; Schmidt's version for Xanalys Lispworks as base
 
 ;;;; This is the header of Chris Doubles original file. (but without Changelog)
@@ -49,10 +49,6 @@
 ;;;; Christopher Double, at: chris@double.co.nz
 
 (in-package :excl)
-
-(shadowing-import '(sb-int:fixnump))
-
-(export '(fixnump))
 
 (defvar if*-keyword-list '("then" "thenret" "else" "elseif"))
 
@@ -218,6 +214,8 @@ program-controlled interception of a break."
                            (array (signed-byte 8) 1)))
   (write-sequence sequence stream :start start :end end))
 
+
+#||
 
 ;;; Bivalent Gray streams
 
@@ -394,5 +392,6 @@ program-controlled interception of a break."
 
 ;;; End bivalent Gray streams
 
+||#
 
 (provide 'acl-excl)

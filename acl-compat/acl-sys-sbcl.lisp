@@ -1,9 +1,4 @@
-(in-package :sys)
-
-(ignore-errors
-(export 'command-line-arguments)
-(export 'command-line-argument)
-(export 'reap-os-subprocess)
+(in-package :acl-compat.system)
 
 (defun command-line-arguments ()
   sb-ext:*posix-argv*)
@@ -14,5 +9,3 @@
 (defun reap-os-subprocess (&key (wait nil))
   (declare (ignore wait))
   nil)
-
-)

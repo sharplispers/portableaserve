@@ -155,7 +155,7 @@
                          ))))
 
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 (defparameter *saved-readtable* (copy-readtable))
 (defparameter *meta-readtable* (copy-readtable))
 
@@ -241,7 +241,7 @@
                             $[@(digit d) !(setq n (+ (* n 10) (ctoi d)))]])
                      (* s n))))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 (disable-meta-syntax)
 )
 
