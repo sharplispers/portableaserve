@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: webact.cl,v 1.7 2004/03/16 02:57:02 kevinrosenberg Exp $
+;; $Id: webact.cl,v 1.8 2004/03/16 20:38:10 kevinrosenberg Exp $
 
 
 (in-package :net.aserve)
@@ -42,27 +42,6 @@
    websession-master
    websession-variable
    ))
-
-#+ignore
-(defpackage :net.aserve
-  (:use :common-lisp :acl-compat.excl :net.html.generator :puri)
-  (:export 
-   #:initialize-websession-master
-   #:locate-action-path
-   #:webaction
-   #:webaction-entity
-   #:webaction-from-ent
-   #:webaction-project
-   #:websession
-   #:websession-data
-   #:websession-key
-   #:websession-from-req
-   #:websession-master
-   #:websession-variable
-   ))
-
-
-(in-package :net.aserve)
 
 (defclass webaction-entity (computed-entity access-file-mixin)
   ((webaction ;; holds webaction object
