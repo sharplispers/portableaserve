@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.4 2002/06/09 11:35:00 rudi Exp $
+;; $Id: publish.cl,v 1.5 2002/06/20 06:39:44 neonsquare Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -1713,7 +1713,7 @@
 						 (getf (cdr inf) :deny))))
 	      (case new-state
 		(:allow (setq state :allow))
-		(nil ; state unchanged
+		((nil) ; state unchanged
 		 )
 		(:deny (return-from check-allow-deny-info :deny)))))))
 
