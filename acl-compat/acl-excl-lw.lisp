@@ -137,7 +137,11 @@
 (defun filesys-write-date (stream)
 	(file-write-date stream))
 
+#+obsolete
 (defun stream-input-fn (stream)
+  stream)
+
+(defmethod stream-input-fn ((stream stream))
   stream)
 	
 
