@@ -1,3 +1,9 @@
+2004-01-28  Rudi Schlatte  <rudi@constantly.at>
+
+	* packages.lisp: excl -> acl-compat.excl
+
+	* lispworks/acl-socket.lisp: ditto.
+
 2004-01-27  Rudi Schlatte  <rudi@constantly.at>
 
 	* chunked-stream-mixin.lisp: replace excl: package prefix with

@@ -100,7 +100,7 @@
 (defpackage acl-compat.socket
   (:use #:common-lisp
         #+(or cmu lispworks scl) #:acl-mp
-        #+(or lispworks cmu)#:excl
+        #+(or lispworks cmu)#:acl-compat.excl
         #+clisp #:socket
         #+sbcl #:sb-bsd-sockets
         #+(or lispworks cmu) #:de.dataheaven.chunked-stream-mixin

@@ -1,21 +1,8 @@
 ;; This package is designed for LispWorks.  It implements the
 ;; ACL-style socket interface on top of LispWorks.
 
-;(require :com.ljosa.chunked "chunked")
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require "comm"))
-
-#| already defined in packages.lisp
-(defpackage acl-socket
-  (:use common-lisp #+de.dataheaven.chunked de.dataheaven.chunked-stream-mixin excl)
-  (:nicknames socket)
-  #+cl-ssl(:import-from :ssl "MAKE-SSL-CLIENT-STREAM" "MAKE-SSL-SERVER-STREAM")
-  (:shadow socket-stream stream-error)
-  (:export socket make-socket accept-connection
-   ipaddr-to-dotted dotted-to-ipaddr ipaddr-to-hostname lookup-hostname
-   remote-host remote-port local-host local-port socket-control socket-os-fd))
-|#
 
 #+cl-ssl
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -25,13 +12,13 @@
 (in-package acl-compat.socket)
 
 (define-condition stream-error (error)
-  ((excl::stream :initarg :stream
+  ((acl-compat.excl::stream :initarg :stream
            :reader stream-error-stream)
-   (excl::action :initarg :action
+   (acl-compat.excl::action :initarg :action
            :reader stream-error-action)
-   (excl::code :initarg :code
+   (acl-compat.excl::code :initarg :code
          :reader stream-error-code)
-   (excl::identifier :initarg :identifier
+   (acl-compat.excl::identifier :initarg :identifier
                :reader stream-error-identifier))
   (:report (lambda (condition stream)
              (format stream "A stream error occured (action=~A identifier=~A code=~A stream=~S)."
