@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.38 2004/06/01 09:00:39 rudi Exp $
+;; $Id: main.cl,v 1.39 2004/06/10 03:52:10 kevinrosenberg Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -232,7 +232,12 @@
 (defvar *max-socket-fd* 0) ; the maximum fd returned by accept-connection
 (defvar *aserve-debug-stream* nil) ; stream to which to seen debug messages
 (defvar *debug-connection-reset-by-peer* nil) ; true to signal these too
-(defvar *default-aserve-external-format* :latin1-base) 
+
+
+;; NDL 2004-06-04 -- external-formats are implementation-dependent...
+(defvar *default-aserve-external-format* #-lispworks :latin1-base #+lispworks :latin-1) 
+
+
 (defvar *worker-request*)  ; set to current request object
 
 (defvar *read-request-timeout* 20)
@@ -2502,8 +2507,12 @@ in get-multipart-sequence"))
 
 (defsetf request-query-value 
     (key req &key (post t) (uri t) 
-		  (test '#'equal) (external-format 
-				  *default-aserve-external-format*))
+                   ;; NDL 2004-06-04 -- LispWorks cannot "externalise" the object which you get 
+                   ;; upon evaluating #'equal, in functions which invoker this setf expander,
+                   ;; but it's perfectly happy to work with #'equal itself. Protect from
+                   ;; one level of evaluation.
+ 		  (test #-lispworks #'equal #+lispworks '#'equal)
+                   (external-format *default-aserve-external-format*))
     (newvalue)
   ;; make it appear that the query alist contains this extra key/value
   `(let ((ent (assoc ,key (request-query ,req :post ,post :uri ,uri

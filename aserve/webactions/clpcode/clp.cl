@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: clp.cl,v 1.2 2004/02/17 12:48:43 rudi Exp $
+;; $Id: clp.cl,v 1.3 2004/06/10 03:52:10 kevinrosenberg Exp $
 
 
 (in-package :net.aserve)
@@ -63,7 +63,10 @@
       (:session
        (websession-variable (websession-from-req req) name)))))
 
-(defsetf locate-any-value .inv-locate-any-value)
+;; NDL 2004-06-04  -- LispWorks needs the eval-when in order to use this form further down
+;; the same file.
+(eval-when (compile load eval)
+  (defsetf locate-any-value .inv-locate-any-value))
 
 (defun .inv-locate-any-value (req args name value)
   (let ((location :request))
@@ -88,6 +91,7 @@
      then (parse-integer value :junk-allowed t)))
 
 
+;; NDL 2004-06-04 -- I don't think LispWorks can change a socket's external-format.
 (def-clp-function clp_value (req ent args body)
   ;; name=xxxx
   ;; safe
@@ -100,26 +104,31 @@
 	 (value (and name
 		     (locate-any-value req args name)))
 	 (safe (assoc "safe" args :test #'equalp))
+	 #-lispworks 
 	 (external-format 
 	  (cdr (assoc "external-format" args :test #'equalp))))
+    #-lispworks 
     (if* external-format
        then (setq external-format (find-external-format external-format)))
     
     (if* value 
-       then (if* external-format
-	       then (let ((old-ef (stream-external-format *html-stream*)))
-		      (force-output *html-stream*)
-		      (setf (stream-external-format *html-stream*)
-			(find-external-format :octets))
-		      (if* safe
-			 then (html (:princ-safe value))
-			 else (html (:princ value)))
-		      (force-output *html-stream*)
-		      (setf (stream-external-format *html-stream*) old-ef))
-	       else 
-		    (if* safe
-		       then (html (:princ-safe value))
-		       else (html (:princ value)))))))
+       then (cond
+	     ;; NDL - breaking with tradition heere and using cond, so I can comment
+	     ;; out one clause without getting ugly.
+	     #-lispworks
+	     (external-format
+	      (let ((old-ef (stream-external-format *html-stream*)))
+		(force-output *html-stream*)
+		(setf (stream-external-format *html-stream*)
+		      (find-external-format :octets))
+		(if* safe
+		     then (html (:princ-safe value))
+		     else (html (:princ value)))
+		(force-output *html-stream*)
+		(setf (stream-external-format *html-stream*) old-ef)))
+	     (t (if* safe
+		     then (html (:princ-safe value))
+		     else (html (:princ value))))))))
 
 
 (def-clp-function clp_set (req ent args body)

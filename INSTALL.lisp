@@ -39,9 +39,14 @@
     (find-or-load-system :aserve
                          (make-pathname
                           :directory '(:relative "aserve")
-                          :name "aserve" :type "asd" :case :local)))
+                          :name "aserve" :type "asd" :case :local))
+    (find-or-load-system :webactions
+                         (make-pathname
+                          :directory '(:relative "aserve" "webactions")
+                          :name "webactions" :type "asd" :case :local)))
   ;; Compile and load the ASERVE system
   (asdf:operate 'asdf:load-op :aserve)
+  (asdf:operate 'asdf:load-op :webactions)
 
   ;; Startup multiprocessing.
   ;;

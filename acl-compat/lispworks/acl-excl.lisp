@@ -37,5 +37,15 @@
           do (format stream "~A=~A~%" (car var) (cdr var)))
 |#
   
+;; NDL 2004-06-04 -- Missing definition & a package, to allow LispWorks to load webactions
+
+(defun cl-internal-real-time ()
+  (round (/ (get-internal-real-time) 1000)))
+
+(defpackage :excl
+  (:import-from #:acl-compat.excl
+   #:filesys-type
+   #:cl-internal-real-time))
+
 
 (provide 'acl-excl)

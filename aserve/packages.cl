@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: packages.cl,v 1.4 2004/02/17 12:48:44 rudi Exp $
+;; $Id: packages.cl,v 1.5 2004/06/10 03:52:10 kevinrosenberg Exp $
 
 ;; Description:
 ;;   packages and exports for AllegroServe
@@ -37,6 +37,9 @@
 ;  standalone package
 ;
 (in-package :cl-user)
+
+;; NDL 2004-06-04  -- Redefining packages and hoping to get the union of your exports
+;; is non-portable. Moved contents of two other :net.aserve package definitions into this one.
 
 (defpackage :net.aserve
   (:use :common-lisp :acl-compat.excl :net.html.generator :puri)
@@ -157,7 +160,34 @@
    #:*response-see-other*
    #:*response-temporary-redirect*
    #:*response-unauthorized*
-   #:*wserver*))
+   #:*wserver*)
+
+  #+lispworks
+  (:export #:clp-directory-entity-processor
+   #:clp-entity
+   #:def-clp-function
+   #:emit-clp-entity
+   #:find-clp-module
+   #:find-clp-module-function
+   #:publish-clp
+   #:request-variable-value
+   )
+  
+  #+lispworks
+  (:export 
+   #:initialize-websession-master
+   #:locate-action-path
+   #:webaction
+   #:webaction-entity
+   #:webaction-from-ent
+   #:webaction-project
+   #:websession
+   #:websession-data
+   #:websession-key
+   #:websession-from-req
+   #:websession-master
+   #:websession-variable
+   ))
 
 
 (defpackage :net.aserve.client 

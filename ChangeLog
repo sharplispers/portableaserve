@@ -1,3 +1,6 @@
+2004-06-09  Kevin Rosenberg <kevin@rosenberg.net>
+	* Commit patch from Nick Levin addressing compilation on Lispworks
+	
 2004-04-26  Kevin Rosenberg <kevin@rosenberg.net>
         * aserve/webactions: Commit patch, with modifications, from
 	Ivan Toshkov

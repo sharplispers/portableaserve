@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: webact.cl,v 1.9 2004/04/27 20:09:39 kevinrosenberg Exp $
+;; $Id: webact.cl,v 1.10 2004/06/10 03:52:10 kevinrosenberg Exp $
 
 
 (in-package :net.aserve)
@@ -455,7 +455,9 @@
   ;; return nil if the filename is illegal (since it contains
   ;; upward directory movement characters).
   (let* ((postfix (subseq (request-decoded-uri-path req) (length (prefix ent))))
-	 (realname (concatenate 'string (webaction-destination wa) postfix)))
+	 ;; NDL 2004-06-04 -- concatenate a pathname? this is portable?
+	 #+ignore (realname (concatenate 'string (webaction-destination wa) postfix))
+	 (realname (namestring (merge-pathnames postfix (webaction-destination wa)))))
     (if* (or #+mswindows (position #\\ postfix) ; don't allow windows dir sep
 	     (match-regexp "\\.\\.[\\/]" postfix))
        then ; contains ../ or ..\  
