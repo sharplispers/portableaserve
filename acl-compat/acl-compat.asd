@@ -117,10 +117,17 @@ lisp-system"))
                       :depends-on ("acl-mp-package" "acl-socket"))
 	       (:unportable-cl-source-file "acl-excl"
 		      :depends-on ("gray-stream-package" "nregex"))
-	       #+cmu(:file "cmu-read-sequence")
+               ;; Debian cmucl has gray stream support for
+               ;; read-/write-sequence, cons.org cmucl has it
+               ;; commented out in src/stream.lisp, so we leave the
+               ;; hack in for the time being... (bug reported to
+               ;; cmucl-imp, tho)
+	       #+(and cmu (not common-lisp-controller))
+               (:file "cmu-read-sequence")
 	       (:unportable-cl-source-file "acl-socket"
 		      :depends-on ("acl-excl" "chunked-stream-mixin" 
-                                              #+cmu "cmu-read-sequence"))
+                                   #+(and cmu (not common-lisp-controller))
+                                   "cmu-read-sequence"))
 	       (:unportable-cl-source-file "acl-sys")
 	       (:file "meta")
 	       (:file "uri"
