@@ -3,15 +3,13 @@ README --
 This is a short description of what you will find
 in the subdirectories of this archive
 
- ./acl-compat-cmu/        Several ACL compatibility hacks for CMUCL
- ./acl-compat-lw/         Several ACL compatibility hacks for LispWorks
+ ./acl-compat/         Several ACL compatibility hacks
  ./aserve/             The AServe source
  ./logical-hostnames.lisp Some logical-pathname-translations needed by defsys
  ./README                 This file
- ./INSTALL-CMU.lisp       Quick installation for CMUCL
- ./INSTALL.lisp           Quick installation for LispWorks
+ ./INSTALL.lisp           Quick installation 
  
- The quick-installation scripts compile and load Portable AllegroServe
+ The quick-installation script compiles and loads Portable AllegroServe
  and the file ASERVE:example.cl. After loading an instance of the
  AllegroServe server is started to serve the examples of ASERVE:example.cl
  on http://localhost:2001
