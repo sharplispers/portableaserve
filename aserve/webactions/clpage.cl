@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: clpage.cl,v 1.8 2004/06/01 09:00:38 rudi Exp $
+;; $Id: clpage.cl,v 1.9 2004/08/31 03:49:36 kevinrosenberg Exp $
 
 
 (eval-when (compile load eval) (require :aserve))
@@ -168,9 +168,15 @@
 			 then (setf (websession-method websession)
 				:cookie))
 		 else ; no session found via cookie
-		      (setq websession (make-instance 'websession
+		      (setq websession
+			    (if (webaction-cookie-domain wa)
+				(make-instance 'websession
 					 :key (next-websession-id sm)
-					 :method :cookie))
+					       :domain (webaction-cookie-domain wa)
+					       :method :cookie)
+				(make-instance 'websession
+					       :key (next-websession-id sm)
+					       :method :cookie)))
 		      (setf (gethash (websession-key websession)
 				     (sm-websessions sm))
 			websession)))
@@ -202,10 +208,16 @@
 		(or sm  ; sm already known, otherwise compute it
 		    (and (setq wa (getf (entity-plist ent) 'webaction))
 			 (setq sm (webaction-websession-master wa)))))
-	 then (set-cookie-header req 
+	 then (if (webaction-cookie-domain wa)
+		  (set-cookie-header req 
 				 :name (sm-cookie-name sm)
 				 :value (websession-key websession)
-				 :path (webaction-project-prefix wa)))
+				 :path (webaction-project-prefix wa)
+				 :domain (webaction-cookie-domain wa))
+		  (set-cookie-header req 
+				 :name (sm-cookie-name sm)
+				 :value (websession-key websession)
+				     :path (webaction-project-prefix wa))))
       (setf (reply-header-slot-value req :cache-control) "no-cache")
       (setf (reply-header-slot-value req :pragma) "no-cache")
       

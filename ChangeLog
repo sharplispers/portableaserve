@@ -1,5 +1,6 @@
 2004-08-30  Kevin Rosenberg <kevin@rosenberg.net>
         * Fixes for compilation on SBCL
+	* Add support for :cookie-domain for webactions
 	
 2004-08-04  Kevin Rosenberg <kevin@rosenberg.net>
 	* Commit patch from Chaskiel M Grundman <cg2v@andrew.cmu.edu>

@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: webact.cl,v 1.10 2004/06/10 03:52:10 kevinrosenberg Exp $
+;; $Id: webact.cl,v 1.11 2004/08/31 03:49:36 kevinrosenberg Exp $
 
 
 (in-package :net.aserve)
@@ -93,6 +93,9 @@
    (clp-content-type :accessor webaction-clp-content-type
 		     :initform nil)
    
+   (cookie-domain :accessor webaction-cookie-domain
+		  :initarg :cookie-domain)
+
    ))
 
 (defparameter *webactions-version* "1.5")
@@ -117,6 +120,7 @@
 				    clp-content-type
 				    (external-format
 				     *default-aserve-external-format*)
+			  cookie-domain
 				    )
   ;; create a webaction project
   ;; and publish all prefixes
@@ -149,6 +153,7 @@
     (setf (webaction-destination wa) destination)
     (setf (webaction-external-format wa) external-format)
     (setf (webaction-clp-content-type wa) clp-content-type)
+    (setf (webaction-cookie-domain wa) cookie-domain)
     
     (if* (and reap-interval (integerp reap-interval) (> reap-interval 0))
        then (setq *session-reap-interval* reap-interval))
