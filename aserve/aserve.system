@@ -5,7 +5,9 @@
 ;; Stig: if clc is present, we're a debian-package
 #+common-lisp-controller
 (setf (logical-pathname-translations "aserve")
-      '(("**;*.*.*" "cl-library:;aserve;**;*.*.*")))
+      '(("examples;**;*.*.*" "/usr/share/doc/cl-aserve/examples/")
+	("**;*.*.*" "cl-library:;aserve;**;*.*.*")
+	))
 
 (mk:defsystem "ASERVE"
   :source-pathname
