@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.27+cvs2003.09.13) unstable; urgency=low
+
+  * Add depends for cl-htmlgen (closes:210756)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat, 13 Sep 2003 11:31:17 -0600
+
 cl-portable-aserve (1.2.27+cvs2003.09.10) unstable; urgency=low
 
   * Update description for cl-htmlgen (closes: 209449)
