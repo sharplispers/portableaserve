@@ -68,8 +68,7 @@
        (let* ((mbox (mp:make-mailbox :size 1))
               (proc (comm:start-up-server
                      :function (lambda (sock) 
-                                 (mp:mailbox-send mbox sock)
-                                 (mp:notice-fd sock))
+                                 (mp:mailbox-send mbox sock))
                      :service local-port)))
          (make-instance 'server-socket
                         :mbox mbox
@@ -78,11 +77,9 @@
                         :fd (first (mp::process-wait-function-arguments proc))
                         :element-type element-type)))
       (:active
-       (let ((stream (comm:open-tcp-stream remote-host remote-port
-			                   :direction :io
-			                   :element-type element-type)))
-         (mp:notice-fd (comm:socket-stream-socket stream))
-         stream)))))
+       (comm:open-tcp-stream remote-host remote-port
+			     :direction :io
+			     :element-type element-type)))))
 
 (defmethod close ((server server-socket) &key abort)
   (declare (ignore abort))
@@ -90,11 +87,15 @@
 
 (declaim (ftype (function ((unsigned-byte 32)) (values simple-string))
 		ipaddr-to-dotted))
-(defun ipaddr-to-dotted (ipaddr)
+(defun ipaddr-to-dotted (ipaddr &key values)
   (declare (type (unsigned-byte 32) ipaddr))
-  (format nil "~d.~d.~d.~d"
-	  (logand #xff (ash ipaddr -24)) (logand #xff (ash ipaddr -16))
-	  (logand #xff (ash ipaddr -8)) (logand #xff ipaddr)))
+  (let ((a (logand #xff (ash ipaddr -24)))
+	(b (logand #xff (ash ipaddr -16)))
+	(c (logand #xff (ash ipaddr -8)))
+	(d (logand #xff ipaddr)))
+    (if values
+	(values a b c d)
+      (format nil "~d.~d.~d.~d" a b c d))))
 
 (defun string-tokens (string)
   (labels ((get-token (str pos1 acc)
@@ -107,8 +108,8 @@
 
 (declaim (ftype (function (string) (values (unsigned-byte 32)))
 		dotted-to-ipaddr))
-(defun dotted-to-ipaddr (dotted)
-  (declare (string dotted))
+(defun dotted-to-ipaddr (dotted &key errorp)
+  (declare (string dotted)(ignore errorp))
   (let ((ll (string-tokens (substitute #\Space #\. dotted))))
     (+ (ash (first ll) 24) (ash (second ll) 16)
        (ash (third ll) 8) (fourth ll))))
