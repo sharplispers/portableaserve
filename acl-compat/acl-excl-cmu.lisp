@@ -250,19 +250,22 @@ program-controlled interception of a break."
 
 (defclass lisp-stream-mixin ()
   ;; For bivalent streams, lisp-stream must be a stream of type
-  ;; unsigned-byte
+  ;; (unsigned-byte 8)
   ((lisp-stream :initarg :lisp-stream
 		:accessor lisp-stream)))
 
 (defclass bivalent-input-stream (lisp-stream-mixin
                                  fundamental-character-input-stream
-                                 fundamental-binary-input-stream))
+                                 fundamental-binary-input-stream)
+  ())
 
 (defclass bivalent-output-stream (lisp-stream-mixin
                                   fundamental-character-output-stream
-                                  fundamental-binary-output-stream))
+                                  fundamental-binary-output-stream)
+  ())
 
-(defclass bivalent-stream (bivalent-input-stream bivalent-output-stream))
+(defclass bivalent-stream (bivalent-input-stream bivalent-output-stream)
+  ())
 
 
 (defun make-bivalent-input-stream (lisp-stream)
