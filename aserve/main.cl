@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.21 2002/10/24 13:26:56 rudi Exp $
+;; $Id: main.cl,v 1.22 2002/11/20 12:21:26 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -165,8 +165,8 @@
     #+ (and allegro (version>= 6)) (require :acldns) ; not strictly required but this is preferred
 )
 
-#+lispworks
-(import 'cl::fixnump)
+;#+lispworks
+;(import 'cl::fixnump)
 #+cmu
 (import 'ext:fixnump)
 #+openmcl
@@ -2633,7 +2633,7 @@ in get-multipart-sequence"))|#
 ;;; which is not fully implemented in ACL-COMPAT
 ;;;
 #-allegro
-(eval-when (:compile-toplevel :load-toplevel :execute)
+(eval-when (:compile-toplevel :execute)
   (meta:enable-meta-syntax)
 (deftype alpha-char () '(and character (satisfies alpha-char-p)))
 (deftype digit-char () '(and character (satisfies digit-char-p)))
