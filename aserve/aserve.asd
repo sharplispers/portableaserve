@@ -11,14 +11,56 @@
 (defclass acl-file (cl-source-file) ())
 (defmethod asdf:source-file-type ((c acl-file) (s module)) "cl")
 
+;;;; ignore warnings
+;;;;
+;;;; FIXME: should better fix warnings instead of ignoring them
+;;;; FIXME: (perform legacy-cl-sourcefile) duplicates ASDF code
+
+(defclass legacy-acl-source-file (acl-file)
+    ()
+  (:documentation
+   "Common Lisp source code module with (non-style) warnings.
+In contrast to CL-SOURCE-FILE, this class does not think that such warnings
+indicate failure."))
+
+(defmethod perform ((operation compile-op) (c legacy-acl-source-file))
+  (let ((source-file (component-pathname c))
+	(output-file (car (output-files operation c)))
+	(warnings-p nil)
+	(failure-p nil))
+    (setf (asdf::component-property c 'last-compiled) nil)
+    (handler-bind ((warning (lambda (c)
+			      (declare (ignore c))
+			      (setq warnings-p t)))
+		   ;; _not_ (or error (and warning (not style-warning)))
+		   (error (lambda (c)
+			    (declare (ignore c))
+			    (setq failure-p t))))
+      (compile-file source-file
+		    :output-file output-file))
+    ;; rest of this method is as for CL-SOURCE-FILE
+    (setf (asdf::component-property c 'last-compiled) (file-write-date output-file))
+    (when warnings-p
+      (case (asdf::operation-on-warnings operation)
+	(:warn (warn "COMPILE-FILE warned while performing ~A on ~A"
+		     c operation))
+	(:error (error 'compile-warned :component c :operation operation))
+	(:ignore nil)))
+    (when failure-p
+      (case (asdf::operation-on-failure operation)
+	(:warn (warn "COMPILE-FILE failed while performing ~A on ~A"
+		     c operation))
+	(:error (error 'compile-failed :component c :operation operation))
+	(:ignore nil)))))
+
 #+(or lispworks cmu mcl openmcl clisp)
 (defsystem aserve
   :components ((:acl-file "macs")
-               (:acl-file "main"
+               (:legacy-acl-source-file "main"
                       :depends-on ("macs"))
                (:acl-file "headers"
                       :depends-on ("main"))
-               (:acl-file "parse"
+               (:legacy-acl-source-file "parse"
                       :depends-on ("main"))
                (:acl-file "decode"
                       :depends-on ("main"))
