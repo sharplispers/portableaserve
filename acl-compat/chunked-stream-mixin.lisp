@@ -97,6 +97,15 @@ obviously 0 because no chunk-data got read so far."
        input-limit 0                    ; or input-index?
        ))))
 
+;; Lispworks fix by Edi Weitz (paserve-help 2003-11-28)
+#+lispworks
+(defmacro %with-stream-input-buffer ((input-buffer input-index input-limit) stream &body body)
+  `(with-slots ((,input-buffer stream::input-buffer)
+                (,input-index stream::input-index)
+                (,input-limit stream::input-limit))
+      (slot-value ,stream 'stream::buffer-state)
+    ,@body))
+
 (defmethod gray-stream:stream-fill-buffer ((stream chunked-stream-mixin))
   "Refill buffer from stream."
   ;; STREAM-FILL-BUFFER gets called when the input-buffer contains no
@@ -105,7 +114,9 @@ obviously 0 because no chunk-data got read so far."
   ;; method. This method is responsible to update the buffer state in
   ;; coordination with the chunk-header.
   (with-slots (chunk-input-avail real-input-limit) stream
-    (gray-stream:with-stream-input-buffer (input-buffer input-index input-limit) stream
+    (#-lispworks gray-stream:with-stream-input-buffer
+     #+lispworks %with-stream-input-buffer
+     (input-buffer input-index input-limit) stream
        (labels
           ((pop-char ()
              (when (and (>= input-index input-limit) ; need new data

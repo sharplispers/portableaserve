@@ -1,3 +1,13 @@
+2003-12-02  Rudi Schlatte  <rudi@SLAW40.kfunigraz.ac.at>
+
+	* meta.lisp (enable-meta-syntax): Save current readtable before
+	installing *meta-readtable*.
+
+2003-12-01  Rudi Schlatte  <rudi@constantly.at>
+
+	* chunked-stream-mixin.lisp: Merge Lispworks patch from Edi Weitz
+	(paserve-help 2003-11-28)
+
 2003-11-27  Rudi Schlatte  <rudi@constantly.at>
 
 	* chunked-stream-mixin.lisp (gray-stream:stream-fill-buffer):

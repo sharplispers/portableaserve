@@ -204,10 +204,11 @@
        ,@body)))
 
 (defun enable-meta-syntax ()
-	(copy-readtable *meta-readtable* *readtable*))
+  (copy-readtable *readtable* *saved-readtable*)
+  (copy-readtable *meta-readtable* *readtable*))
 
 (defun disable-meta-syntax()
-	(copy-readtable *saved-readtable* *readtable*))
+  (copy-readtable *saved-readtable* *readtable*))
 
 #+mcl ;MCL won't compile to a file without this.
 (defmethod make-load-form ((m meta) &optional env)
