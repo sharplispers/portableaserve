@@ -1,5 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; LW Style Buffer Protocol for CMUCL           ;;;
+;;; LW Style Buffer Protocol for other Lisps     ;;;
 ;;; So far only 8bit byte and character IO works ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -110,27 +110,24 @@
 
 (defgeneric stream-fill-buffer (stream))
 (defmethod stream-fill-buffer ((stream buffered-stream-mixin))
+  ;; Implement b/nb semantics: block until at least one byte is read,
+  ;; but not until the whole buffer is filled.  This means it takes at
+  ;; most n calls to this function to fill a buffer of length n, even
+  ;; with a slow connection.
   (with-stream-input-buffer (buffer index limit) stream
-    (let* ((read-bytes
-            #+cmu (system:read-n-bytes (native-lisp-stream stream)
-                                       buffer 0 limit nil)
-            ;; TODO: Replace with implementation-specific unblocking
-            ;; read-sequence call
-            #-cmu (loop with byte
-                        for n-read from 0 below limit
-                        ;; Implement b/nb semantics: read at least one
-                        ;; byte.  If we return nil when the server has
-                        ;; not yet begun responding, we get premature
-                        ;; EOFs in some upper layer, or we'd have to
-                        ;; busy-loop somewhere.
-                        while (and (if (< 0 n-read)
-                                       (listen (native-lisp-stream stream))
-                                     t)
-                                   (setf byte (read-byte
-                                               (native-lisp-stream stream)
-                                               nil nil)))
-                        do (setf (aref buffer n-read) byte)
-                        count t)))
+    (let* ((the-stream (native-lisp-stream stream))
+           (read-bytes
+           #+cmu (do ((n (system:read-n-bytes the-stream buffer 0 limit nil)
+                         (system:read-n-bytes the-stream buffer 0 limit nil)))
+                     ((or (< 0 n) (open-stream-p the-stream)) n))
+           ;; TODO: Replace with implementation-specific non-blocking
+           ;; read-sequence call
+           #-cmu (loop with byte
+                       for n-read from 0 below limit
+                       while (and (if (< 0 n-read) (listen the-stream) t)
+                                  (setf byte (read-byte the-stream nil nil)))
+                       do (setf (aref buffer n-read) byte)
+                       count t)))
       (if (zerop read-bytes)
           nil
           (setf index 0
