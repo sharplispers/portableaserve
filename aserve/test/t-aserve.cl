@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: t-aserve.cl,v 1.4 2003/11/27 10:08:47 rudi Exp $
+;; $Id: t-aserve.cl,v 1.5 2004/02/08 15:41:06 rudi Exp $
 
 ;; Description:
 ;;   test iserve
@@ -746,7 +746,7 @@
 				  ;; authorized if the uri 
 				  ;; has a 'foo' in it
 				  (if* (search "foo" 
-					       (net.uri:uri-path
+					       (puri:uri-path
 						(request-uri req)))
 				     then t
 				     else :deny)))))

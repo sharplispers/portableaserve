@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: log.cl,v 1.9 2003/12/02 14:20:40 rudi Exp $
+;; $Id: log.cl,v 1.10 2004/02/08 15:41:06 rudi Exp $
 
 ;; Description:
 ;;   iserve's logging
@@ -156,7 +156,7 @@
 	   action
 	   (if* (stringp uri) 
 	      then uri 
-	      else (net.uri:render-uri uri nil))
+	      else (puri:render-uri uri nil))
 	   extra))
   (force-output (vhost-error-stream
 		 (wserver-default-vhost

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.33 2004/01/27 10:53:44 rudi Exp $
+;; $Id: main.cl,v 1.34 2004/02/08 15:41:06 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -1574,15 +1574,15 @@ by keyword symbols and not by strings"
 	       then ; no valid command found
 		    (return-from read-http-request nil))
 
-	    (if* (null (net.uri:uri-path uri))
-	       then (setf (net.uri:uri-path uri) "/"))
+	    (if* (null (puri:uri-path uri))
+	       then (setf (puri:uri-path uri) "/"))
 	    
 	    (setq req (make-instance 'http-request
 			:method cmd
-			:uri (net.uri:copy-uri uri)
+			:uri (puri:copy-uri uri)
 			:raw-uri uri
 			:decoded-uri-path
-			(uridecode-string (net.uri:uri-path uri))
+			(uridecode-string (puri:uri-path uri))
 					  
 			:protocol protocol
 			:protocol-string (case protocol

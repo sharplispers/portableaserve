@@ -24,13 +24,13 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: clpage.cl,v 1.2 2003/12/05 21:23:15 kevinrosenberg Exp $
+;; $Id: clpage.cl,v 1.3 2004/02/08 15:41:06 rudi Exp $
 
 
 (eval-when (compile load eval) (require :aserve))
 
 (defpackage :net.aserve
-  (:use :common-lisp :acl-compat.excl :net.html.generator :net.uri)
+  (:use :common-lisp :acl-compat.excl :net.html.generator :puri)
   (:export #:clp-directory-entity-processor
 	   #:clp-entity
 	   #:def-clp-function

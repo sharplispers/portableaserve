@@ -24,12 +24,12 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: webact.cl,v 1.3 2003/12/05 23:21:06 kevinrosenberg Exp $
+;; $Id: webact.cl,v 1.4 2004/02/08 15:41:06 rudi Exp $
 
 
 
 (defpackage :net.aserve
-  (:use :common-lisp :acl-compat.excl :net.html.generator :net.uri)
+  (:use :common-lisp :acl-compat.excl :net.html.generator :puri)
   (:export 
    #:initialize-websession-master
    #:locate-action-path
@@ -404,7 +404,7 @@
 			(return-from webaction-entity
 			  (if* redirect
 			     then (redirect-to req ent
-					       (net.uri:uri-path
+					       (puri:uri-path
 						(request-uri req)))
 			     else (handle-request req)))
 		   else (setq failed-following following)))))
@@ -601,11 +601,11 @@
   
   (setf (request-decoded-uri-path req) newpath)
   (setf (request-uri req)
-    (net.uri:copy-uri (request-uri req)
+    (puri:copy-uri (request-uri req)
 		      :path newpath))
   
   (setf (request-raw-uri req)
-    (net.uri:copy-uri (request-raw-uri req)
+    (puri:copy-uri (request-raw-uri req)
 		      :path newpath)))
 
 

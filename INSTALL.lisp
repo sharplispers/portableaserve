@@ -7,31 +7,23 @@
   #+sbcl (require :asdf)
   #-sbcl (let ((asdf-pathname
                 (merge-pathnames (make-pathname
-                                  :directory '(:relative "contrib")
+                                  :directory '(:relative "libs")
                                   :name "asdf"
                                   :case :local)
                                  *load-truename*)))
-           (warn "~
-Loading asdf from ~A ~
-~:_(you might want to load asdf at startup ~
-~:_and set up asdf:*central-registry* to point to your systems)" asdf-pathname)
            (load asdf-pathname)))
 
 (ensure-asdf)
 
-#-mcl
 (progn
   (flet ((find-or-load-system (system path)
            (let ((path (merge-pathnames path *load-truename*)))
              (unless (asdf:find-system system nil)
-               (warn "~
-Cannot find ASDF system definition for ~A ~
-~:_in asdf:*central-registry*, ~
-~:_loading from file ~A. ~
-~:_Hint: \"ln -sf ~A /path/to/your/systems\" ~
-~:_to avoid this warning in the future."
-                     system path (namestring path))
                (load path)))))
+    (find-or-load-system :puri
+                         (make-pathname
+                          :directory '(:relative "libs" "puri-1.3.1")
+                          :name "puri" :type "asd" :case :local))
     (find-or-load-system :acl-compat
                          (make-pathname
                           :directory '(:relative "acl-compat")
@@ -45,8 +37,6 @@ Cannot find ASDF system definition for ~A ~
                           :directory '(:relative "aserve")
                           :name "aserve" :type "asd" :case :local)))
   ;; Compile and load the ASERVE system
-  (asdf:operate 'asdf:load-op :acl-compat)
-  (asdf:operate 'asdf:load-op :htmlgen)
   (asdf:operate 'asdf:load-op :aserve)
 
   ;; Startup multiprocessing.
@@ -72,27 +62,6 @@ Cannot find ASDF system definition for ~A ~
   (setf mp::*idle-process* mp::*initial-process*)
 
   )
-
-
-#+mcl
-(progn
-  ; Load logical host definitions
-  (load (merge-pathnames "logical-hostnames.lisp" *load-truename*))
-    
-  (unless (asdf:find-system :acl-compat nil)
-    (load "acl-compat:acl-compat.asd"))
-  
-  (unless (asdf:find-system :htmlgen nil)
-    (load "aserve:htmlgen;htmlgen.asd"))
-  
-  (unless (asdf:find-system :aserve nil)
-    (load "aserve:aserve.asd"))
-  
-  ; Compile and load the ASERVE system - loads the other systems also
-  (let ((ccl:*warn-if-redefine* nil))   ;defines a few vars in more than one file
-    (asdf:operate 'asdf:load-op :aserve) )
-  )
-
 
 
 #||

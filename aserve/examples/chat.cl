@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: chat.cl,v 1.4 2003/12/02 14:20:39 rudi Exp $
+;; $Id: chat.cl,v 1.5 2004/02/08 15:41:06 rudi Exp $
 
 ;; Description:
 ;;   aserve chat program
@@ -33,7 +33,7 @@
 
 
 
-(defpackage :user (:use :net.aserve :excl :common-lisp :net.uri
+(defpackage :user (:use :net.aserve :excl :common-lisp :puri
 			:net.aserve.client
 			:net.html.generator))
 (in-package :user)

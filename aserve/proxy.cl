@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.13 2004/01/27 10:53:44 rudi Exp $
+;; $Id: proxy.cl,v 1.14 2004/02/08 15:41:06 rudi Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -309,7 +309,7 @@
 	      (with-http-body (req ent)
 		(html (:html (:head (:title "Bad Request"))
 			     (:body "This url isn't a valid proxy request "
-				    (:princ-safe (net.uri:render-uri uri nil)))))))
+				    (:princ-safe (puri:render-uri uri nil)))))))
        else ; see if it's a local request
 	    (let ((ipaddr (ignore-errors (acl-compat.socket:lookup-hostname host))))
 	      (if* (null ipaddr)
@@ -333,7 +333,7 @@
 		 then ; it's us, make it into into a local request
 		      ; and look  it up again
 		      (setf (request-raw-uri req)
-			(net.uri:copy-uri uri :scheme nil :host nil))
+			(puri:copy-uri uri :scheme nil :host nil))
 		      (handle-request req)
 		 else ; must really proxy
 		      (check-cache-then-proxy-request 
@@ -575,7 +575,7 @@ cached connection = ~s~%" cond cached-connection))
 		; now the uri
 		(let ((str (if* phostport
 			      then ; proxying so send http://...
-				   (net.uri:render-uri (request-raw-uri req) 
+				   (puri:render-uri (request-raw-uri req) 
 						       nil)
 			      else (net.aserve.client::uri-path-etc uri))))
 		  (dotimes (i (length str))
@@ -1515,9 +1515,9 @@ cached connection = ~s~%" cond cached-connection))
 
     ; clear out the fragment part (after the #) so that we don't match
     ; on that.
-    (setf (net.uri:uri-fragment (request-raw-uri req)) nil)
+    (setf (puri:uri-fragment (request-raw-uri req)) nil)
     (setq rendered-uri
-      (transform-uri (net.uri:render-uri (request-raw-uri req) nil)))
+      (transform-uri (puri:render-uri (request-raw-uri req) nil)))
       
     
     (dlogmess (format nil "cache: look in cache for ~a, level ~d, ents ~d~%" 
@@ -1595,7 +1595,7 @@ cached connection = ~s~%" cond cached-connection))
   ;;
   (let ((new-ent (make-pcache-ent))
 	(rendered-uri 
-	 (transform-uri (net.uri:render-uri (request-raw-uri req) nil)))
+	 (transform-uri (puri:render-uri (request-raw-uri req) nil)))
 	(pcache (wserver-pcache *wserver*)))
     
     (setf (pcache-ent-key new-ent) rendered-uri
@@ -1805,7 +1805,7 @@ cached connection = ~s~%" cond cached-connection))
 (defun send-cached-response (req pcache-ent)
   ;; send back this response
   (dlogmess (format nil "cache: sending back cached response: ~a, length ~d~%" 
-		   (net.uri:render-uri (request-raw-uri req) nil)
+		   (puri:render-uri (request-raw-uri req) nil)
 		   (pcache-ent-data-length pcache-ent)))
   (incf (pcache-ent-returned pcache-ent))
 
@@ -1984,7 +1984,7 @@ cached connection = ~s~%" cond cached-connection))
   
 	    
   (dlogmess (format nil "cache: caching response to ~a, code ~d, length ~d~%" 
-		    (net.uri:render-uri (request-raw-uri req) nil)
+		    (puri:render-uri (request-raw-uri req) nil)
 		    response-code
 		    body-length
 		    ))
@@ -2591,13 +2591,13 @@ cached connection = ~s~%" cond cached-connection))
 	      
     
     
-(defmethod find-uri-info ((uri net.uri:uri))
+(defmethod find-uri-info ((uri puri:uri))
   ;; locate the uri-info corresponding to this uri, if
   ;; there is one
   (let ((pcache (wserver-pcache *wserver*))
-	(path (net.uri:uri-path uri))
-	(host (net.uri:uri-host uri))
-	(port (or (net.uri:uri-port uri) 80)))
+	(path (puri:uri-path uri))
+	(host (puri:uri-host uri))
+	(port (or (puri:uri-port uri) 80)))
     (if* pcache
        then (dolist (ent (gethash host (pcache-uri-info-table pcache)))
 	      (if* (eql port (uri-info-port ent))
@@ -2649,7 +2649,7 @@ cached connection = ~s~%" cond cached-connection))
   (make-load-form-saving-slots obj :environment env))
 
 ; this is just temporary until we get a patch for this in uri.fasl
-(defmethod make-load-form ((self net.uri:uri) &optional env)
+(defmethod make-load-form ((self puri:uri) &optional env)
   (declare (ignore env))
   `(make-instance ',(class-name (class-of self))
      :scheme ,(uri-scheme self)
@@ -2659,9 +2659,9 @@ cached connection = ~s~%" cond cached-connection))
      :query ,(uri-query self)
      :fragment ,(uri-fragment self)
      :plist ',(uri-plist self)
-     :string ,(net.uri::uri-string self)
+     :string ,(puri::uri-string self)
      ; bug is missing ' in parsed-path value
-     :parsed-path ',(net.uri::uri-parsed-path self)))
+     :parsed-path ',(puri::uri-parsed-path self)))
 )
 
 (defun save-proxy-cache (filename &key (server *wserver*))

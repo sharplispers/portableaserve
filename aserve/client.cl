@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.14 2004/01/27 10:53:45 rudi Exp $
+;; $Id: client.cl,v 1.15 2004/02/08 15:41:06 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -281,7 +281,7 @@
 	       then			; must do a redirect to get to the real site
 		    (client-request-close creq)
 		    (apply #'do-http-request
-			   (net.uri:merge-uris new-location uri)
+			   (puri:merge-uris new-location uri)
 			   :redirect
 			   (if* (integerp redirect)
 			      then (1- redirect)
@@ -337,29 +337,29 @@
     ;; start a request 
   
     ; parse the uri we're accessing
-    (if* (not (typep uri 'net.uri:uri))
-       then (setq uri (net.uri:parse-uri uri)
+    (if* (not (typep uri 'puri:uri))
+       then (setq uri (puri:parse-uri uri)
 		  fresh-uri t))
     
     ; make sure it's an http uri
-    (case (or (net.uri:uri-scheme uri) :http)
+    (case (or (puri:uri-scheme uri) :http)
       (:http nil)
       (:https (setq ssl t))
       (t (error "Can only do client access of http or https uri's, not ~s" uri)))
   
     ; make sure that there's a host
-    (if* (null (setq host (net.uri:uri-host uri)))
+    (if* (null (setq host (puri:uri-host uri)))
        then (error "need a host in the client request: ~s" uri))
 
     (setq scheme-default-port
-      (case (or (net.uri:uri-scheme uri) (if* ssl 
+      (case (or (puri:uri-scheme uri) (if* ssl 
 					    then :https
 					    else :http))
 	(:http 80)
 	(:https 443)))
     
     ; default the port to what's appropriate for http or https
-    (setq port (or (net.uri:uri-port uri) scheme-default-port))
+    (setq port (or (puri:uri-port uri) scheme-default-port))
     
     (if* proxy
        then ; sent request through a proxy server
@@ -407,8 +407,8 @@ or \"foo.com:8000\", not ~s" proxy))
 	      ((:get :put)  ; add info the uri
 	       ; must not blast a uri we were passed
 	       (if* (not fresh-uri)
-		  then (setq uri (net.uri:copy-uri uri)))
-	       (setf (net.uri:uri-query uri) (query-to-form-urlencoded
+		  then (setq uri (puri:copy-uri uri)))
+	       (setf (puri:uri-query uri) (query-to-form-urlencoded
 					      query
 					      :external-format
 					      external-format)))
@@ -424,7 +424,7 @@ or \"foo.com:8000\", not ~s" proxy))
     (net.aserve::format-dif :xmit sock "~a ~a ~a~a"
 			    (string-upcase (string method))
 			    (if* proxy
-			       then (net.uri:render-uri uri nil)
+			       then (puri:render-uri uri nil)
 			       else (uri-path-etc uri))
 			    (string-upcase (string protocol))
 			    crlf)
@@ -547,14 +547,14 @@ or \"foo.com:8000\", not ~s" proxy))
 
 (defun uri-path-etc (uri)
   ;; return the string form of the uri path, query and fragment
-  (let ((nuri (net.uri:copy-uri uri)))
-    (setf (net.uri:uri-scheme nuri) nil)
-    (setf (net.uri:uri-host nuri) nil)
-    (setf (net.uri:uri-port nuri) nil)
-    (if* (null (net.uri:uri-path nuri))
-       then (setf (net.uri:uri-path nuri) "/"))
+  (let ((nuri (puri:copy-uri uri)))
+    (setf (puri:uri-scheme nuri) nil)
+    (setf (puri:uri-host nuri) nil)
+    (setf (puri:uri-port nuri) nil)
+    (if* (null (puri:uri-path nuri))
+       then (setf (puri:uri-path nuri) "/"))
     
-    (net.uri:render-uri nuri nil)))
+    (puri:render-uri nuri nil)))
     
     
 (defmethod read-client-response-headers ((creq client-request))
@@ -881,10 +881,10 @@ or \"foo.com:8000\", not ~s" proxy))
     ;; compute path
     (setq path (cdr (net.aserve::assoc-paramval "path" others)))
     (if* (null path)
-       then (setq path (or (net.uri:uri-path uri) "/"))
+       then (setq path (or (puri:uri-path uri) "/"))
        else ; make sure it's a prefix
 	    (if* (not (net.aserve::match-head-p 
-		       path (or (net.uri:uri-path uri) "/")))
+		       path (or (puri:uri-path uri) "/")))
 	       then ; not a prefix, don't save
 		    (return-from save-cookie nil)))
     
@@ -895,9 +895,9 @@ or \"foo.com:8000\", not ~s" proxy))
        then ; one is given, test to see if it's a substring
 	    ; of the host we used
 	    (if* (null (net.aserve::match-tail-p domain 
-						 (net.uri:uri-host uri)))
+						 (puri:uri-host uri)))
 	       then (return-from save-cookie nil))
-       else (setq domain (net.uri:uri-host uri)))
+       else (setq domain (puri:uri-host uri)))
     
     
     (let ((item (make-cookie-item
@@ -965,8 +965,8 @@ or \"foo.com:8000\", not ~s" proxy))
 (defmethod compute-cookie-string (uri (jar cookie-jar))
   ;; compute a string of the applicable cookies.
   ;;
-  (let ((host (net.uri:uri-host uri))
-	(path (or (net.uri:uri-path uri) "/"))
+  (let ((host (puri:uri-host uri))
+	(path (or (puri:uri-path uri) "/"))
 	res
 	rres)
     

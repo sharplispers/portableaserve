@@ -146,18 +146,14 @@ lisp-system"))
                                #-allegro ("acl-excl-common")
                                #+allegro ("packages" "nregex"))
    (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
-   ;; URI objects, URI parsing
-   (:file "meta")
-   (:file "uri" :depends-on ("meta"))
+   (:file "meta")                       ; Still needed inside main.cl
    ;; SSL
    #+(and ssl-available (not (or allegro mcl clisp)))
    (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
    #+(and ssl-available (not (or allegro mcl clisp)))
-   (:file "acl-ssl-streams" :depends-on ("packages"))
-   #+nil
-   (:legacy-cl-source-file "md5")
-   #+nil
-   (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
+   (:file "acl-ssl-streams" :depends-on ("packages")))
+  ;; Dependencies
+  :depends-on (:puri)
   ;; Implementation-specific dependencies
   #+sbcl :depends-on
   #+sbcl (:sb-bsd-sockets :sb-posix)

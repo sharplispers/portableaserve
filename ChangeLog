@@ -1,3 +1,14 @@
+2004-02-08  Rudi Schlatte  <rudi@constantly.at>
+
+	* aserve/webactions/webact.cl, aserve/webactions/clpage.cl,
+	aserve/test/t-aserve.cl, aserve/proxy.cl, aserve/main.cl,
+	aserve/log.cl, aserve/chat.cl, aserve/client.cl, aserve/cgi.cl:
+	Use package puri throughout.
+
+	* INSTALL.lisp: Removed warnings for loading the provided-by-us
+	versions of asdf et al.  Load puri library before acl-compat.
+	Remove MCL-specific handling.
+
 2004-01-27  Rudi Schlatte  <rudi@constantly.at>
 
 	* INSTALL.lisp: clean up a bit, merge sbcl, cmu and lispworks

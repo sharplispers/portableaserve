@@ -1,3 +1,8 @@
+2004-02-08  Rudi Schlatte  <rudi@62-99-252-74.C-GMITTE.Xdsl-line.inode.at>
+
+	* acl-compat.asd: Introduce dependency on puri, remove meta and
+	uri.lisp
+
 2004-02-02  Rudi Schlatte  <rudi@constantly.at>
 
 	* cmucl/acl-mp.lisp (process-run-function): Give the new process

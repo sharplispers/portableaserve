@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: cgi.cl,v 1.5 2004/01/11 17:20:33 rudi Exp $
+;; $Id: cgi.cl,v 1.6 2004/02/08 15:41:06 rudi Exp $
 
 ;; Description:
 ;;   common gateway interface (running external programs)
@@ -39,7 +39,7 @@
 			&key
 			path-info
 			path-translated
-			(script-name (net.uri:uri-path (request-uri req)))
+			(script-name (puri:uri-path (request-uri req)))
 			(query-string nil query-string-p)
 			auth-type
 			(timeout 200)
@@ -113,7 +113,7 @@
 	       then (push (cons "QUERY_STRING" query-string) envs))
        else ; no query string arg given, see if the uri
 	    ; for ths command has a query string
-	    (let ((query (net.uri:uri-query 
+	    (let ((query (puri:uri-query 
 			  (request-uri req))))
 	      (if* query
 		 then (push (cons "QUERY_STRING" query) envs))))
