@@ -100,7 +100,7 @@ are marked by a -system postfix but we could later change that to a directory pe
 lisp-system"))
 
 (defun lisp-system-shortname ()
-  #+acl :acl #+lispworks :lw #+cmu :cmu #+mcl :mcl #+openmcl :openmcl)
+  #+acl :acl #+lispworks :lw #+cmu :cmu #+mcl :mcl #+openmcl :openmcl #+scl :scl)
 
 (defmethod component-pathname ((component unportable-cl-source-file))
   (let ((pathname (call-next-method)))
@@ -110,7 +110,7 @@ lisp-system"))
 
 ;;;; system
 
-#+(or lispworks cmu mcl openmcl)
+#+(or lispworks cmu mcl openmcl scl)
 (defsystem acl-compat
   :components ((:gray-streams "vendor-gray-streams")
 	       (:file "nregex")
@@ -146,7 +146,7 @@ lisp-system"))
 		    (pushnew :acl-compat cl:*features*))
   )
 
-#+(or lispworks cmu mcl openmcl)
+#+(or lispworks cmu mcl openmcl scl)
 (when (ignore-errors (find-class 'load-compiled-op))
   (defmethod perform :after ((op load-compiled-op) (c (eql (find-system 'acl-compat))))
     (pushnew :acl-compat cl:*features*)))
