@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.9 2002/12/03 14:44:37 rudi Exp $
+;; $Id: proxy.cl,v 1.10 2003/01/03 15:26:01 doublec Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -1833,7 +1833,7 @@ cached connection = ~s~%" cond cached-connection))
      (let ((val (pcache-ent-use pcache-ent)))
        (if* val
 	  then (setf (pcache-ent-use pcache-ent) 
-		  (the fixnum (1+ (the fixnum val)))))))))
+		  #-cormanlisp (the fixnum (1+ (the fixnum val))) #+cormanlisp (1+ val)))))))
 
 (defun unlock-pcache-ent (pcache-ent)
   ;; reduce the use count of this entry
@@ -1841,7 +1841,7 @@ cached connection = ~s~%" cond cached-connection))
     (let ((val (pcache-ent-use pcache-ent)))
       (if* val
 	 then (if* (and (zerop (excl::fast
-				(decf (the fixnum val))))
+				(decf #-cormanlisp (the fixnum val) #+cormanlisp val)))
 			(eq (pcache-ent-state pcache-ent) :dead))
 		 then (setf (pcache-ent-use pcache-ent) nil)
 		 else (setf (pcache-ent-use pcache-ent) val))))))
@@ -2198,8 +2198,8 @@ cached connection = ~s~%" cond cached-connection))
 	(setq ent (pcache-ent-next ent)))
       (excl::atomically 
        (excl::fast 
-	(decf (the fixnum (pcache-dead-items pcache)) 
-	      (the fixnum count)))))))
+	(decf #-cormanlisp (the fixnum (pcache-dead-items pcache)) #+cormanlisp (pcache-dead-items pcache) 
+	      #-cormanlisp (the fixnum count) #+cormanlisp count))))))
      
      
   

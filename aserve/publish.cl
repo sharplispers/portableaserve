@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.11 2002/12/26 20:24:13 rudi Exp $
+;; $Id: publish.cl,v 1.12 2003/01/03 15:26:03 doublec Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -227,6 +227,13 @@
   ;; the table slot holds the hash table that's used
   ()
   (:default-initargs :info (make-hash-table :test #'equal)))
+
+;; :default-initargs is broken in CormanLisp 2.0. Workaround here.
+#+cormanlisp
+(defmethod initialize-instance ((locator locator-exact) &key info &allow-other-keys)
+    (call-next-method)
+    (unless info
+        (setf (locator-info locator) (make-hash-table :test #'equal))))
 
 
 (defclass locator-prefix (locator)
@@ -604,7 +611,7 @@
     
     (if* preload
        then ; keep the content in core for fast display
-	    (with-open-file (p file :element-type '(unsigned-byte 8))
+	    (with-open-file (p file :element-type #+cormanlisp 'unsigned-byte #-cormanlisp '(unsigned-byte 8))
 	      (let ((size (excl::filesys-size (stream-input-fn p)))
 		    (lastmod (excl::filesys-write-date (stream-input-fn p)))
 		    (guts))
@@ -1238,7 +1245,7 @@
 		(if* (null (errorset 
 			    (setq p (open (file ent) 
 					  :direction :input
-					  :element-type '(unsigned-byte 8)))))
+					  :element-type #+cormanlisp 'unsigned-byte #-cormanlisp '(unsigned-byte 8)))))
 		   then ; file not readable
 		      
 			(return-from process-entity nil))

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.25 2002/12/26 19:28:49 rudi Exp $
+;; $Id: main.cl,v 1.26 2003/01/03 15:26:00 doublec Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -640,14 +640,27 @@ Problems with protocol may occur." (ef-name ef)))))
        else ; must get it from the alist
 	    `(header-slot-value-other ,req ,name))))
 
+;; The following is a workaround for a CormanLisp 2.0 bug.
+;; When fixed I'll remove this code.
+;; See my bug report to the mailing list:
+;; http://groups.yahoo.com/group/cormanlisp/message/1131
+;;
+#+cormanlisp
+(defun request-headers (req)
+    (declare (ignore req)))
+
+#+cormanlisp
+(defun (setf request-headers) (value req)
+    (declare (ignore req value)))
+
 (defun header-slot-value-other (req name)
   ;; handle out of the the 'extra' headers
   (let ((ent (assoc name (request-headers req) :test #'eq)))
-    (if* ent
-       then (cdr ent)
+                    (if* ent
+       then     (cdr ent)
        else (let ((ans (header-buffer-req-header-value req name)))
-	      (push (cons name ans) (request-headers req))
-	      ans))))
+                	      (push (cons name ans) (request-headers req))
+                	      ans))))
       
 
 
@@ -2317,7 +2330,7 @@ in get-multipart-sequence"))
 	   then (if* (eq prevch #\return)
 		   then (decf start) ; back up to toss out return
 			)
-		(setf (schar buffer start) #\null) ; null terminate
+		(setf (schar buffer start) #-cormanlisp #\null #+cormanlisp #\nul) ; null terminate
 		
 		; debug output
 		; dump out buffer
