@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.28 2003/08/24 12:35:00 rudi Exp $
+;; $Id: main.cl,v 1.29 2003/08/29 12:45:00 desoi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -2581,7 +2581,7 @@ in get-multipart-sequence"))
 (eval-when (:compile-toplevel :execute)
   (meta:enable-meta-syntax)
 (deftype alpha-char () '(and character (satisfies alpha-char-p)))
-(deftype digit-char () '(and character (satisfies digit-char-p)))
+(deftype number-char () '(and character (satisfies digit-char-p)))
 )
 #-allegro
 (defun date-to-universal-time (date)
@@ -2612,8 +2612,8 @@ in get-multipart-sequence"))
                          (progn (setf meta::index old-index) nil)))
                (integer (&aux (old-index meta::index) c
                               (result (make-result)))
-                        (or (meta:match [!(skip-delimiters) @(digit-char c) !(vector-push-extend c result)
-                                         $[@(digit-char c) !(vector-push-extend c result)]
+                        (or (meta:match [!(skip-delimiters) @(number-char c) !(vector-push-extend c result)
+                                         $[@(number-char c) !(vector-push-extend c result)]
                                          !(setf last-result (parse-integer result))])
                             (progn (setf meta::index old-index) nil)))
                (date (&aux day month year hours minutes seconds)
