@@ -15,6 +15,7 @@
 		    (pushnew :htmlgen cl:*features*))
   )
 
+#+(or lispworks cmu mcl openmcl)
 (when (ignore-errors (find-class 'load-compiled-op))
   (defmethod perform :after ((op load-compiled-op) (c (eql (find-system :htmlgen))))
     (pushnew :htmlgen cl:*features*)))

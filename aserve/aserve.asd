@@ -9,7 +9,7 @@
 (in-package #:aserve-system)
 
 (defclass acl-file (cl-source-file) ())
-(defmethod asdf::source-file-type ((c acl-file) (s module)) "cl")
+(defmethod asdf:source-file-type ((c acl-file) (s module)) "cl")
 
 #+(or lispworks cmu mcl openmcl)
 (defsystem aserve
@@ -38,6 +38,7 @@
   )
 
 ;;; Logical pathname is needed by AllegroServe examples
+#+(or lispworks cmu mcl openmcl)
 (setf (logical-pathname-translations "ASERVE")
       `(
         #+ignore                        ; Don't need this with asdf
@@ -71,6 +72,7 @@
          (mp:all-processes))
   (mp::startup-idle-and-top-level-loops)))
 
+#+(or lispworks cmu mcl openmcl)
 (when (ignore-errors (find-class 'load-compiled-op))
   (defmethod perform :after ((op load-compiled-op) (c (eql (find-system 'aserve))))
     (pushnew :aserve cl:*features*)))
