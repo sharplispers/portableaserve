@@ -1,3 +1,8 @@
+2004-02-17  Rudi Schlatte  <rudi@SLAW40.kfunigraz.ac.at>
+
+	* acl-excl-common.lisp (match-regexp): Make :return :index return
+	values same as ACL
+
 2004-02-16  Rudi Schlatte  <rudi@62-99-252-74.C-GMITTE.Xdsl-line.inode.at>
 
 	* acl-compat.asd: 

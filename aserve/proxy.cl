@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.14 2004/02/08 15:41:06 rudi Exp $
+;; $Id: proxy.cl,v 1.15 2004/02/17 12:48:44 rudi Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -941,8 +941,9 @@ cached connection = ~s~%" cond cached-connection))
     (with-http-body (req ent)
       (html (:title "not found by proxy")
 	    (:body
-	     (:h1 "no found")
-	     "The proxy could not find the requested uri")))))
+	     (:h1 "not found")
+	     "The proxy could not find the requested uri: "
+	     (:princ-safe (request-raw-uri req)))))))
 
   
 ;;;--------------------- connection cache -------------

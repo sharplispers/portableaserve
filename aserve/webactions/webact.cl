@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: webact.cl,v 1.4 2004/02/08 15:41:06 rudi Exp $
+;; $Id: webact.cl,v 1.5 2004/02/17 12:48:44 rudi Exp $
 
 
 
@@ -100,7 +100,7 @@
    
    ))
 
-(defparameter *webactions-version* "1.4")
+(defparameter *webactions-version* "1.5")
 	      
 (defvar *name-to-webaction* (make-hash-table :test #'equal))
 
@@ -116,6 +116,7 @@
 				    session-lifetime
 				    (sessions t)
 				    reap-interval
+				    reap-hook-function
 				    access-file
 				    authorizer
 				    clp-content-type
@@ -179,7 +180,9 @@
        then (initialize-websession-master
 	     (setf (webaction-websession-master wa)
 	       (make-instance 'websession-master
-		 :cookie-name name))))
+		 :cookie-name name
+		 :reap-hook-function reap-hook-function
+		 ))))
     
     (if* (null sessions)
        then ; no sessions for this project
@@ -488,8 +491,7 @@
   ;; websession is non-nil.
   ;;
   (let (pos sessid sm)
-    (if* (and (> (length following) 0)
-	      (eq #\~ (aref following 0))
+    (if* (and (eq #\~ (aref following 0))
 	      (setq pos (position #\~ following :start 1))
 	      (> (length following) (1+ pos))
 	      (eql #\/ (aref following (1+ pos)))

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.35 2004/02/16 19:37:18 rudi Exp $
+;; $Id: main.cl,v 1.36 2004/02/17 12:48:44 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -37,7 +37,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 33))
+(defparameter *aserve-version* '(1 2 35))
 
 #+allegro
 (eval-when (eval load)
@@ -556,6 +556,8 @@ Problems with protocol may occur." (ef-name ef)))))
                 #-allegro (ignorable ,g-req ,g-ent))
        ,(if* body 
 	   then `(compute-response-stream ,g-req ,g-ent))
+       (if* (entity-headers ,g-ent)
+	  then (bulk-set-reply-headers ,g-req (entity-headers ,g-ent)))
        (if* ,g-headers
 	  then (bulk-set-reply-headers ,g-req ,g-headers))
        (send-response-headers ,g-req ,g-ent :pre)
@@ -976,7 +978,7 @@ by keyword symbols and not by strings"
   ;;
   ;; start the web server
   ;; return the server object
-  #-(and unix (not openmcl))
+  #+mswindows
   (declare (ignore setuid setgid))
   #-(and allegro (version>= 6 2 beta)) 
   (declare (ignore ssl-password))
@@ -1375,7 +1377,7 @@ by keyword symbols and not by strings"
 		  (if* (> fd *max-socket-fd*)
 		     then (setq *max-socket-fd* fd)
 			  (logmess (format nil 
-					   "Maximum socket file desciptor number is now ~d" fd))))
+					   "Maximum socket file descriptor number is now ~d" fd))))
 		
 		
 		(setq error-count 0) ; reset count
@@ -2623,8 +2625,11 @@ in get-multipart-sequence"))
       
       
     ))
-
-
+    
+    
+    
+    
+	  
 (defun compute-month (str start)
   ;; return the month number given a 3char rep of the string
   

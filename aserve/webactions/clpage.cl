@@ -24,10 +24,12 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: clpage.cl,v 1.3 2004/02/08 15:41:06 rudi Exp $
+;; $Id: clpage.cl,v 1.4 2004/02/17 12:48:44 rudi Exp $
 
 
 (eval-when (compile load eval) (require :aserve))
+
+(in-package :net.aserve)
 
 (defpackage :net.aserve
   (:use :common-lisp :acl-compat.excl :net.html.generator :puri)
@@ -40,8 +42,6 @@
 	   #:publish-clp
 	   #:request-variable-value
 	   ))
-
-(in-package :net.aserve)
 
 
 (defclass clp-entity (entity)

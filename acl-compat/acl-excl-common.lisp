@@ -142,8 +142,8 @@
         (:index                         ; return (cons start end)
          (multiple-value-bind (start end reg-starts reg-ends)
              (cl-ppcre:scan scanner string-to-match :start start :end end)
-           (and start (values t (cons start end)
-                              (map 'list #'cons reg-starts reg-ends)))))
+           (and start (apply #'values t (cons start end)
+                             (map 'list #'cons reg-starts reg-ends)))))
         ((nil)                          ; return t
          (not (not (cl-ppcre:scan scanner string-to-match
                                   :start start :end end)))))))

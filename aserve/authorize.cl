@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: authorize.cl,v 1.6 2003/12/02 14:20:40 rudi Exp $
+;; $Id: authorize.cl,v 1.7 2004/02/17 12:48:44 rudi Exp $
 
 ;; Description:
 ;;   classes and functions for authorizing access to entities
@@ -56,9 +56,10 @@
    ))
 
 
+
 (defmethod authorize ((auth password-authorizer) 
-		  (req http-request)
-		  (ent entity))
+		      (req http-request)
+		      (ent entity))
   ;; check if this is valid request, return t if ok
   ;; and :done if we've sent a request for a  new name and password
   ;;

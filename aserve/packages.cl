@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: packages.cl,v 1.3 2004/02/08 15:41:06 rudi Exp $
+;; $Id: packages.cl,v 1.4 2004/02/17 12:48:44 rudi Exp $
 
 ;; Description:
 ;;   packages and exports for AllegroServe
@@ -132,7 +132,7 @@
    #:wserver-external-format
    #:wserver-filters
    #:wserver-locators
-   #:wserer-io-timeout
+   #:wserver-io-timeout
    #:wserver-log-function
    #:wserver-log-stream
    #:wserver-response-timeout

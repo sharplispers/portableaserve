@@ -1,3 +1,126 @@
+2004-01-09  John Foderaro  <jkf@tiger.franz.com>
+1.2.35
+	* publish.cl, main.cl, test/t-aserve.cl: add a slot to 
+	  all entities holding
+	  the extra headers to add to the response.  Add a :headers
+	  argument to all publish functions that allows one
+	  to store a value in the new headers slot.
+
+2003-12-23  John Foderaro  <jkf@tiger.franz.com>
+1.2.34
+	*  fix typo in exports wserver-io-timeout
+
+2003-12-12  Kevin Layer  <layer@relay.known.net>
+
+	* makefile: set base version to 6.2
+	* proxy.cl: fix typo in proxy-failure-response, include requested
+	  uri, too
+
+2003-10-31  John Foderaro  <jkf@tiger.franz.com>
+
+	* cgi.cl - transfer data from script back to http client
+	    immediately rather than buffering it up.
+
+2003-10-27  John Foderaro  <jkf@tiger.franz.com>
+1.2.33
+	* webactions/ files - change headers to include lgpl copyright info
+
+2003-10-22  John Foderaro  <jkf@tiger.franz.com>
+1.2.32
+	* add webactions subdirectory of code
+
+2003-09-22  John Foderaro  <jkf@tiger.franz.com>
+1.2.31
+	
+	* authorize.cl: send back some text with failed response
+	* publish.cl: fix html sent back to with failed responses
+	
+
+2003-09-22    <jkf@main.verada.com>
+
+	* decode.cl: fix multiline base64 decoding.
+
+2003-09-12    <layer@HOBART>
+1.2.30
+
+	* load.cl: fix problem building on acl 7.0 on windows
+
+2003-09-10  Kevin Layer  <layer@crikey>
+1.2.29
+
+	* load.cl,
+	* examples/examples.cl,
+	* examples/urian.cl: use *load-pathname* instead of
+	  *load-truename* since truename in ACL 7.0 goes through symbolic
+	  links and this doesn't work in the way aserve is built at franz
+	  (via symlinks to source code)
+
+2003-09-04  John Foderaro  <jkf@tiger.franz.com>
+1.2.28
+	* non-standard http headers are again supported in all
+	  functions, including proxying (where they are just passed on
+	  or passed back as the case may be).
+
+2003-08-12  John Foderaro  <jkf@tiger.franz.com>
+
+	* move the require of :uri to before the first
+	  reference to it in packages.cl
+
+2003-05-09    <jkf@main.verada.com>
+1.2.27
+	* added a hook argument to most publish functions. documented
+	  as 'entity hook function'
+	* chat.cl - use cookies to get around security problem
+	* add compute-request-headers (an internal fucntion at the
+	  moment, I may export it in the future)
+	  
+
+2003-05-08  John Foderaro  <jkf@tiger.franz.com>
+
+	* doc/aserve.html - clarify that you can have a list of
+	    authorization objects in an entity.
+
+	* main.cl - make the uri-scheme of (request-uri req) correctly
+	        reflect if this is an https or http request.
+
+2003-02-26  John Foderaro  <jkf@tiger.franz.com>
+1.2.26
+	* doc/aserve.html - new get-request-body argument
+
+2003-02-24  Charles A. Cox  <cox@ultra>
+	New file: examples/locale.cl.
+	
+	* load.cl: add locale example.
+	* main.cl: add external-format argument to
+	get-request-body for spr27296.
+	* examples/examples.cl: Minor home page cleanup for ics
+	examples.
+	* examples/urian.cl: Add extra smarts for determining a
+	page's charset.
+	* test/t-aserve.cl: Add spr27296 test.
+
+2003-02-06  John Foderaro  <jkf@tiger.franz.com>
+
+	* main.cl  - added (setf request-query-value)
+
+2003-01-10  John Foderaro  <jkf@tiger.franz.com>
+1.2.25
+	* publish.cl (get-cookie-values): handle case of a cookie parameter
+	not having value, i.e  name2;   Pretend it was  name2=;
+
+2003-01-07  John Foderaro  <jkf@tiger.franz.com>
+
+	* client.cl - when sending character data obey external formats
+	* main.cl - initialize log stream to *initial-terminal-io* since
+	  *standard-output* could be bound to something during the loading
+	  process.
+	* [htmlgen changes, see it's ChangeLog]
+
+2002-09-06  John Foderaro  <jkf@tiger.franz.com>
+
+	* detect connection reset by peer on the AIX operating system
+	* [change made in htmlgen ChangeLog]
+
 2002-08-09  John Foderaro  <jkf@tiger.franz.com>
 1.2.24
 	* change #\newline to #\linefeed in the source for portability

@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: t-aserve.cl,v 1.7 2004/02/16 19:37:18 rudi Exp $
+;; $Id: t-aserve.cl,v 1.8 2004/02/17 12:48:44 rudi Exp $
 
 ;; Description:
 ;;   test iserve
@@ -94,7 +94,8 @@
 		   (test-client port)
 		   (test-cgi port)
 		   (if* (member :ics *features*)
-		      then (test-international port))
+		      then (test-international port)
+			   (test-spr27296))
 		   (if* test-timeouts 
 		      then (test-timeouts port))
 		   ))
@@ -231,7 +232,9 @@
          #+allegro
          (format nil "http://~a:~a" 
 			      (long-site-name)
-			      port)))
+			      port))
+	(reps 0)
+	(got-reps nil))
     
     (setq dummy-1-contents (build-dummy-file 8055 70 dummy-1-name))
 
@@ -245,10 +248,15 @@
     (let ((ent (publish-file :path "/frob" :file dummy-1-name
 			     :content-type "text/plain"
 			     :cache-p t
+			     :hook #'(lambda (req ent extra)
+				       (declare (ignore req ent extra))
+				       (setq got-reps (or got-reps 0))
+				       (incf got-reps))
+			     :headers '((:testhead . "testval"))
 			     )))
       (test nil (net.aserve::contents ent)) ; nothing cached yet
 
-      ;;
+      ;; 
       (dolist (cur-prefix (list prefix-local prefix-dns))
 	(dolist (keep-alive '(nil t))
 	  (dolist (protocol '(:http/1.0 :http/1.1))
@@ -257,10 +265,16 @@
 		(x-do-http-request (format nil "~a/frob" cur-prefix)
 				   :protocol protocol
 				   :keep-alive keep-alive)
+	      (incf reps)
 	      (test 200 code)
 	      (test (format nil "text/plain")
 		    (cdr (assoc :content-type headers :test #'eq))
 		    :test #'equal)
+	      
+	      (test "testval"
+		    (cdr (assoc "testhead" headers :test #'equal))
+		    :test #'equal)
+	      
 	      #+ignore (if* (eq protocol :http/1.1)
 			  then (test "chunked"
 				     (cdr (assoc :transfer-encoding headers 
@@ -272,6 +286,7 @@
       (test t (not (null (net.aserve::contents ent))))
       )
 
+    (test reps got-reps)  ; verify hook function worked
 
     (setq dummy-2-contents (build-dummy-file 8055 65 dummy-2-name))
 
@@ -286,7 +301,9 @@
     ;; 
     (publish-file :path "/frob2" :file dummy-2-name
 		  :content-type "text/plain"
-		  :preload t)
+		  :preload t
+		  :headers '((:testhead . "testval"))
+		  )
     
     ;; publish with no preload and no cache
     (publish-file :path "/frob2-npl" :file dummy-2-name
@@ -294,7 +311,7 @@
 		  :preload nil)
     
 
-    ;;
+    ;; 
     (dolist (cur-prefix (list prefix-local prefix-dns))
       (dolist (keep-alive '(nil t))
 	(dolist (protocol '(:http/1.0 :http/1.1))
@@ -307,6 +324,9 @@
 	    (test (format nil "text/plain")
 		  (cdr (assoc :content-type headers :test #'eq))
 		  :test #'equal)
+	    (test "testval"
+		    (cdr (assoc "testhead" headers :test #'equal))
+		    :test #'equal)
 	    #+ignore (if* (eq protocol :http/1.1)
 			then (test "chunked"
 				   (cdr (assoc :transfer-encoding headers 
@@ -387,7 +407,7 @@
       (declare (ignore headers))
       (test 200 (and :df-test code))
       (test dummy-1-contents body :test #'equal))
-
+    
     (multiple-value-bind (body code headers)
 	(x-do-http-request (format nil "~a/checkit" prefix-dns))
       (declare (ignore headers))
@@ -490,6 +510,7 @@
 	;; to make a separate binding for each function
 	(publish :path (car pair) 
 		 :content-type "text/plain"
+		 :headers '((:testhead . "testval"))
 		 :function
 		 #'(lambda (req ent)
 		     (with-http-response (req ent)
@@ -499,9 +520,12 @@
 	(dolist (protocol '(:http/1.0 :http/1.1))
 	  (multiple-value-bind (body code headers)
 	      (x-do-http-request (format nil "~a~a" prefix-local (car pair))
-		:protocol protocol
-		:keep-alive keep-alive)
+				 :protocol protocol
+				 :keep-alive keep-alive)
 	    (test 200 code)
+	    (test "testval"
+		    (cdr (assoc "testhead" headers :test #'equal))
+		    :test #'equal)
 	    (test (format nil "text/plain" port)
 		  (cdr (assoc :content-type headers :test #'eq))
 		  :test #'equal)
@@ -522,13 +546,39 @@
 	     :function
 	     #'(lambda (req ent)
 		 (with-http-response (req ent)
-		       (with-http-body (req ent)
-			 (write-sequence "foo" *html-stream*)))))
+		   (with-http-body (req ent)
+		     (write-sequence "foo" *html-stream*)))))
     (multiple-value-bind (body code)
 	(x-do-http-request (format nil "~a/foo%20bar%20baz" prefix-local))
       (test 200 code)
       (test "foo" body :test #'equal))
-			   
+
+    
+    ;; test we can send non-standard headers back and forth
+    
+    (publish :path "/unusual-headers"
+	     :content-type "text/plain"
+	     :function 
+	     #'(lambda (req ent)
+		 
+		 (test "booboo" (header-slot-value req :frobfrob)
+		       :test #'equal)
+		 (with-http-response (req ent)
+		   (setf (reply-header-slot-value req :snortsnort)
+		     "zipzip")
+		   (with-http-body (req ent)
+		     (html "foo the bar")))))
+    
+    (multiple-value-bind (body code headers)
+	(x-do-http-request (format nil "~a/unusual-headers" prefix-local)
+			   :headers '(("frobfrob" . "booboo")))
+      (declare (ignore body))
+      
+      (test 200 code)
+      (test "zipzip" (cdr (assoc "snortsnort" headers :test #'equalp))
+	    :test #'equal))
+		       
+    
     ))
 
 
@@ -847,6 +897,14 @@
 			       (header-slot-value req :content-type)
 			       :test #'equal))
 		 (setq req-query-res (request-query req))
+		 
+		 ;; also test here the setf'ing of query values
+		 (test nil (request-query-value "flurber" req))
+		 (setf (request-query-value "flurber" req) "ziftp")
+		 (test "ziftp" (request-query-value "flurber" req)
+		       :test #'equal)
+		 
+		 
 		 (with-http-response (req ent)
 		   (with-http-body (req ent)
 		     (html "hi")))))
@@ -1212,7 +1270,8 @@
 			      (long-site-name)
 			      port))
 	(test-dir)
-	(step 0))
+	(step 0)
+	(got-reps nil))
     
     (multiple-value-bind (ok whole dir)
         ;; A slight, unfortunate incompatibility between cl-ppcre and
@@ -1227,6 +1286,11 @@
 	
     (publish-directory :prefix "/test-pd/"
 		       :destination test-dir
+		       :hook #'(lambda (req ent extra)
+				       (declare (ignore req ent extra))
+				       (setq got-reps (or got-reps 0))
+				       (incf got-reps))
+		       :headers '(("testvdir" . "testvval"))
 		       :filter #'(lambda (req ent filename info)
 				   (declare (ignore ent info))
 				   (test t
@@ -1243,13 +1307,22 @@
     (test 404 (values2 
 	       (x-do-http-request (format nil "~a/test-pd/server.pem" 
 					  prefix-local))))
-      
+
+    (test nil got-reps) ; hook didn't fire
+    
     ; in step 1 we have it return the actual file
     (setq step 1)
-    (test 200 (values2
-	       (x-do-http-request (format nil "~a/test-pd/server.pem"
-					  prefix-local))))
-      
+    (multiple-value-bind (body code headers)
+	(x-do-http-request (format nil "~a/test-pd/server.pem"
+				   prefix-local))
+      (declare (ignore body))
+      (test 200 code)
+      (test "testvval"
+		    (cdr (assoc "testvdir" headers :test #'equal))
+		    :test #'equal))
+    
+    (test 1 got-reps)   ; hook fired
+    
     ; remove entry so subsequent tests won't see it
     (publish-file :path "/test-pd/server.pem" :remove t)
       
@@ -1434,7 +1507,9 @@
 			(incf got-here)
 			(with-http-response (req ent)
 			  (with-http-body (req ent)
-			    (html "foo")))))
+			    (html "foo"))))
+		    :headers '((:testhead . "testval"))
+		    )
     (dolist (prefix (list prefix-local prefix-dns))
       (setq got-here 0)
       (test 200 (values2
@@ -1445,9 +1520,14 @@
 		 (x-do-http-request (format nil "~a/pptest/fred"
 					    prefix))))
       (test 2 got-here)
-      (test 200 (values2
-		 (x-do-http-request (format nil "~a/pptest#asdfasdf"
-					    prefix))))
+      (multiple-value-bind (body code headers)
+	  (x-do-http-request (format nil "~a/pptest#asdfasdf"
+				     prefix))
+	(declare (ignore body))
+	(test 200 code)
+	(test "testval"
+	      (cdr (assoc "testhead" headers :test #'equal))
+	      :test #'equal))
       
       (test 3 got-here)
       (test 200 (values2
@@ -1480,19 +1560,19 @@
     (publish :path "/cgi-0"
 	     :function #'(lambda (req ent)
 			   (net.aserve:run-cgi-program 
-			    req ent "aserve/examples/cgitest.sh")))
+			    req ent "sh aserve/examples/cgitest.sh")))
     (publish :path "/cgi-1"
 	     :function #'(lambda (req ent)
 			   (net.aserve:run-cgi-program 
-			    req ent "aserve/examples/cgitest.sh 1")))
+			    req ent "sh aserve/examples/cgitest.sh 1")))
     (publish :path "/cgi-2"
 	     :function #'(lambda (req ent)
 			   (net.aserve:run-cgi-program 
-			    req ent "aserve/examples/cgitest.sh 2")))
+			    req ent "sh aserve/examples/cgitest.sh 2")))
     (publish :path "/cgi-3"
 	     :function #'(lambda (req ent)
 			   (net.aserve:run-cgi-program 
-			    req ent "aserve/examples/cgitest.sh 3")))
+			    req ent "sh aserve/examples/cgitest.sh 3")))
     
     ;; verify that the various headers work
     (test 200 (values2 
@@ -1525,7 +1605,7 @@
     (publish :path "/cgi-4"
 	     :function #'(lambda (req ent)
 			   (net.aserve:run-cgi-program 
-			    req ent "aserve/examples/cgitest.sh 4"
+			    req ent "sh aserve/examples/cgitest.sh 4"
 			    :error-output
 			    #'(lambda (req ent stream)
 				(declare (ignore req ent))
@@ -1654,9 +1734,40 @@
       (test t (not (null begin)))  ; verify we found begin 
       (test t (not (null end)))    ; and end markers
       (test Privyet! test-string :test #'string=))))
-  
-  
-  
+
+
+
+(defun test-spr27296 ()
+  #+(and allegro ics)
+  (let ((server (start :port nil :server :new
+		       :external-format (crlf-base-ef :utf8)))
+	(string (concatenate 'string
+		  "<Name>B"
+		  '(#\latin_small_letter_o_with_diaeresis
+		    #\r
+		    #\latin_small_letter_o_with_diaeresis)
+		  "cz P"
+		  '(#\latin_small_letter_e_with_acute)
+		  "ter</Name>")))
+    (publish :path "/spr27296"
+	     :content-type "text/xml"
+	     :server server
+	     :function #'(lambda (req ent)
+			   (test string
+				 (get-request-body
+				  req
+				  :external-format (crlf-base-ef :utf8))
+				 :test #'string=)
+			   (with-http-response (req ent)
+			     (with-http-body (req ent)))))
+    (do-http-request (format nil "http://localhost:~d/spr27296"
+			     (socket:local-port
+			      (net.aserve::wserver-socket server)))
+      :method :post
+      :content string
+      :external-format (crlf-base-ef :utf8))
+    (shutdown :server server)))
+			   
 
 
     

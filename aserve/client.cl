@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.15 2004/02/08 15:41:06 rudi Exp $
+;; $Id: client.cl,v 1.16 2004/02/17 12:48:44 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -192,7 +192,7 @@
 	       )))
 
     (unwind-protect
-	(let (new-location)
+	(let (new-location) 
 	  
 	  (loop
 	    (read-client-response-headers creq)
