@@ -149,11 +149,13 @@ streams and handled by their close methods."
     (ext:get-socket-host-and-port fd)))
 
 (defun local-port (socket-stream)
-    (let ((fd (sys:fd-stream-fd socket-stream)))
-    (multiple-value-bind (host port)
-        (ext:get-socket-host-and-port fd)
-      (declare (ignore host))
-      port)))
+  (if (typep socket-stream 'socket::server-socket)
+      (port socket-stream)
+      (let ((fd (sys:fd-stream-fd socket-stream)))
+        (multiple-value-bind (host port)
+            (ext:get-socket-host-and-port fd)
+          (declare (ignore host))
+          port))))
 
 (defun socket-control (stream &key output-chunking output-chunking-eof input-chunking)
   (declare (ignore stream output-chunking output-chunking-eof input-chunking))
