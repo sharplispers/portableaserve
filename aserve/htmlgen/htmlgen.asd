@@ -9,4 +9,11 @@
 
 (defsystem htmlgen
   :components ((:acl-file "htmlgen"))
-  #-allegro :depends-on #-allegro (acl-compat))
+  #-allegro :depends-on #-allegro (acl-compat)
+  :perform (load-op :after (op htmlgen)
+		    (pushnew :htmlgen cl:*features*))
+  )
+
+(when (ignore-errors (find-class 'load-compiled-op))
+  (defmethod perform :after ((op load-compiled-op) (c (eql (find-system :htmlgen))))
+    (pushnew :htmlgen cl:*features*)))

@@ -31,7 +31,10 @@
                       :depends-on ("main"))
                (:acl-file "proxy"
                       :depends-on ("main")))
-  :depends-on (htmlgen acl-compat))
+  :depends-on (htmlgen acl-compat)
+  :perform (load-op :after (op aserve)
+		    (pushnew :aserve cl:*features*))
+  )
 
 ;;; Logical pathname is needed by AllegroServe examples
 (setf (logical-pathname-translations "ASERVE")
@@ -66,3 +69,7 @@
          #'(lambda (proc) (string= (mp:process-name proc) "Top Level Loop"))
          (mp:all-processes))
   (mp::startup-idle-and-top-level-loops)))
+
+(when (ignore-errors (find-class 'load-compiled-op))
+  (defmethod perform :after ((op load-compiled-op) (c (eql (find-system 'aserve))))
+    (pushnew :aserve cl:*features*)))

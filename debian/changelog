@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2002.10.09) unstable; urgency=low
+
+  * Push package name onto features after .asd load-op
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed,  9 Oct 2002 11:47:11 -0600
+
 cl-portable-aserve (1.2.12c+cvs2002.10.06) unstable; urgency=low
 
   * Expand package descriptions (closes: 163598)

@@ -1,3 +1,4 @@
+
 ;;;; -*- mode: lisp -*-
 ;;;;
 ;;;; This as an ASDF system for ACL-COMPAT, meant to replace
@@ -139,4 +140,11 @@ lisp-system"))
                #+nil
                (:legacy-cl-source-file "md5")
                #+nil
-               (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5"))))
+	       (:legacy-cl-source-file "acl-md5" :depends-on ("acl-excl" "md5")))
+  :perform (load-op :after (op acl-compat)
+		    (pushnew :acl-compat cl:*features*))
+  )
+
+(when (ignore-errors (find-class 'load-compiled-op))
+  (defmethod perform :after ((op load-compiled-op) (c (eql (find-system 'acl-compat))))
+    (pushnew :acl-compat cl:*features*)))
