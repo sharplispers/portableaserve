@@ -405,6 +405,7 @@
                      (fragment nil fragmentp)
                      (plist nil plistp)
                      (string nil stringp))
+  (declare (ignore place))
   (when placep
     (error "PLACE keyword of COPY-URI not implemented."))
   (make-instance 'uri
