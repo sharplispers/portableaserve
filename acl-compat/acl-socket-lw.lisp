@@ -33,8 +33,7 @@
    (excl::identifier :initarg :identifier
                :reader stream-error-identifier))
   (:report (lambda (condition stream)
-             (format stream "~A (action=~A id=~A code=~A stream=~S)."
-                     (lw:get-unix-error (stream-error-code condition))
+             (format stream "A stream error occured (action=~A identifier=~A code=~A stream=~S)."
                      (stream-error-action condition)
                      (stream-error-identifier condition)
                      (stream-error-code condition)
@@ -43,8 +42,7 @@
 (define-condition socket-error (stream-error)
   ()
   (:report (lambda (condition stream)
-             (format stream "~A (action=~A id=~A code=~A stream=~S)."
-                     (lw:get-unix-error (stream-error-code condition))
+             (format stream "A socket error occured (action=~A identifier=~A code=~A stream=~S)."
                      (stream-error-action condition)
                      (stream-error-identifier condition)
                      (stream-error-code condition)
