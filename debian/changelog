@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.35+cvs.2004.03.01) unstable; urgency=low
+
+  * New upstream
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Mon,  1 Mar 2004 10:04:49 -0700
+
 cl-portable-aserve (1.2.33+cvs2003.12.05) unstable; urgency=low
 
   * Add cl-webactions binary package
