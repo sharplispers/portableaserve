@@ -22,18 +22,23 @@ set -e
 #     installation fails and the `postinst' is called with `abort-upgrade',
 #     `abort-remove' or `abort-deconfigure'.
 
-THE_PACKAGE_NAME=acl-compat
+THE_PACKAGE_NAME=aserve
 
 case "$1" in
     configure)
+
 	/usr/sbin/register-common-lisp-source ${THE_PACKAGE_NAME}
-	;;
+	
+    ;;
+
     abort-upgrade|abort-remove|abort-deconfigure)
-	;;
+
+    ;;
+
     *)
         echo "postinst called with unknown argument \`$1'" >&2
         exit 0
-	;;
+    ;;
 esac
 
 # dh_installdeb will replace this with shell code automatically

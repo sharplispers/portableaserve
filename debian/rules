@@ -6,38 +6,29 @@
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 
-DESTDIR         := `pwd`/debian/tmp
-COMPATDESTDIR	:= `pwd`/debian/cl-acl-compat
+pkg-compat	  := cl-acl-compat
+pkg-aserve	:= cl-aserve
+pkg-html	:= cl-htmlgen
 
-INSTALL         := install
-INSTALLFLAGS    := -g root -o root -m 0644
-INSTALLDIRFLAGS := -g root -o root -m 0755
+name-compat	:= acl-compat
+name-aserve	:= aserve
+name-html	:= htmlgen
 
-ASERVEDEST	:= $(DESTDIR)/usr/share/common-lisp/repositories/aserve
-HTGENDEST	:= $(DESTDIR)/usr/share/common-lisp/repositories/aserve/htmlgen
-COMPATDEST	:= $(COMPATDESTDIR)/usr/share/common-lisp/repositories/acl-compat
+clc-base	:= usr/share/common-lisp
+clc-systems	:= $(clc-base)/systems
+clc-source	:= $(clc-base)/source
+clc-aserve	:= $(clc-source)/$(name-aserve)
+clc-html	:= $(clc-source)/$(name-html)
+clc-compat	:= $(clc-source)/$(name-compat)
 
-ASERVEDOC	:= $(DESTDIR)/usr/share/doc/cl-aserve
-WEBDEST		:= $(ASERVEDOC)/html
-EXDEST		:= $(ASERVEDOC)/examples
-COMPATDOC	:= $(COMPATDESTDIR)/usr/share/doc/cl-acl-compat
+src-aserve	:= aserve/*.cl aserve/*.asd
+src-html	:= aserve/htmlgen/*.cl aserve/htmlgen/*.asd
+src-compat	:= acl-compat/*.lisp acl-compat/*.asd
 
-ASERVESRC	:= \
-	aserve/*.cl \
-	aserve/*.system
+doc-base	:= usr/share/doc
 
-#HTGENSRC	:= \
-#	aserve/htmlgen/*.cl
-
-COMPATSRC	:= \
-	acl-compat/*.lisp \
-	acl-compat/*.system
-
-EXSRC		:= \
-	aserve/examples/*.cl \
-	aserve/examples/*.jpg \
-	aserve/examples/*.gif \
-	aserve/examples/*.txt
+examples	:= aserve/examples/*.cl aserve/examples/*.jpg \
+		aserve/examples/*.gif aserve/examples/*.txt
 
 build: 
 	dh_testdir
@@ -47,10 +38,8 @@ build:
 clean:
 	dh_testdir
 	rm -f build
-
 	# Add here commands to clean up after the build process.
 #	-$(MAKE) clean
-
 	dh_clean
 
 # Build architecture-independent files here.
@@ -64,32 +53,26 @@ binary-arch: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
+	dh_installdirs -p $(pkg-aserve) $(clc-aserve) $(clc-systems)
+	dh_installdirs -p $(pkg-compat) $(clc-compat) $(clc-systems)
+	dh_installdirs -p $(pkg-html) $(clc-html) $(clc-systems)
 
 	# Add here commands to install the files into debian/tmp
-	$(INSTALL) $(INSTALLFLAGS) $(ASERVESRC) $(ASERVEDEST)
-#	$(INSTALL) $(INSTALLFLAGS) $(HTGENSRC) $(HTGENDEST)
-	$(INSTALL) $(INSTALLFLAGS) aserve/htmlgen/htmlgen.cl $(ASERVEDEST)
+	dh_install -p $(pkg-aserve) $(src-aserve) $(clc-aserve)
+	dh_install -p $(pkg-html) $(src-html) $(clc-html)
+	dh_install -p $(pkg-compat) $(src-compat) $(clc-compat)
+	dh_installdirs -p $(pkg-aserve) $(doc-base)/$(pkg-aserve)/html
+	dh_install aserve/doc/*.html $(doc-base)/$(pkg-aserve)/html
 
-	$(INSTALL) $(INSTALLFLAGS) aserve/ChangeLog $(ASERVEDOC)/changelog
-	$(INSTALL) $(INSTALLFLAGS) aserve/htmlgen/ChangeLog $(ASERVEDOC)/htmlgen-changelog
-	$(INSTALL) $(INSTALLFLAGS) aserve/license-allegroserve.txt $(ASERVEDOC)
-	$(INSTALL) $(INSTALLFLAGS) aserve/license-lgpl.txt $(ASERVEDOC)
-	$(INSTALL) $(INSTALLFLAGS) aserve/doc/*.html $(WEBDEST)
-	$(INSTALL) $(INSTALLFLAGS) aserve/doc/*.txt $(ASERVEDOC)
-	$(INSTALL) $(INSTALLFLAGS) $(EXSRC) $(EXDEST)
-	$(INSTALL) $(INSTALLFLAGS) INSTALL.lisp $(EXDEST)
-
-	# Vanilla stuff
-	$(INSTALL) $(INSTALLFLAGS) $(COMPATSRC) $(COMPATDEST)
-#	$(INSTALL) $(INSTALLFLAGS) debian/README.Debian $(COMPATDOC)
-	$(INSTALL) $(INSTALLFLAGS) ChangeLog $(COMPATDOC)/changelog
+	dh_link -p $(pkg-aserve) $(clc-aserve)/$(name-aserve).asd $(clc-systems)/$(name-aserve).asd
+	dh_link -p $(pkg-compat) $(clc-compat)/$(name-compat).asd $(clc-systems)/$(name-compat).asd
+	dh_link -p $(pkg-html) $(clc-html)/$(name-html).asd $(clc-systems)/$(name-html).asd
 
 	dh_installdocs
-#	dh_installexamples
-	dh_installmenu
-	dh_installcron
-#	dh_installmanpages
-#	dh_undocumented
+	dh_installdocs -p $(pkg-aserve) aserve/ChangeLog
+	dh_installdocs -p $(pkg-aserve) aserve/doc/*.txt
+	dh_installdocs -p $(pkg-html) aserve/htmlgen/ChangeLog
+	dh_installexamples -p $(pkg-aserve) $(examples)
 	dh_installchangelogs
 	dh_link
 	dh_strip

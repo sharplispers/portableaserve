@@ -1,3 +1,9 @@
+cl-portable-aserve (1.2.12c+cvs2002.09.22) unstable; urgency=low
+
+  * New upstream release
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Mon, 23 Sep 2002 07:38:34 -0600
+
 cl-portable-aserve (1.2.5b-4) unstable; urgency=low
 
   * Fixing lintian bugs
