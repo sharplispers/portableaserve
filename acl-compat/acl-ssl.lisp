@@ -19,6 +19,10 @@
 (defmethod make-ssl-client-stream ((lw-socket-stream comm:socket-stream) &rest options)
   (apply #'make-ssl-client-stream (comm:socket-stream-socket lw-socket-stream) options))
 
+#+cormanlisp
+(defmethod make-ssl-client-stream (stream  &rest options)
+  (apply #'make-ssl-client-stream (sockets:socket-descriptor (cl::stream-handle stream)) options))
+
 (defmethod make-ssl-server-stream ((socket integer) &rest options)
   (destructuring-bind (&key certificate key other-certificates (format :binary)) options
     (when (minusp socket)

@@ -27,13 +27,16 @@
            gray-stream:fundamental-character-output-stream)
   ())
 
-(defmethod gray-stream::stream-element-type ((socket-stream binary-ssl-stream))
+(defmethod #-cormanlisp gray-stream::stream-element-type #+cormanlisp gray-stream::stream-stream-element-type ((socket-stream binary-ssl-stream))
   '(unsigned-byte 8))
 
-(defmethod gray-stream::stream-element-type ((socket-stream character-ssl-stream))
+(defmethod #-cormanlisp gray-stream::stream-element-type #+cormanlisp gray-stream::stream-stream-element-type ((socket-stream character-ssl-stream))
   'character)
 
 (defmethod gray-stream:stream-line-column ((socket-stream character-ssl-stream))
+  nil)
+
+(defmethod gray-stream:stream-line-column ((socket-stream binary-ssl-stream))
   nil)
 
 (defmethod gray-stream:stream-listen ((socket-stream ssl-stream-mixin))
@@ -106,7 +109,7 @@
       (setf ssl-internal::input-avail 0)
       (setf ssl-internal::input-offset 0))))
 
-(defmethod common-lisp:close ((socket-stream ssl-stream-mixin) &key abort)
+(defmethod #-cormanlisp common-lisp:close #+cormanlisp gray-stream:stream-close ((socket-stream ssl-stream-mixin) &key abort)
   (with-slots (ssl-socket) socket-stream
     (unless abort
       (ssl-internal:flush-output-buffer ssl-socket))
@@ -227,7 +230,9 @@
     (ssl-internal:close-ssl-socket ssl-socket)))
 |#
 
+#-cormanlisp
 (declaim (inline %reader-function-for-sequence))
+#-cormanlisp
 (defun %reader-function-for-sequence (sequence)
   (typecase sequence
     (string #'read-char)
@@ -235,7 +240,9 @@
     ((array signed-byte (*)) #'read-byte)
     (otherwise #'read-byte)))
 
+#-cormanlisp
 (declaim (inline %writer-function-for-sequence))
+#-cormanlisp
 (defun %writer-function-for-sequence (sequence)
   (typecase sequence
     (string #'write-char)
@@ -244,29 +251,36 @@
     (otherwise #'write-byte)))
 
 ;; Bivalent socket support for READ-SEQUENCE / WRITE-SEQUENCE
+#-cormanlisp
 (defmethod gray-stream:stream-read-sequence ((stream ssl-stream-mixin) sequence start end)
   (stream::read-elements stream sequence start end (%reader-function-for-sequence sequence)))
 
+#-cormanlisp
 (defmethod gray-stream:stream-write-sequence ((stream ssl-stream-mixin) sequence start end)
   (stream::write-elements stream sequence start end (%writer-function-for-sequence sequence)))
 
+#-cormanlisp
 (in-package :acl-socket)
 
+#-cormanlisp
 (defmethod remote-host ((socket ssl::ssl-stream-mixin))
   (comm:get-socket-peer-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket))))
 
+#-cormanlisp
 (defmethod remote-port ((socket ssl::ssl-stream-mixin))
   (multiple-value-bind (host port)
       (comm:get-socket-peer-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket)))
     (declare (ignore host))
     port))
 
+#-cormanlisp
 (defmethod local-host ((socket ssl::ssl-stream-mixin))
   (multiple-value-bind (host port)
       (comm:get-socket-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket)))
     (declare (ignore port))
     host))
 
+#-cormanlisp
 (defmethod local-port ((socket ssl::ssl-stream-mixin))
   (multiple-value-bind (host port)
       (comm:get-socket-address (ssl-internal::ssl-socket-fd (ssl::ssl-socket socket)))
