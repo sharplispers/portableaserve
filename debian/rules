@@ -68,9 +68,13 @@ binary-arch: build
 	dh_link -p $(pkg-html) $(clc-html)/$(name-html).asd $(clc-systems)/$(name-html).asd
 
 	dh_installdocs
-	dh_installdocs -p $(pkg-aserve) aserve/ChangeLog
+	gzip --best aserve/ChangeLog
+	mv aserve/ChangeLog.gz aserve/changelog.gz
+	dh_installdocs -p $(pkg-aserve) aserve/changelog.gz
 	dh_installdocs -p $(pkg-aserve) aserve/doc/*.txt
-	dh_installdocs -p $(pkg-html) aserve/htmlgen/ChangeLog
+	gzip --best aserve/htmlgen/ChangeLog
+	mv aserve/htmlgen/ChangeLog.gz aserve/htmlgen/changelog.gz
+	dh_installdocs -p $(pkg-aserve) aserve/htmlgen/changelog.gz
 	dh_installexamples -p $(pkg-aserve) $(examples)
 	dh_installchangelogs
 	dh_link

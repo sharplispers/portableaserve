@@ -7,7 +7,7 @@ Build-Depends-Indep: debhelper (>= 4.0.0)
 
 Package: cl-aserve
 Architecture: all
-Depends: common-lisp-controller (>= 3.36), cl-acl-compat, cl-htmlgen
+Depends: common-lisp-controller (>= 3.47), cl-acl-compat, cl-htmlgen
 Description: Portable Aserve
  A portable version of AllegroServe which is a web application server
  for Common Lisp programs.
