@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: log.cl,v 1.6 2002/12/03 14:44:38 rudi Exp $
+;; $Id: log.cl,v 1.7 2003/08/24 12:35:00 rudi Exp $
 
 ;; Description:
 ;;   iserve's logging

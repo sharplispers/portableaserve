@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: macs.cl,v 1.6 2002/12/03 14:44:38 rudi Exp $
+;; $Id: macs.cl,v 1.7 2003/08/24 12:35:00 rudi Exp $
 
 ;; Description:
 ;;   useful internal macros

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.12 2003/06/12 03:11:43 desoi Exp $
+;; $Id: client.cl,v 1.13 2003/08/24 12:35:00 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -443,15 +443,36 @@ or \"foo.com:8000\", not ~s" proxy))
     (if* accept
        then (net.aserve::format-dif :xmit
 				    sock "Accept: ~a~a" accept crlf))
+
+    ; content can be a nil, a single vector or a list of vectors.
+    ; canonicalize..
+    (if* (and content (atom content)) then (setq content (list content)))
     
     (if* content
-       then (typecase content
-	      ((array character (*)) nil)
-	      ((array (unsigned-byte 8) (*)) nil)
-              ((array base-char (*)) nil) ;added for paserve - in some lisps (e.g. mcl) strings are not character arrays
-	      (t (error "Illegal content array: ~s" content)))
+       then (let ((computed-length 0))
+	      (dolist (content-piece content)
+		(typecase content-piece
+                  ;;added for paserve - in some lisps (e.g. mcl)
+                  ;;strings are not character arrays
+		  ((or (array character (*)) (array base-char (*)))
+		   (if* (null content-length)
+		      then (incf computed-length
+                                 #+allegro
+				 (native-string-sizeof 
+				  content-piece
+				  :external-format external-format)
+                                 #-allegro
+                                 (length content-piece))))
+		 
+		  ((array (unsigned-byte 8) (*)) 
+		   (if* (null content-length)
+		      then (incf computed-length (length content-piece))))
+		  (t (error "Illegal content array: ~s" content-piece))))
+	      
+	      (if* (null content-length)
+		 then (setq content-length computed-length))))
+    
 	    
-	    (setq content-length (length content)))
     
     (if* content-length
        then (net.aserve::format-dif :xmit
@@ -509,7 +530,7 @@ or \"foo.com:8000\", not ~s" proxy))
 	      (net.aserve::if-debug-action 
 	       :xmit
 	       (format net.aserve::*debug-stream*
-		       "client sending content of ~d bytes"
+		       "client sending content of ~d characters/bytes"
 		       (length cont)))
 	      (write-sequence cont sock)))
     

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.10 2003/01/03 15:26:01 doublec Exp $
+;; $Id: proxy.cl,v 1.11 2003/08/24 12:35:00 rudi Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -1120,6 +1120,8 @@ cached connection = ~s~%" cond cached-connection))
 	       #+allegro (gc)
 	       #+cmu (ext:gc)
 	       #+lispworks (hcl:gc-if-needed)
+               #+mcl (ccl:gc)
+               #+sbcl (sb-ext:gc)
 	       (display-proxy-cache-statistics req ent pcache)))
   
   (publish :path "/cache-entries-global-gc"
@@ -1127,6 +1129,9 @@ cached connection = ~s~%" cond cached-connection))
 	   #'(lambda (req ent)
 	       #+allegro (gc t)
                #+cmu (ext:gc :full t)
+	       #+lispworks (hcl:gc-if-needed) ; TODO: do a full gc here
+               #+mcl (ccl:gc)
+               #+sbcl (sb-ext:gc :full t)
 	       (display-proxy-cache-statistics req ent pcache)))
   
 	       

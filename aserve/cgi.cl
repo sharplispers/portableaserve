@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: cgi.cl,v 1.3 2002/12/03 14:44:39 rudi Exp $
+;; $Id: cgi.cl,v 1.4 2003/08/24 12:35:00 rudi Exp $
 
 ;; Description:
 ;;   common gateway interface (running external programs)

@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.27 2003/08/14 09:03:56 rudi Exp $
+;; $Id: main.cl,v 1.28 2003/08/24 12:35:00 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -37,7 +37,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 24))
+(defparameter *aserve-version* '(1 2 27))
 
 #+allegro
 (eval-when (eval load)
@@ -75,8 +75,6 @@
 ; set to true to automatically close sockets about to be gc'ed
 ; open sockets should never be subject to gc unless there's a bug
 ; in the code leading to leaks.
-
-; rudi: cmucl has socket auto-finalization (see excl:accept-connection)
 (defvar *watch-for-open-sockets* #+allegro t #-allegro nil) 
 
 (defmacro define-debug-kind (name class what)
@@ -208,7 +206,7 @@
                                ((pid :int) (sig :int))
                                :result-type :int
                                :language :ansi-c)
-    (fli:define-foreign-function (unix-signal "signal" :source)
+  (fli:define-foreign-function (unix-signal "signal" :source)
                                ((sig :int) (hdl :int))
                                :result-type :void
                                :language :ansi-c))
@@ -229,7 +227,7 @@
 #+ (and sbcl unix)
 (defun getpid () (sb-unix:unix-getpid))
 
-#+ccl
+#+mcl
 (defun getpid () (ccl::getpid))
 
 ;; more specials
@@ -424,6 +422,11 @@
     ;; when the server shuts down
     :initform nil
     :accessor wserver-shutdown-hooks)
+   
+   (ssl
+    :initform nil
+    :initarg :ssl
+    :accessor wserver-ssl)
    ))
 
 
@@ -441,10 +444,10 @@
 (defclass vhost ()
   ((log-stream :accessor vhost-log-stream
 	       :initarg :log-stream
-	       :initform (ensure-stream-lock *standard-output*))
+	       :initform (ensure-stream-lock *trace-output*))
    (error-stream :accessor vhost-error-stream
 		 :initarg :error-stream
-		 :initform (ensure-stream-lock *standard-output*))
+		 :initform (ensure-stream-lock *trace-output*))
    (names :accessor vhost-names
 	  :initarg :names
 	  :initform nil)
@@ -659,11 +662,11 @@ Problems with protocol may occur." (ef-name ef)))))
 (defun header-slot-value-other (req name)
   ;; handle out of the the 'extra' headers
   (let ((ent (assoc name (request-headers req) :test #'eq)))
-                    (if* ent
-       then     (cdr ent)
+    (if* ent
+       then (cdr ent)
        else (let ((ans (header-buffer-req-header-value req name)))
-                	      (push (cons name ans) (request-headers req))
-                	      ans))))
+	      (push (cons name ans) (request-headers req))
+	      ans))))
       
 
 
@@ -1069,6 +1072,7 @@ by keyword symbols and not by strings"
     (setf (wserver-terminal-io server) *terminal-io*)
     (setf (wserver-enable-chunking server) chunking)
     (setf (wserver-enable-keep-alive server) keep-alive)
+    (setf (wserver-ssl server) ssl)
 
     #+unix
     (if* os-processes
@@ -1285,6 +1289,7 @@ by keyword symbols and not by strings"
   (if* (typep c 'stream-error)
      then (or (eq (stream-error-identifier c) :connection-reset)
 	      #+(and allegro unix) (eq (stream-error-code c) 32) ; sigpipe
+	      #+(and allegro aix) (eq (stream-error-code c) 73) 
 	      )))
 
 	  
@@ -1563,7 +1568,10 @@ by keyword symbols and not by strings"
 				(if* port
 				   then (setf (uri-port uri) port)))
 			
-			(setf (uri-scheme uri) :http)  ; always http
+			(setf (uri-scheme uri) 
+			  (if* (wserver-ssl *wserver*)
+						  then :https
+						  else :http))
 			
 			;; set virtual host in the request
 			(let ((vhost 
@@ -1606,66 +1614,80 @@ by keyword symbols and not by strings"
 
 	    
 
-(defmethod get-request-body ((req http-request))
-  ;; return a string that holds the body of the http-request
-  ;;  cache it for later too
-  (or (request-request-body req)
-      (setf (request-request-body req)
-	(if* (member (request-method req) '(:put :post))
-	   then (multiple-value-bind (length believe-it)
-		    (header-slot-value-integer req :content-length)
-		  (if* believe-it
-		     then ; we know the length
-			  (prog1 (let ((ret (make-string length)))
-				   (read-sequence-with-timeout 
-				    ret length 
-				    (request-socket req)
-				    *read-request-body-timeout*))
+(defmethod get-request-body ((req http-request)
+			     &key (external-format :octets ef-supplied))
+  (let ((result
+	 ;; return a string that holds the body of the http-request
+	 ;;  cache it for later too
+	 (or (request-request-body req)
+	     (setf (request-request-body req)
+	       (if* (member (request-method req) '(:put :post))
+		  then (multiple-value-bind (length believe-it)
+			   (header-slot-value-integer req :content-length)
+			 (if* believe-it
+			    then	; we know the length
+				 (prog1 (let ((ret (make-string length)))
+					  (read-sequence-with-timeout 
+					   ret length 
+					   (request-socket req)
+					   *read-request-body-timeout*))
 	    
-			    ; netscape (at least) is buggy in that 
-			    ; it sends a crlf after
-			    ; the body.  We have to eat that crlf.  
-			    ; We could check
-			    ; which browser is calling us but it's 
-			    ; not clear what
-			    ; is the set of buggy browsers 
-			    (let ((ch (read-char-no-hang (request-socket req)
-							 nil nil)))
-			      (if* (eq ch #\return)
-				 then ; now look for linefeed
-				      (setq ch (read-char-no-hang 
-						(request-socket req) nil nil))
-				      (if* (eq ch #\linefeed)
-					 thenret 
-					 else (unread-char 
-					       ch (request-socket req)))
-			       elseif ch
-				 then (unread-char ch (request-socket req)))))
+					; netscape (at least) is buggy in that 
+					; it sends a crlf after
+					; the body.  We have to eat that crlf.
+					; We could check
+					; which browser is calling us but it's 
+					; not clear what
+					; is the set of buggy browsers 
+				   (let ((ch (read-char-no-hang
+					      (request-socket req)
+					      nil nil)))
+				     (if* (eq ch #\return)
+					then ; now look for linefeed
+					     (setq ch (read-char-no-hang 
+						       (request-socket req)
+						       nil nil))
+					     (if* (eq ch #\linefeed)
+						thenret 
+						else (unread-char 
+						      ch (request-socket req)))
+				      elseif ch
+					then (unread-char ch (request-socket
+							      req)))))
 				      
 				      
-		     else ; no content length given
+			    else	; no content length given
 			  
-			  (if* (equalp "keep-alive" 
-				       (header-slot-value req :connection))
-			     then ; must be no body
-				  ""
-			     else ; read until the end of file
-				  (with-timeout-local
-				      (*read-request-body-timeout* 
-				       nil)
-				    (let ((ans (make-array 
-						2048 
-						:element-type 'character
-						:fill-pointer 0))
-					  (sock (request-socket req))
-					  (ch))
-				      (loop (if* (eq :eof 
-						     (setq ch (read-char 
+				 (if* (equalp "keep-alive" 
+					      (header-slot-value req
+								 :connection))
+				    then ; must be no body
+					 ""
+				    else ; read until the end of file
+					 (with-timeout-local
+					     (*read-request-body-timeout* 
+					      nil)
+					   (let ((ans (make-array 
+						       2048 
+						       :element-type 'character
+						       :fill-pointer 0))
+						 (sock (request-socket req))
+						 (ch))
+					     (loop (if* (eq :eof 
+							    (setq ch
+							      (read-char 
 							       sock nil :eof)))
-					       then (return  ans)
-					       else (vector-push-extend ch ans))))))))
-	   else "" ; no body
-		))))
+						      then (return  ans)
+						      else (vector-push-extend
+							    ch ans))))))))
+		  else ""		; no body
+		       )))))
+    (if* ef-supplied			; spr27296
+       then (values
+	     (octets-to-string
+	      (string-to-octets result :external-format :octets)
+	      :external-format external-format))
+       else result)))
 
 
 
@@ -2124,7 +2146,7 @@ in get-multipart-sequence"))
 		      then 
 			   ; here is where we should do
 			   ; external format processing
-#|			   #+(and allegro (version>= 6 0 pre-final 1))
+			   #+(and allegro (version>= 6 0 pre-final 1))
 			   (multiple-value-setq (buffer items tocopy)
 			     (octets-to-string
 			      mpbuffer
@@ -2135,8 +2157,7 @@ in get-multipart-sequence"))
 			      :string-end (length buffer)
 			      :external-format external-format
 			      :truncate t))
-;			   #-(and allegro (version>= 6 0 pre-final 1))
-|#                         #-allegro
+			   #-(and allegro (version>= 6 0 pre-final 1))
 			   (dotimes (i tocopy)
 			     (setf (aref buffer (+ start i))
 			       (code-char (aref mpbuffer (+ cur i)))))
@@ -2322,13 +2343,12 @@ in get-multipart-sequence"))
   (let ((max (length buffer))
 	(prevch))
     (loop
-      (let ((ch (read-byte sock nil :eof)))
+      (let ((ch (read-char sock nil :eof)))
 	(if* (eq ch :eof)
 	   then (debug-format :info"eof on socket~%")
 		(free-request-buffer buffer)
 		(return-from read-sock-line nil))
       
-      	(setq ch (code-char ch))
 	(if* (eq ch #\linefeed)
 	   then (if* (eq prevch #\return)
 		   then (decf start) ; back up to toss out return
@@ -2425,7 +2445,21 @@ in get-multipart-sequence"))
 	      :test test)))
 
 
-	
+(defsetf request-query-value 
+    (key req &key (post t) (uri t) 
+		  (test #'equal) (external-format 
+				  *default-aserve-external-format*))
+    (newvalue)
+  ;; make it appear that the query alist contains this extra key/value
+  `(let ((ent (assoc ,key (request-query ,req :post ,post :uri ,uri
+					 :external-format ,external-format)
+		    :test ,test)))
+    (if* ent 
+       then (setf (cdr ent) ,newvalue)
+       else (push (cons ,key ,newvalue) (request-query-alist ,req)))
+    
+    ,newvalue))
+
 
 (defun header-decode-integer (val)
   ;; if val is a string holding an integer return its value

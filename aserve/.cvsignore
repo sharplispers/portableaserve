@@ -3,6 +3,7 @@
 *.fasl
 *.fas
 *.lib
+*.dfsl
 *.x86f
 *.err
 
