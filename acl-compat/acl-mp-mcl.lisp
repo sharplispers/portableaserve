@@ -29,9 +29,8 @@
   
 (shadowing-import 'ccl:*current-process*)   ;need to refer to mp:*current-process*
   
-(export '*current-process*) 
+;(export '*current-process*) 
   
-
 (defmacro without-scheduling (&body forms)
   `(ccl:without-interrupts ,@forms))
 
