@@ -1,0 +1,21 @@
+;;; -*- mode: lisp -*-
+
+(in-package :CL-USER)
+
+(mk:defsystem "ACL-COMPAT"
+  :source-pathname "acl-compat:"
+  :binary-pathname (make-pathname :directory (append (pathname-directory *load-truename*) (list "bin" "mcl")))
+  :components ((:file "nregex")
+               (:file "acl-mp-mcl")
+               (:file "acl-socket-mcl")
+               (:file "acl-excl-mcl"
+                      :depends-on ("nregex"))
+               (:file "acl-sys-mcl")
+               (:file "meta")
+               (:file "uri-mcl"
+                      :depends-on ("meta"))
+               (:file "parse-time") ;need to verify it is really OK to use this - says public domain but ask
+               
+               ))
+
+    
