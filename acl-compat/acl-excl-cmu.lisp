@@ -60,6 +60,7 @@
 		"FILESYS-WRITE-DATE"
 		"STREAM-INPUT-FN"
 		"MATCH-REGEXP"
+		"COMPILE-REGEXP"
 		"*CURRENT-CASE-MODE*"
 		"INTERN*"
 		"FILESYS-TYPE"
@@ -134,15 +135,20 @@
 (defun stream-input-fn (stream)
   stream)
 	
-
 (defun match-regexp (pattern string &key (return :string))
-  (let ((res (regex pattern string)))
+  (let ((res (cond ((stringp pattern)
+		    (regex pattern string))
+		   ((functionp pattern) (funcall pattern string))
+		   (t (error "Wrong type for pattern")))))
     (case return
       (:string
        (values-list (cons (not (null res))
                           res)))
       (:index (error "REGEXP: INDEX Not implemented"))
       (otherwise (not (null res))))))
+
+(defun compile-regexp (regexp)
+  (compile nil (regex-compile regexp)))
 
 (defvar *current-case-mode* :case-insensitive-upper)
 
