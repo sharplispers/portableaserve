@@ -13,7 +13,13 @@ $ lisp
 
 You can now test on http://localhost:2001/
 
-Mor info about Portable Aserve may be found on
+The example.cl file may be found at:
+/usr/share/common-lisp/repositories/aserve/example.cl
+
+Other example-files may be found in:
+/usr/share/doc/cl-aserve/examples/
+
+More info about Portable Aserve may be found on
 http://www.sourceforge.net/projects/portableaserve/
 
 

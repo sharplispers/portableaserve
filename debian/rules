@@ -71,12 +71,18 @@ binary-arch: build
 	$(INSTALL) $(INSTALLFLAGS) aserve/htmlgen/htmlgen.cl $(ASERVEDEST)
 
 	$(INSTALL) $(INSTALLFLAGS) aserve/ChangeLog $(ASERVEDOC)/changelog
+	$(INSTALL) $(INSTALLFLAGS) aserve/htmlgen/ChangeLog $(ASERVEDOC)/htmlgen-changelog
+	$(INSTALL) $(INSTALLFLAGS) aserve/license-allegroserve.txt $(ASERVEDOC)
+	$(INSTALL) $(INSTALLFLAGS) aserve/license-lgpl.txt $(ASERVEDOC)
 	$(INSTALL) $(INSTALLFLAGS) aserve/doc/*.html $(WEBDEST)
+	$(INSTALL) $(INSTALLFLAGS) aserve/doc/*.txt $(ASERVEDOC)
 	$(INSTALL) $(INSTALLFLAGS) $(EXSRC) $(EXDEST)
+	$(INSTALL) $(INSTALLFLAGS) INSTALL.lisp $(EXDEST)
 
 	# Vanilla stuff
 	$(INSTALL) $(INSTALLFLAGS) $(COMPATSRC) $(COMPATDEST)
-	$(INSTALL) $(INSTALLFLAGS) debian/README.Debian $(COMPATDOC)
+#	$(INSTALL) $(INSTALLFLAGS) debian/README.Debian $(COMPATDOC)
+	$(INSTALL) $(INSTALLFLAGS) ChangeLog $(COMPATDOC)/changelog
 
 	dh_installdocs
 #	dh_installexamples
