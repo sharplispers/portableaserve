@@ -2,32 +2,7 @@
 
 (in-package "CL-USER")
 
-#+lispworks
-(progn
-  ;; Load logical host definitions
-  (load (merge-pathnames "logical-hostnames.lisp" *load-truename*))
-
-  ;; Load definition of CL-SSL system
-  ;;(load "cl-ssl:defsys.lisp")
-
-  ;; Compile and load CL-SSL system
-  ;;(scm:compile-system 'cl-ssl :load t) ;use :FORCE T if compilation troubles
-
-  ;; Load definition of ACL Compatibility system
-  (load "acl-compat:defsys.lisp")
-
-  ;; Compile and load ACL Compatibility system
-  (scm:compile-system 'acl-compat :load t :force t) ;use :FORCE T if compilation troubles
-
-  ;; Load definition of Aserve system
-  (load "aserve:defsys.lisp")
-
-  ;; Compile and load the ASERVE system
-  (scm:compile-system 'aserve :load t :force t) ;use :FORCE T if compilation troubles
-)
-
-
-#+(and cmu (not asdf))
+#+(and (or lispworks cmu) (not asdf))
 (let ((asdf-pathname
        (merge-pathnames (make-pathname
                          :directory '(:relative "contrib")
@@ -40,7 +15,7 @@ Loading asdf from ~A ~
 ~:_and set up asdf:*central-registry* to point to your systems)" asdf-pathname)
   (load asdf-pathname))
 
-#+cmu
+#+(or lispworks cmu)
 (progn
   (flet ((find-or-load-system (system path)
            (let ((path (merge-pathnames path *load-truename*)))
@@ -89,7 +64,7 @@ Cannot find ASDF system definition for ~A ~
   ;; DOUBLE KLUDGE: The preceding (commented-out) form caused the
   ;; loading of INSTALL.lisp to abort silently (!), so we do the
   ;; following, pilfered from eclipse the window manager:
-  #+mp
+  #+(and cmu mp)
   (setf mp::*idle-process* mp::*initial-process*)
 
   )
