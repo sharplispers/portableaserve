@@ -34,6 +34,19 @@
   ;; LispWorks it's already there
   #+lispworks (lw:do-nothing))
 
+#+common-lisp-controller
+(defmethod perform ((operation load-compiled-op) (component gray-streams))
+  ;; Debian cmucl distribution
+  #+(and cmu common-lisp-controller (not gray-streams))
+  (require :cmucl-graystream)
+  ;; vanilla cmucl
+  #+(and cmu (not common-lisp-controller) (not gray-streams))
+  (progn (load "library:subsystems/gray-streams-library")
+         (pushnew :gray-streams *features*))
+  ;; LispWorks (it's already there)
+  #+lispworks (lw:do-nothing))
+
+
 ;;;; ignore warnings
 ;;;;
 ;;;; FIXME: should better fix warnings instead of ignoring them
