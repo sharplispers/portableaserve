@@ -3,11 +3,11 @@
 (in-package "CL-USER")
 
 (setf (logical-pathname-translations "ACL-COMPAT")
-      `(("*.*.*" 
+      `((#-mcl "*.*.*" #+mcl "**;*.*.*" ;mcl gives recording source-file error when redefining anything loaded with this
          ;; e.g., "/home/jsc/lisp/src/aserve/acl-compat-lw/" 
          ,(merge-pathnames 
            (make-pathname :host (pathname-host *load-truename*)
-                          :directory '(:relative "acl-compat")
+                          :directory '(:relative "acl-compat" #+mcl :wild-inferiors)
                           :name    :wild
                           :type    :wild
                           :version :wild
@@ -53,3 +53,4 @@
                           ;:case :common
                           )
            *load-truename*))))
+
