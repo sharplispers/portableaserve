@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: webact.cl,v 1.5 2004/02/17 12:48:44 rudi Exp $
+;; $Id: webact.cl,v 1.6 2004/03/01 18:25:30 kevinrosenberg Exp $
 
 
 
@@ -435,7 +435,7 @@
 	   then ; give up right away.
 		(return-from webaction-entity (failed-request req)))
 	
-	(let ((type (excl::filesys-type realname)))
+	(let ((type (acl-compat.excl::filesys-type realname)))
 	  (if* (not (eq :file type))
 	     then (if* failed-following
 		     then (logmess (format nil "no map for webaction ~s"
@@ -471,7 +471,7 @@
     
     #+allegro
     (if* sys:*tilde-expand-namestrings*
-       then (setq realname (excl::tilde-expand-unix-namestring realname)))
+       then (setq realname (acl-compat.excl::tilde-expand-unix-namestring realname)))
     
     (values realname postfix)))
 

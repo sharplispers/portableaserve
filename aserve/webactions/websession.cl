@@ -23,7 +23,7 @@
 ;; version) or write to the Free Software Foundation, Inc., 59 Temple Place, 
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
-;; $Id: websession.cl,v 1.2 2004/02/17 12:48:44 rudi Exp $
+;; $Id: websession.cl,v 1.3 2004/03/01 18:25:31 kevinrosenberg Exp $
 
 (in-package :net.aserve)
 
@@ -70,7 +70,7 @@
 	 ;; the session key
 	 :reader  websession-key)
    
-   (lastref  :initform (excl::cl-internal-real-time)
+   (lastref  :initform (acl-compat.excl::cl-internal-real-time)
 	     :accessor websession-lastref)
    
    ; how we pass the session information
@@ -106,7 +106,7 @@
   (dotimes (i (logand (get-universal-time) #xfff)) (random 256))
   
   #+unix
-  (dotimes (i (logand (excl::filesys-inode ".") #xfff)) (random 256))
+  (dotimes (i (logand (acl-compat.excl::filesys-inode ".") #xfff)) (random 256))
   (dotimes (i (logand (get-universal-time) #xff)) (random 256))
   
   (let ((val 1))
@@ -125,7 +125,7 @@
 (defvar *websession-counter-lock* (acl-compat.mp:make-process-lock))
 
 (defmethod next-websession-id ((sm websession-master))
-  (mp:with-process-lock (*websession-counter-lock*)
+  (acl-compat.mp:with-process-lock (*websession-counter-lock*)
     
     (let ((counterval (sm-counter sm)))
       
@@ -145,7 +145,7 @@
 (defvar *verify-reaper-started* 0)
 
 (defmethod note-websession-referenced ((sess websession))
-  (setf (websession-lastref sess) (excl::cl-internal-real-time))
+  (setf (websession-lastref sess) (acl-compat.excl::cl-internal-real-time))
   
   ; make sure we've got the reaper process running, but don't
   ; check too often since it's not necessary
@@ -177,7 +177,7 @@
 
       
 (defun reap-unused-sessions (sm)
-  (let ((now (excl::cl-internal-real-time))
+  (let ((now (acl-compat.excl::cl-internal-real-time))
 	(lifetime (sm-lifetime sm))
 	(reap-fcn (sm-reap-hook-function sm))
 	(toreap))
