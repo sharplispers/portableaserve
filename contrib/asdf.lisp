@@ -1,7 +1,9 @@
-;;; This is asdf: Another System Definition Facility.  $Revision: 1.1 $
+;;; This is asdf: Another System Definition Facility.  $Revision: 1.2 $
 ;;;
-;;; The canonical source for asdf is presently the cCLan CVS repository,
-;;; at <URL:http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/cclan/asdf/>
+;;; Feedback, bug reports, and patches are all welcome: please mail to
+;;; <cclan-list@lists.sf.net>.  But note first that the canonical
+;;; source for asdf is presently the cCLan CVS repository at
+;;; <URL:http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/cclan/asdf/>
 ;;;
 ;;; If you obtained this copy from anywhere else, and you experience
 ;;; trouble using it, or find bugs, you may want to check at the
@@ -39,7 +41,7 @@
   (:export #:defsystem #:oos #:operate #:find-system #:run-shell-command
 	   #:system-definition-pathname #:find-component ; miscellaneous
 	   
-	   #:compile-op #:load-op #:test-system-version
+	   #:compile-op #:load-op #:load-source-op #:test-system-version
 	   #:operation			; operations
 	   #:feature			; sort-of operation
 	   #:version			; metaphorically sort-of an operation
@@ -47,7 +49,7 @@
 	   #:output-files #:perform	; operation methods
 	   #:operation-done-p #:explain
 	   
-	   #:component #:module #:source-file 
+	   #:component #:source-file 
 	   #:c-source-file #:cl-source-file #:java-source-file
 	   #:static-file
 	   #:doc-file
@@ -55,6 +57,7 @@
 	   #:text-file
 	   #:source-file-type
 	   #:module			; components
+	   #:system
 	   #:unix-dso
 	   
 	   #:module-components		; component accessors
@@ -70,7 +73,7 @@
 	   ;#:*component-parent-pathname* 
 	   #:*central-registry*		; variables
 	   
-	   #:operation-error #:compile-failed #:compile-warned
+	   #:operation-error #:compile-failed #:compile-warned #:compile-error
 	   #:system-definition-error 
 	   #:missing-component
 	   #:missing-dependency
@@ -78,13 +81,27 @@
 	   )
   (:use :cl))
 
+#+nil
+(error "The author of this file habitually uses #+nil to comment out forms.  But don't worry, it was unlikely to work in the New Implementation of Lisp anyway")
+
+
 (in-package #:asdf)
+
+;;; parse the cvs revision into something that might be vaguely useful.  
+(defvar *asdf-revision* (let* ((v "$Revision: 1.2 $")
+			       (colon (position #\: v))
+			       (dot (position #\. v)))
+			  (and v colon dot 
+			       (list (parse-integer v :start (1+ colon)
+						    :junk-allowed t)
+				     (parse-integer v :start (1+ dot)
+						    :junk-allowed t)))))
 
 (proclaim '(optimize (debug 3)))
 (declaim (optimize (debug 3)))
 
 (defvar  *compile-file-warnings-behaviour* :warn)
-(defvar  *compile-file-failure-behaviour* :error)
+(defvar  *compile-file-failure-behaviour* #+sbcl :error #-sbcl :warn)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; utility stuff
@@ -100,7 +117,15 @@ and NIL NAME and TYPE components"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; classes, condiitons
 
-(define-condition system-definition-error (error) ())
+(define-condition system-definition-error (error) ()
+  ;; [this use of :report should be redundant, but unfortunately it's not.
+  ;; cmucl's lisp::output-instance prefers the kernel:slot-class-print-function
+  ;; over print-object; this is always conditions::%print-condition for
+  ;; condition objects, which in turn does inheritance of :report options at
+  ;; run-time.  fortunately, inheritance means we only need this kludge here in
+  ;; order to fix all conditions that build on it.  -- rgr, 28-Jul-02.]
+  #+cmu (:report print-object))
+
 (define-condition formatted-system-definition-error (system-definition-error)
   ((format-control :initarg :format-control :reader format-control)
    (format-arguments :initarg :format-arguments :reader format-arguments))
@@ -124,8 +149,9 @@ and NIL NAME and TYPE components"
   (:report (lambda (c s)
 	     (format s "Erred while invoking ~A on ~A"
 		     (error-operation c) (error-component c)))))
-(define-condition compile-failed (operation-error) ())
-(define-condition compile-warned (operation-error) ())
+(define-condition compile-error (operation-error) ())
+(define-condition compile-failed (compile-error) ())
+(define-condition compile-warned (compile-error) ())
 
 (defclass component ()
   ((name :type string :accessor component-name :initarg :name :documentation
@@ -305,7 +331,7 @@ and NIL NAME and TYPE components"
 	       (or (not in-memory)
 		   (< (car in-memory) (file-write-date on-disk))))
       (let ((*package* (make-package (gensym (package-name #.*package*))
-				     :use '("CL" "ASDF"))))
+				     :use '(:cl :asdf))))
 	(format t ";;; Loading system definition from ~A into ~A~%"
 		on-disk *package*)
 	(load on-disk)))
@@ -425,7 +451,9 @@ system."))
 
 (defgeneric (setf visiting-component) (new-value operation component))
 
-(defmethod (setf visiting-component) (new-value operation component))
+(defmethod (setf visiting-component) (new-value operation component)
+  ;; MCL complains about unused lexical variables
+  (declare (ignorable new-value operation component)))
 
 (defmethod (setf visiting-component) (new-value (o operation) (c component))
   (let ((node (node-for o c))
@@ -565,19 +593,25 @@ system."))
 		:initform *compile-file-warnings-behaviour*)
    (on-failure :initarg :on-failure :accessor operation-on-failure
 	       :initform *compile-file-failure-behaviour*)))
-   
+
+(defmethod perform :before ((operation compile-op) (c source-file))
+  (setf (component-property c 'last-compiled) nil)
+  (map nil #'ensure-directories-exist (output-files operation c)))
+
+(defmethod perform :after ((operation compile-op) (c source-file))
+  (when (output-files operation c)
+    (setf (component-property c 'last-compiled)
+	  (file-write-date (car (output-files operation c))))))
 
 ;;; perform is required to check output-files to find out where to put
 ;;; its answers, in case it has been overridden for site policy
 (defmethod perform ((operation compile-op) (c cl-source-file))
   (let ((source-file (component-pathname c))
 	(output-file (car (output-files operation c))))
-    (setf (component-property c 'last-compiled) nil)
     (multiple-value-bind (output warnings-p failure-p)
 	(compile-file source-file
 		      :output-file output-file)
-      (declare (ignore output))
-      (setf (component-property c 'last-compiled) (file-write-date output-file))
+      ;(declare (ignore output))
       (when warnings-p
 	(case (operation-on-warnings operation)
 	  (:warn (warn "COMPILE-FILE warned while performing ~A on ~A"
@@ -589,7 +623,9 @@ system."))
 	  (:warn (warn "COMPILE-FILE failed while performing ~A on ~A"
 		       c operation))
 	  (:error (error 'compile-failed :component c :operation operation))
-	  (:ignore nil))))))
+	  (:ignore nil)))
+      (unless output
+	(error 'compile-error :component c :operation operation)))))
 
 (defmethod output-files ((operation compile-op) (c cl-source-file))
   (list (compile-file-pathname (component-pathname c))))
@@ -604,14 +640,17 @@ system."))
 
 (defclass load-op (operation) ())
 
+(defmethod perform :after ((o load-op) (c source-file))
+  (let* ((co (make-sub-operation o 'compile-op))
+	 (output-files (output-files co c)))
+    (when output-files
+      (setf (component-property c 'last-loaded) 
+	    (file-write-date (car output-files))))))
+
 (defmethod perform ((o load-op) (c cl-source-file))
   (let* ((co (make-sub-operation o 'compile-op))
 	(output-files (output-files co c)))
-    (setf (component-property c 'last-loaded) 
-	  (if (some #'not (map 'list #'load output-files))
-	      nil
-	      (file-write-date (car output-files))))))
-
+    (mapcar #'load output-files)))
 
 (defmethod perform ((operation load-op) (c static-file))
   nil)
@@ -635,6 +674,20 @@ system."))
 	     (component-property c 'last-loaded)))
       nil t))
 
+;;; load-source-op
+
+(defclass load-source-op (operation) ())
+
+(defmethod perform ((o load-source-op) (c cl-source-file))
+  (load (component-pathname c)))
+
+;;; morally dubious, this
+(defmethod perform :after ((o load-source-op) (c source-file))
+  (setf (component-property c 'last-loaded) 
+	(file-write-date (component-pathname c))))
+
+;;; TODO: operation-done-p for load-source-op, what _should_ the answer be?
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -644,7 +697,8 @@ system."))
   (let ((op (apply #'make-instance operation-class
 		   :original-initargs args args))
 	(system (if (typep system 'component) system (find-system system))))
-    (traverse op system 'perform)))
+    (with-compilation-unit ()
+      (traverse op system 'perform))))
 
 (defun oos (&rest args)
   "Alias of OPERATE function"
@@ -654,9 +708,13 @@ system."))
 ;;; syntax
 
 (defun remove-keyword (key arglist)
-  (loop for sublist = arglist then rest until (null sublist)
-	for (elt arg . rest) = sublist
-	unless (eq key elt) append (list elt arg)))
+  (labels ((aux (key arglist)
+	     (cond ((null arglist) nil)
+		   ((eq key (car arglist)) (cddr arglist))
+		   (t (cons (car arglist) (cons (cadr arglist)
+						(remove-keyword
+						 key (cddr arglist))))))))
+    (aux key arglist)))
 
 (defmacro defsystem (name &body options)
   (destructuring-bind (&key pathname (class 'system) &allow-other-keys) options
@@ -681,7 +739,8 @@ system."))
 				   :module (coerce-name ',name)
 				   :pathname
 				   (or ,pathname
-				       (pathname-sans-name+type *load-truename*)
+				       (pathname-sans-name+type
+					(resolve-symlinks *load-truename*))
 				       *default-pathname-defaults*)
 				   ',component-options))))))
   
@@ -783,36 +842,62 @@ Returns the new tree (which probably shares structure with the old one)"
 	      ret)))
 
 
+#-(or allegro)
+(defun resolve-symlinks (path)
+  (truename path))
+
+#+allegro
+(defun resolve-symlinks (path)
+  (excl:pathname-resolve-symbolic-links path))
+
 ;;; optional extras
 
 ;;; run-shell-command functions for other lisp implementations will be
 ;;; gratefully accepted, if they do the same thing.  If the docstring
 ;;; is ambiguous, send a bug report
 
-#+sbcl
 (defun run-shell-command (control-string &rest args)
   "Interpolate ARGS into CONTROL-STRING as if by FORMAT, and
 synchronously execute the result using a Bourne-compatible shell, with
 output to *trace-output*.  Returns the shell's exit code."
   (let ((command (apply #'format nil control-string args)))
     (format *trace-output* "; $ ~A~%" command)
+    #+sbcl
     (sb-impl::process-exit-code
      (sb-ext:run-program  
       "/bin/sh"
       (list  "-c" command)
-      :input nil :output *trace-output*))))
-
-#+cmu
-(defun run-shell-command (control-string &rest args)
-  "Interpolate ARGS into CONTROL-STRING as if by FORMAT, and
-synchronously execute the result using a Bourne-compatible shell, with
-output to *trace-output*.  Returns the shell's exit code."
-  (let ((command (apply #'format nil control-string args)))
-    (format *trace-output* "; $ ~A~%" command)
+      :input nil :output *trace-output*))
+    
+    #+(or cmu scl)
     (ext:process-exit-code
      (ext:run-program  
       "/bin/sh"
       (list  "-c" command)
-      :input nil :output *trace-output*))))
+      :input nil :output *trace-output*))
+
+    #+allegro
+    (excl:run-shell-command command :input nil :output *trace-output*)
+    
+    #+lispworks
+    (system:call-system-showing-output
+     command
+     :shell-type "/bin/sh"
+     :output-stream *trace-output*)
+    
+    #+clisp				;XXX not exactly *trace-output*, I know
+    (ext:run-shell-command  command :output :terminal :wait t)
+
+    #+openmcl
+    (nth-value 1
+	       (ccl:external-process-status
+		(ccl:run-program "/bin/sh" (list "-c" command)
+				 :input nil :output *trace-output*
+				 :wait t)))
+
+    #-(or openmcl clisp lispworks allegro scl cmu sbcl)
+    (error "RUN-SHELL-PROGRAM not implemented for this Lisp")
+    ))
+  
 
 (pushnew :asdf *features*)
