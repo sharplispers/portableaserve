@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.2 2001/08/09 10:27:58 neonsquare Exp $
+;; $Id: proxy.cl,v 1.3 2001/08/09 14:44:09 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -1126,7 +1126,7 @@ cached connection = ~s~%" cond cached-connection))
 	   #'(lambda (req ent)
 	       #+allegro (gc t)
 	       #+cmu (ext:gc)
-	       #+lispworks (gc-if-needed)
+	       #+lispworks (hcl:gc-if-needed)
 	       (display-proxy-cache-statistics req ent pcache)))
   
 	       
