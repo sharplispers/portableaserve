@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.5 2002/06/20 06:39:44 neonsquare Exp $
+;; $Id: publish.cl,v 1.6 2002/07/16 20:13:00 rudi Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -1817,7 +1817,11 @@
       (with-http-body (req ent)
 	(dolist (item (items ent))
 	  (let ((cache (multi-item-cache item)))
-	    (write-all-vector cache *html-stream*
+            ;; TODO: write-all-vector is defined in cgi.cl; reinstate
+            ;; it here once cgi.cl is integrated into paserve
+	    (#+allegro write-all-vector
+             #-allegro write-vector
+                       cache *html-stream*
 			      :end (length cache))))))
     
     t ; processed

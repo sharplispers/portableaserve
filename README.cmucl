@@ -8,18 +8,39 @@ CMU Common Lisp-specific requirements
 0. Executive summary
 
 
-   To begin, just load INSTALL.lisp.  If you experience problems or
-   want to get rid of some annoying warnings, read on.
+   To begin, just load INSTALL.lisp.  Then, load
+   aserve/examples/examples.cl and start the server with
+
+(net.aserve:start :port 8080 :chunking nil)
+
+   If you experience problems or want to get rid of some annoying
+   warnings, read on.
 
 
 
-1. asdf (Another System Definition Facility)
+1. Man, this is S_L_O_W!  This is unusable!
+
+
+   Chances are you are an experienced user and loaded aserve through
+   asdf (see next section on some words about that) instead of loading
+   INSTALL.lisp.  If so, you will likely be experiencing request
+   answer times of about 1 second -- per request, so you can see these
+   1 pixel transparent GIFs arrive one after the other ...
+
+   Take a look at INSTALL.lisp or the function
+   cl-user::init-aserve-cmu in aserve.asd.  Once the multiprocessing
+   is initialized by one of these methods, the server will be quite a
+   bit more responsive.
+
+
+
+2. asdf (Another System Definition Facility)
 
 
    asdf is Dan Barlow's CLOSsy defsystem facility.  A defsystem is the
-   Lisp equivalent of make; i.e. we can tell it to compile / load a
-   system, and it knows what files to operate on in what order.  For
-   further information about asdf, start at
+   Lisp equivalent of the Unix "make" utility; i.e. we can tell it to
+   compile / load a system, and it knows what files to operate on in
+   what order.  For further information about asdf, start at
    <URL:http://ww.telent.net/cliki/asdf>.
 
    Since asdf is not (yet?) included with Common Lisp implementations,
@@ -56,17 +77,20 @@ $ ln -sf /home/rudi/lisp/portableaserve/aserve/htmlgen/htmlgen.asd ~/systems/
 
 
 
-2. Gray streams
+3. Gray streams
 
 
-   Portable Allegroserve needs Gray stream support in the image.  The
-   file acl-compat.asd should load the required files automatically,
-   if gray streams are not yet present in the Lisp image.  If you
-   experience problems, please report them to the portableaserve
-   mailing list; be sure to include your version of cmucl, where you
-   obtained it, where its files are placed in your system, etc.
-   Failing to cleanly load acl-compat.asd is considered a bug; don't
-   hesitate to report it as such.
+   Portable Allegroserve needs Gray stream support in the Lisp image
+   it's running in.  The file acl-compat.asd should load the required
+   files automatically, if gray streams are not yet present in the
+   Lisp image during system compile / load.  If you experience
+   problems, please report them to the portableaserve mailing list; be
+   sure to include your version of cmucl, where you obtained it, where
+   its files are placed in your system, etc.  Failing to cleanly load
+   acl-compat.asd is considered a bug; don't hesitate to report it as
+   such.  As it is, users reported success both on Debian systems and
+   with the cmucl distribution from cons.org, so it will likely Just
+   Work (tm).
 
 
 Have fun,

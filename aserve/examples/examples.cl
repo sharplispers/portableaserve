@@ -22,7 +22,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: examples.cl,v 1.3 2002/06/17 12:55:36 rudi Exp $
+;; $Id: examples.cl,v 1.4 2002/07/16 20:13:00 rudi Exp $
 
 ;; Description:
 ;;   Allegro iServe examples
@@ -34,10 +34,10 @@
 
 
 ;; examples of web pages
-(defpackage :net.aserve.examples ;; aserve example
-  (:use :common-lisp :excl :net.html.generator :net.aserve))
+(defpackage #:net.aserve.examples ;; aserve example
+  (:use #:common-lisp #:excl #:net.html.generator #:net.aserve))
 
-(in-package :net.aserve.examples)
+(in-package #:net.aserve.examples)
 
 ;; don't flush all publishing done so far. since we have other
 ;; example files this is bad news.
@@ -58,9 +58,11 @@
 	     (with-http-response (req ent)
 	       (with-http-body (req ent)
 		 (html
-		  (:head (:title "Welcome to AllegroServe"))
+                  (:head (:title "Welcome to Portable AllegroServe on "
+                                 (:princ (lisp-implementation-type))))
 		  (:body (:center ((:img :src "aservelogo.gif")))
-			 (:h1 "Welcome to AllegroServe") 
+			 (:h1 "Welcome to Portable AllegroServe on "
+                              (:princ (lisp-implementation-type))) 
 			 (:p "These links show off some of AllegroServe's capabilities. ")
 			 (:i "This server's host name is "
 			     (:princ-safe (header-slot-value req :host)))
@@ -224,7 +226,7 @@
 	      :content-type "image/gif")
 
 ;; this is a demonstration of how you can return a jpeg 
-;; image that was created on the fly (rather thsn read from
+;; image that was created on the fly (rather than read from
 ;; a file via publish-file). 
 ;; We don't want to actually create the image here, so we 
 ;; cheat and read it from a file, but it shows that you can
@@ -861,11 +863,12 @@
 ;; existing tree of pages on your machine if you want to see this work.
 
 ;; the franz home page
-#+ignore (publish-directory :prefix "/"
+#+ignore
+(publish-directory :prefix "/"
 		   :destination "/net/tanya/home/httpd/html/"
 		   )
 
-
+#+ignore
 (publish-directory :prefix "/int"
 		   :destination "/net/tanya/www/internal/htdocs/")
 
