@@ -13,13 +13,8 @@
 
 #+openmcl
 (defun filesys-inode (path)
-  (let ((checked-path (probe-file path)))
-    (cond (checked-path
-	   (ccl:rlet ((lstat :stat))
-		     (ccl:with-cstrs ((str (namestring checked-path)))
-				     (#_stat str lstat))
-		     (ccl:pref lstat :stat.st_ino)))
-	  (t (error "path ~s does not exist" path)))))
+    (or (nth-value 4 (ccl::%stat (ccl::native-translated-namestring path)))
+	      (error "path ~s does not exist" path)))
 
 (defun cl-internal-real-time ()
   (round (/ (get-internal-real-time) 1000)))

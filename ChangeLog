@@ -1,3 +1,7 @@
+2004-10-01  Kevin Rosenberg <kevin@rosenberg.net>
+	* acl-compat/mcl/acl-mp: Apply portability patch from Gary Byers
+	to fix filesys-inode for linux
+	
 2004-09-24  Kevin Rosenberg <kevin@rosenberg.net>
 	* acl-compat/sbcl/acl-mp.lisp: Apply patch from Gabor Melis
 	to fix type [portableaserve-discuss@lists.sourceforge.net].
