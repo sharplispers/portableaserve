@@ -84,7 +84,7 @@
     (otherwise :unknown)))
 
 (defun socket-error (stream error-code action format-string &rest format-args)
-  (let ((code (if (numberp error-code) error-code (lw:errno-value))))
+  (let ((code (if (numberp error-code) error-code #+unix(lw:errno-value))))
     (error 'socket-error :stream stream :code code
            :identifier (if (keywordp error-code)
                            error-code
@@ -143,8 +143,8 @@
   (print-unreadable-object (passive-socket stream :type t :identity nil)
     (format stream "@~d on port ~d" (socket-os-fd passive-socket) (local-port passive-socket))))
 
-(defmethod stream-input-available ((stream fixnum))
-  (system::check-input stream))
+(defmethod stream-input-available ((fd fixnum))
+  (comm::socket-listen fd))
 
 (defmethod stream-input-available ((stream stream::os-file-handle-stream))
   (stream-input-available (stream::os-file-handle-stream-file-handle stream)))

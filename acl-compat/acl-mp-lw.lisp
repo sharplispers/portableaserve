@@ -128,6 +128,8 @@
            (collect-fds ()
              (setf collected-fds
                    (remove-if-not wait-function streams))))
+      
+      #+unix
       (unwind-protect
           (progn
             (dolist (stream-or-fd streams)
@@ -136,7 +138,11 @@
                 (mp:process-wait-with-timeout (or whostate "Waiting for input") timeout #'collect-fds)
               (mp:process-wait (or whostate "Waiting for input") #'collect-fds)))
         (dolist (stream-or-fd streams)
-          (mp:unnotice-fd (fd stream-or-fd)))))
+          (mp:unnotice-fd (fd stream-or-fd))))
+      #-unix
+      (if timeout
+          (mp:process-wait-with-timeout (or whostate "Waiting for input") timeout #'collect-fds)
+        (mp:process-wait (or whostate "Waiting for input") #'collect-fds)))
     collected-fds))
 
 (defmacro without-scheduling (&body forms)
