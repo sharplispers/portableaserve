@@ -3,11 +3,11 @@
 ;; parse.cl
 ;;
 ;;
-;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA 
+;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
-;; the GNU Lesser General Public License as published by 
+;; the GNU Lesser General Public License as published by
 ;; the Free Software Foundation, as clarified by the AllegroServe
 ;; prequel found in license-allegroserve.txt.
 ;;
@@ -25,10 +25,10 @@
 ;;
 
 ;;
-;; $Id: parse.cl,v 1.7 2002/07/26 21:07:26 desoi Exp $
+;; $Id: parse.cl,v 1.8 2002/10/24 13:25:25 rudi Exp $
 
 ;; Description:
-;;   parsing and encoding code  
+;;   parsing and encoding code
 
 ;;- This code in this file obeys the Lisp Coding Standard found in
 ;;- http://www.franz.com/~jkf/coding_standards.html
@@ -294,7 +294,7 @@
 	(setf (svref arr code) ch-alpha))
       
       (setf (svref arr (char-code #\space)) ch-space)
-      (setf (svref arr (char-code #\ff)) ch-space)
+      (setf (svref arr (char-code #\Page)) ch-space)
       (setf (svref arr (char-code #\tab)) ch-space)
       (setf (svref arr (char-code #\return)) ch-space)
       (setf (svref arr (char-code #\linefeed)) ch-space)
