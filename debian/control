@@ -10,19 +10,22 @@ Architecture: all
 Depends: common-lisp-controller (>= 3.56), cl-acl-compat, cl-htmlgen
 Description: Portable Aserve
  A portable version of AllegroServe which is a web application server
- for Common Lisp programs.
+ for Common Lisp programs. It also includes an HTTP client function
+ for accessing web sites and retrieving data.
 
 Package: cl-acl-compat
 Architecture: all
 Depends: common-lisp-controller (>= 3.56)
 Description: Compatibility layer for Allegro Common Lisp
- A thin compatibility-layer that emulates Allegro Common Lisp. It is used
- to support a number of Allegro's open-source packages.
+ A thin compatibility-layer that emulates library functions provided
+ by Allegro Common Lisp. It is used
+ to support a number of Franz's open-source packages which depend upon
+ such library functions.
 
 Package: cl-htmlgen
 Architecture: all
 Depends: common-lisp-controller (>= 3.56), cl-acl-compat
 Description: HTML generation library for Common Lisp programs
  cl-htmlgen is Franz's library for generating HTML from Common Lisp programs.
- It is limited to generating HTML code, so you may want to the cl-lml2
- for generating XHTML code.
+ It is limited to generating HTML code, so you may want to use the cl-lml2
+ Debian package for generating XHTML code.
