@@ -69,6 +69,7 @@
 		"ERRORSET"
 		"ATOMICALLY"
 		"FAST"
+                "WITHOUT-PACKAGE-LOCKS"
 		"SOCKET-ERROR"
                 "RUN-SHELL-COMMAND"
                 "FASL-READ"
