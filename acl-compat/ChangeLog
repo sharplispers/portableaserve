@@ -1,3 +1,8 @@
+2003-04-30  Rudi Schlatte  <rudi@constantly.at>
+
+	* acl-compat.asd et al: The Great Renaming: begin move of
+	implementation-dependent files into subdirectories
+
 2003-04-27  Rudi Schlatte  <rudi@constantly.at>
 
 	* acl-socket-sbcl.lisp: Implemented peername lookup (by storing

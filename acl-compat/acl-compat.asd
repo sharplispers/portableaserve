@@ -96,14 +96,16 @@ are marked by a -system postfix but we could later change that to a directory pe
 lisp-system"))
 
 (defun lisp-system-shortname ()
-  #+allegro :allegro #+lispworks :lw #+cmu :cmu #+(and mcl (not openmcl)) :mcl 
+  #+allegro :allegro #+lispworks :lispworks #+cmu :cmucl
+  #+(and mcl (not openmcl)) :mcl
   #+openmcl :openmcl #+clisp :clisp #+scl :scl #+sbcl :sbcl)
 
 (defmethod component-pathname ((component unportable-cl-source-file))
-  (let ((pathname (call-next-method)))
-    (make-pathname :name (format nil "~A-~A" (pathname-name pathname) 
-                                 (string-downcase (lisp-system-shortname)))
-                   :defaults pathname)))
+  (let ((pathname (call-next-method))
+        (name (string-downcase (lisp-system-shortname))))
+    (merge-pathnames
+     (make-pathname :directory (list :relative name))
+     pathname)))
 
 ;;;; system
 
