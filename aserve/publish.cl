@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.7 2002/07/19 08:03:39 rudi Exp $
+;; $Id: publish.cl,v 1.8 2002/07/19 11:29:04 rudi Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -1208,8 +1208,21 @@
 	      
 		(with-http-body (req ent)
 		  ;; at this point the header are out and we have a stream
-		  ;; to write to 
+		  ;; to write to
+                  #-cmu
 		  (write-sequence contents (request-reply-stream req))
+                  #+cmu
+                  ;; No preemptive multitasking in cmucl, so we yield
+                  ;; manually (otherwise the server blocks on one long
+                  ;; request)
+                  (loop with stream = (request-reply-stream req)
+                        with length = (length contents)
+                        for index from 0 to length by 1024
+                        do (progn (write-sequence contents stream
+                                                  :start index
+                                                  :end (min (+ index 1024)
+                                                            length))
+                                  (mp:process-yield)))
 		  ))
        
 	    
@@ -1295,13 +1308,14 @@
 				(if* (<= got 0) then (return))
 				(write-sequence buffer (request-reply-stream req)
 						:end got)
+                                (decf size got)
                                 ;; No preemptive multitasking in
                                 ;; cmucl, so we yield manually
                                 ;; (otherwise the server blocks on one
                                 ;; long request)
-                                #+cmucl
+                                #+cmu
                                 (mp:process-yield)
-				(decf size got)))))))
+                                ))))))
 		      
 		      
 		
