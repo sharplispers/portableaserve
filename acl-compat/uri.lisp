@@ -193,19 +193,21 @@
 
 (defun render-uri (uri stream)
   "Print an URI-Object in normal URI-notation"
-  (with-slots (scheme host port path query fragment) uri
-    (when scheme 
-      (format stream "~A:" (string-downcase (symbol-name scheme))))
-    (when host
-      (format stream "//~A" host))
-    (when (and host port)
-      (format stream ":~A" port))
-    (when path
-      (format stream "~A" path))
-    (when query
-      (format stream "?~A" query))
-    (when fragment
-      (format stream "#~A" fragment))))
+  (format stream "~A"
+          (with-output-to-string (s)
+             (with-slots (scheme host port path query fragment) uri
+               (when scheme 
+                 (format s "~A:" (string-downcase (symbol-name scheme))))
+               (when host
+                 (format s "//~A" host))
+               (when (and host port)
+                 (format s ":~A" port))
+               (when path
+                 (format s "~A" path))
+               (when query
+                 (format s "?~A" query))
+               (when fragment
+                 (format s "#~A" fragment))))))
 
 (defmethod print-object ((uri uri) stream)
   (if *print-escape*
@@ -318,7 +320,8 @@
 
 (defun %relative-path (target base)
   "Calculate the minimum relative path from target in relation to base"
-  (let* ((level (or (mismatch base
+  (let* ((base (or base "/"))
+         (level (or (mismatch base
                               target)
                     0))
              (rel-target (subseq target (1+ (position #\/ (subseq target 0 level) :from-end t))))
