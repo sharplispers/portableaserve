@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.8 2001/09/02 17:02:42 neonsquare Exp $
+;; $Id: main.cl,v 1.9 2001/09/04 02:59:47 neonsquare Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -1585,16 +1585,16 @@ by keyword symbols and not by strings"
   (labels ((accept-char (char stream)
 	     (let ((c (read-char-no-hang stream nil nil)))
 	       (cond ((eql c char))
-		     (t (unread-char c stream)))))
+		     (c (unread-char c stream)))))
 	   
 	   (read-body-with-content-length (length stream)
 	     (prog1 (let ((ret (make-string length)))
 		      (read-sequence-with-timeout 
 		       ret length stream *read-request-body-timeout*))
 		      
-		      ;; Chop CRLF for buggy browsers like Netscape
-		      (every #'(lambda (c) (accept-char c stream))
-			     '(#\return #\linefeed))))
+	       ;; Chop CRLF for buggy browsers like Netscape
+		      (and (accept-char #\return stream)
+			   (accept-char #\linefeed stream))))
 	   
 	   (read-body-without-content-length (stream)
 	     (mp:with-timeout (*read-request-body-timeout* nil)
