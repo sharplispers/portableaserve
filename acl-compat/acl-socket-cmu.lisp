@@ -7,7 +7,7 @@
 (defpackage acl-socket
   (:use "MP" "COMMON-LISP")
   #+cl-ssl (:import-from :ssl "MAKE-SSL-CLIENT-STREAM" "MAKE-SSL-SERVER-STREAM")
-  (:export make-socket accept-connection
+  (:export socket make-socket accept-connection
    ipaddr-to-dotted dotted-to-ipaddr ipaddr-to-hostname lookup-hostname
    remote-host remote-port local-host local-port socket-control #+cl-ssl make-ssl-client-stream #+cl-ssl make-ssl-server-stream)
   (:nicknames socket))
