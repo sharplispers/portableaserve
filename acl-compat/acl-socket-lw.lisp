@@ -76,7 +76,7 @@
 
 (defmethod close ((server-socket server-socket) &key abort)
   (declare (ignore abort))
-  (close (passive-socket server-socket)))
+  (comm::close-socket (passive-socket server-socket)))
 
 (declaim (ftype (function ((unsigned-byte 32)) (values simple-string))
 		ipaddr-to-dotted))
