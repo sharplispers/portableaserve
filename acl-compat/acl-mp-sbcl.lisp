@@ -1,14 +1,10 @@
-;; This package is designed for sbcl.  It will implement ACL-style
-;; multiprocessing on top of sbcl, once it's there.  At the moment it
-;; only hollers at the user when he tries to run multi-threaded
-;; PortableAServe :)
+;; Threading for sbcl, or stub functions for single-threaded sbcl.
 ;;
 ;; Written by Rudi Schlatte, intended to be distributed along with the
 ;; acl-compat library, under the same license as the rest of it.
 
-;; Actual multi-processing code based on Dan
-;; Barlow<dan@metacircles.com>'s work for McCLIM, used with
-;; permission.
+;; Inspirations taken from Dan Barlow<dan@metacircles.com>'s work for
+;; McCLIM; cut, pasted and mutilated with permission.
 
 (in-package :acl-compat.mp)
 
@@ -78,7 +74,7 @@
   function                              ; function wot will be run
   arguments                             ; arguments to the function
   id                                    ; pid of unix thread or nil
-  %queue                        ; queue for process structure mutators
+  %queue                        ; lock for process structure mutators
   run-reasons                           ; primitive mailbox for IPC
   initial-bindings                      ; special variable bindings
   property-list

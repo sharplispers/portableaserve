@@ -1,3 +1,8 @@
+2003-04-27  Rudi Schlatte  <rudi@constantly.at>
+
+	* acl-socket-sbcl.lisp: Implemented peername lookup (by storing
+	the socket in the plist of the bivalent stream object for now)
+
 2003-04-26  Rudi Schlatte  <rudi@constantly.at>
 
 	* acl-mp-sbcl.lisp: Add initial support for multi-threaded sbcl

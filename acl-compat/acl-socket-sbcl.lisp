@@ -40,7 +40,8 @@
                                          (element-type server-socket)
                                          :auto-close t)))
         (if (eq (stream-type server-socket) :bivalent)
-            (make-bivalent-stream stream)
+            ;; HACK: remember socket, so we can do peer lookup
+            (make-bivalent-stream stream :plist `(:socket ,socket))
             stream))
       nil))
 
@@ -82,7 +83,8 @@ to read about the missing parts."
                                         ; :buffering :none
                                            )))
            (if (eq :bivalent format)
-               (make-bivalent-stream stream)
+               ;; HACK: remember socket, so we can do peer lookup
+               (make-bivalent-stream stream :plist `(:socket ,socket))
                stream))))))
 
 (defmethod close ((server server-socket) &key abort)
@@ -95,6 +97,7 @@ streams and handled by their close methods."
                           (values simple-string))
 		ipaddr-to-dotted))
 (defun ipaddr-to-dotted (ipaddr &key values)
+  "Convert from 32-bit integer to dotted string."
   (declare (type (unsigned-byte 32) ipaddr))
   (let ((a (logand #xff (ash ipaddr -24)))
 	(b (logand #xff (ash ipaddr -16)))
@@ -103,6 +106,16 @@ streams and handled by their close methods."
     (if values
 	(values a b c d)
       (format nil "~d.~d.~d.~d" a b c d))))
+
+(declaim (ftype (function (simple-vector)
+                          (values (unsigned-byte 32)))
+                vector-to-ipaddr))
+(defun vector-to-ipaddr (sensible-ipaddr)
+  "Convert from 4-integer vector to 32-bit integer."
+  (loop with result = 0
+        for component across sensible-ipaddr
+        do (setf result (+ (ash result 8) component))
+        finally (return result)))
 
 (defun string-tokens (string)
   (labels ((get-token (str pos1 acc)
@@ -117,6 +130,7 @@ streams and handled by their close methods."
                           (values (unsigned-byte 32)))
 		dotted-to-ipaddr))
 (defun dotted-to-ipaddr (dotted &key (errorp t))
+  "Convert from dotted string to 32-bit integer."
   (declare (string dotted))
   (if errorp
       (let ((ll (string-tokens (substitute #\Space #\. dotted))))
@@ -140,30 +154,50 @@ streams and handled by their close methods."
       (dotted-to-ipaddr (ipaddr-to-dotted host))))
 
 (defun remote-host (socket-stream)
-  (warn "remote-host not implemented!")
-  0)
+  (let (socket)
+    (if (and (typep socket-stream 'chunked-stream)
+             (setf socket (getf (stream-plist socket-stream) :socket)))
+        (vector-to-ipaddr (socket-peername socket))
+      (progn (warn "Could not get remote host for ~S" socket-stream)
+             0))))
 
 (defun remote-port (socket-stream)
-  (warn "remote-port not implemented!")
-  0)
+  (let (socket)
+    (if (and (typep socket-stream 'chunked-stream)
+             (setq socket (getf (stream-plist socket-stream) :socket)))
+        (nth-value 1 (socket-peername socket))
+      (progn (warn "Could not get remote port for ~S" socket-stream)
+             0))))
 
-(defun local-host (socket-stream)
-  (warn "local-host not implemented!")
-  0)
+(defun local-host (thing)
+  (typecase thing
+    (chunked-stream (let ((socket (getf (stream-plist thing) :socket)))
+                      (if socket (vector-to-ipaddr (socket-name socket))
+                        (progn (warn "Socket not in plist of ~S -- could not get local host" thing)
+                               0))))
+    (server-socket (vector-to-ipaddr #(127 0 0 1)))
+    (t (progn (warn "Could not get local host for ~S" thing)
+              0))))
 
-(defun local-port (socket-stream)
-  (warn "local-port not implemented!")
-  0)
+(defun local-port (thing)
+  (typecase thing
+    (chunked-stream (let ((socket (getf (stream-plist thing) :socket)))
+                      (if socket (nth-value 1 (socket-name socket))
+                        (progn (warn "Socket not in plist of ~S -- could not get local port" thing)
+                               0))))
+    (server-socket (port thing))
+    (t (progn (warn "Could not get local port for ~S" thing)
+              0))))
 
 ;; Now, throw chunking in the mix
 
 (defclass chunked-stream (de.dataheaven.chunked-stream-mixin::chunked-stream-mixin
                           gray-stream::buffered-bivalent-stream)
-  ())
+  ((plist :initarg :plist :accessor stream-plist)))
 
 
-(defun make-bivalent-stream (lisp-stream)
-  (make-instance 'chunked-stream :lisp-stream lisp-stream))
+(defun make-bivalent-stream (lisp-stream &key plist)
+  (make-instance 'chunked-stream :lisp-stream lisp-stream :plist plist))
 
 
 (defun socket-control (stream &key (output-chunking nil oc-p) output-chunking-eof (input-chunking nil ic-p))
