@@ -3,7 +3,8 @@
 (in-package :cl-user)
 
 ;; Stig: if clc is present, we're a debian-package
-#+common-lisp-controller
+;; Rudi: Not if kludge-no-cclan is also present (see README.cmucl)
+#+(and common-lisp-controller (not kludge-no-cclan))
 (setf (logical-pathname-translations "aserve")
       '(("examples;**;*.*.*" "/usr/share/doc/cl-aserve/examples/")
 	("**;*.*.*" "cl-library:;aserve;**;*.*.*")
@@ -17,12 +18,12 @@
   #+common-lisp-controller
   "aserve:"
   :source-extension "cl"
-  :components (#-common-lisp-controller
+  :components (;;#-common-lisp-controller
 	       (:module "htmlgen"
 			:components ((:file "htmlgen")))
-	       ;; Stig: we might use above.. will check again later
-	       #+common-lisp-controller
-	       (:file "htmlgen")
+	       ;;;; Stig: we might use above.. will check again later
+	       ;;#+common-lisp-controller
+	       ;;(:file "htmlgen")
 	       
                (:file "macs")
                (:file "main"
