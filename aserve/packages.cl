@@ -2,7 +2,8 @@
 ;;
 ;; packages.cl
 ;;
-;; copyright (c) 1986-2002 Franz Inc, Berkeley, CA 
+;; copyright (c) 1986-2002 Franz Inc, Berkeley, CA  - All rights reserved.
+;; copyright (c) 2002-2004 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -23,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: packages.cl,v 1.5 2004/06/10 03:52:10 kevinrosenberg Exp $
+;; $Id: packages.cl,v 1.6 2005/02/20 12:20:45 rudi Exp $
 
 ;; Description:
 ;;   packages and exports for AllegroServe
@@ -105,6 +106,7 @@
    #:request-raw-uri
    #:request-socket
    #:request-uri
+   #:request-variable-value
    #:request-wserver
    
    #:request-reply-code

@@ -2,7 +2,8 @@
 ;;
 ;; client.cl
 ;;
-;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA 
+;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA  - All rights reserved.
+;; copyright (c) 2000-2004 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -23,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.17 2004/06/01 09:00:40 rudi Exp $
+;; $Id: client.cl,v 1.18 2005/02/20 12:20:45 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -203,6 +204,7 @@
 	  (if* (and (member (client-request-response-code creq)
 			    '(#.(net.aserve::response-number *response-found*)
 			      #.(net.aserve::response-number *response-moved-permanently*)
+			      #.(net.aserve::response-number *response-temporary-redirect*)
 			      #.(net.aserve::response-number *response-see-other*))
 			    :test #'eq)
 		    redirect
@@ -841,6 +843,10 @@ or \"foo.com:8000\", not ~s" proxy))
   ;;
   ((items :initform nil
 	  :accessor cookie-jar-items)))
+
+(defmethod print-object ((jar cookie-jar) stream)
+  (print-unreadable-object (jar stream :type t :identity t)
+    (format stream "~d cookies" (length (cookie-jar-items jar)))))
 
 ;* for a given hostname, there will be only one cookie with
 ; a given (path,name) pair

@@ -2,7 +2,8 @@
 ;;
 ;; proxy.cl
 ;;
-;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA 
+;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA  - All rights reserved.
+;; copyright (c) 2000-2004 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -23,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.15 2004/02/17 12:48:44 rudi Exp $
+;; $Id: proxy.cl,v 1.16 2005/02/20 12:20:45 rudi Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
