@@ -66,6 +66,8 @@ Cannot find ASDF system definition for ~A ~
                           :directory '(:relative "aserve")
                           :name "aserve" :type "asd" :case :local)))
   ;; Compile and load the ASERVE system
+  (asdf:operate 'asdf:load-op :acl-compat)
+  (asdf:operate 'asdf:load-op :htmlgen)
   (asdf:operate 'asdf:load-op :aserve)
 
   ;; Startup multiprocessing.
