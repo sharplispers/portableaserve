@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.9 2002/12/03 14:44:38 rudi Exp $
+;; $Id: client.cl,v 1.10 2003/03/24 11:41:58 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -289,7 +289,11 @@
 			   args)
 	       else
 		    (values 
-		     body
+		     (if (eq format :text)
+                         (let ((result (make-string (length body))))
+                           (map-into result #'code-char body)1
+                           result)
+                         body)
 		     (client-request-response-code creq)
 		     (client-request-headers  creq)
 		     (client-request-uri creq)))))

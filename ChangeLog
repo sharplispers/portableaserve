@@ -1,3 +1,8 @@
+2003-03-24  Rudi Schlatte  <rudi@constantly.at>
+
+	* aserve/client.cl (do-http-request): Restore :format :text
+	behavior (broke this last summer.. sorrysorrybowbow)
+
 2003-02-28  Rudi Schlatte  <rudi@constantly.at>
 
 	* INSTALL.lisp: Support sbcl 0.7.13 single-threaded
