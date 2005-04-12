@@ -1,7 +1,7 @@
 ;;; MCL layer for ACL sockets.
 ;;; Based on acl-socket-cmu.lisp and acl-socket-lw.lisp.
 ;;;
-;;; John DeSoi, Ph.D. desoi@users.sourceforget.net
+;;; John DeSoi, Ph.D. desoi@users.sourceforge.net
 
 
 (defpackage :acl-compat.socket
@@ -155,16 +155,14 @@
               
 
 
-; See if one of the streams is established
+; See if one of the streams is established. 
 (defmethod find-connection-index ((listener passive-socket))
   (with-slots (count streams index connect-index) listener
-    (dotimes (i count connect-index)
-      (incf index)
-      (when (>= index count)
-        (setf index 0) )
-      (when (connection-established (elt streams index))
-        (setf connect-index index)
-        (return connect-index) ) ) ) )
+    (let ((next (if (< (1+ index) count) (1+ index) 0)))
+       (when (connection-established (elt streams next))
+         (setf index next
+               connect-index next)
+         connect-index))))
 
 
 (defmethod process-connected-stream ((listener passive-socket))
