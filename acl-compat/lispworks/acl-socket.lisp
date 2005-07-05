@@ -281,4 +281,10 @@
       (de.dataheaven.chunked-stream-mixin::initialize-input-chunking stream))
     (setf (de.dataheaven.chunked-stream-mixin:input-chunking-p stream) input-chunking)))
 
+#+(and :lispworks4.4 (not :cl-ssl))
+(defmethod make-ssl-client-stream ((socket-stream bidirectional-binary-socket-stream) &rest options)
+  (declare (ignore options))
+  (comm:attach-ssl socket-stream :ssl-ctx t :ssl-side :client)
+  socket-stream)
+
 (provide 'acl-socket)

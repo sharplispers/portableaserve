@@ -1,3 +1,8 @@
+2005-07-05  Klaus Harbo  <klaus@mu.dk>
+
+	* acl-compat/lispworks/acl-socket.lisp (make-ssl-client-stream):
+	Support for LispWorks' own SSL facilities.
+
 2005-06-17  Edi Weitz  <edi@agharta.de>
 
 	* acl-compat/lispworks/acl-excl.lisp (filesys-inode):
