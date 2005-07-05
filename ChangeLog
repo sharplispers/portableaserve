@@ -1,3 +1,9 @@
+2005-06-17  Edi Weitz  <edi@agharta.de>
+
+	* acl-compat/lispworks/acl-excl.lisp (filesys-inode):
+	Conditionalize.  It's only used on Unix and otherwise the code
+	won't even compile on Windows.
+
 2004-10-01  Kevin Rosenberg <kevin@rosenberg.net>
 	* acl-compat/mcl/acl-mp: Apply portability patch from Gary Byers
 	to fix filesys-inode for linux

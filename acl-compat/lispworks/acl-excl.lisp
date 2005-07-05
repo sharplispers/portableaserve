@@ -21,7 +21,7 @@
 			:file
 			nil)))
 
-
+#-:win32
 (defun filesys-inode (path)
   (let ((checked-path (probe-file path)))
     (cond
