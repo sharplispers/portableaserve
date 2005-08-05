@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.18 2005/02/20 12:20:45 rudi Exp $
+;; $Id: publish.cl,v 1.19 2005/08/05 09:26:39 melisgl Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -1971,25 +1971,29 @@
 		      (throw 'with-http-response nil) ; and quick exit
 		      )))))
 
-    
-
+(defun keep-alive-possible-p (req)
+  (and (wserver-enable-keep-alive *wserver*)
+       #-openmcl-native-threads
+       (>= (wserver-free-workers *wserver*) 2)
+       (or (and (eq (request-protocol req) :http/1.1)
+                (not
+                 (header-value-member "close" 
+                                      (header-slot-value req :connection))))
+           (and (eq (request-protocol req) :http/1.0)
+                (header-value-member "keep-alive" 
+                                     (header-slot-value req :connection))))))
 
 (defmethod compute-strategy ((req http-request) (ent entity) format)
   ;; determine how we'll respond to this request
   
   (let ((strategy nil)
-	(keep-alive-possible
-	 (and (wserver-enable-keep-alive *wserver*)
-              #-openmcl-native-threads
-	      (>= (wserver-free-workers *wserver*) 2)
-	      (header-value-member "keep-alive" 
-				   (header-slot-value req :connection )))))
+	(keep-alive-possible-p (keep-alive-possible-p req)))
     (if* (eq (request-method req) :head)
        then ; head commands are particularly easy to reply to
 	    (setq strategy '(:use-socket-stream
 			     :omit-body))
 	    
-	    (if* keep-alive-possible
+	    (if* keep-alive-possible-p
 	       then (push :keep-alive strategy))
 	    
      elseif (and  ;; assert: get command
@@ -1997,11 +2001,11 @@
 	     (eq (request-protocol req) :http/1.1)
 	     (null (content-length ent)))
        then ;; http/1.1 so we can chunk
-	    (if* keep-alive-possible
+	    (if* keep-alive-possible-p
 	       then (setq strategy '(:keep-alive :chunked :use-socket-stream))
 	       else (setq strategy '(:chunked :use-socket-stream)))
        else ; can't chunk, let's see if keep alive is requested
-	    (if* keep-alive-possible
+	    (if* keep-alive-possible-p
 	       then ; a keep alive is requested..
 		    ; we may want reject this if we are running
 		    ; short of processes to handle requests.
@@ -2039,15 +2043,11 @@
   ;; for files we can always use the socket stream and keep alive
   ;; since we konw the file length ahead of time
   (declare (ignore format))
-  (let ((keep-alive (and (wserver-enable-keep-alive *wserver*)
-                         #-openmcl-native-threads
-			 (>= (wserver-free-workers *wserver*) 2)
-			 (equalp "keep-alive" 
-				 (header-slot-value req :connection))))
+  (let ((keep-alive-possible-p (keep-alive-possible-p req))
 	(strategy))
     
     (if*  (eq (request-method req) :get)
-       then (setq strategy (if* keep-alive
+       then (setq strategy (if* keep-alive-possible-p
 			      then '(:use-socket-stream :keep-alive)
 			      else '(:use-socket-stream)))
        else (setq strategy (call-next-method)))

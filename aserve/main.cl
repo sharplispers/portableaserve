@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.42 2005/02/20 12:20:45 rudi Exp $
+;; $Id: main.cl,v 1.43 2005/08/05 09:26:39 melisgl Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -586,18 +586,20 @@ Problems with protocol may occur." (ef-name ef)))))
 			  
 
 
-; safe versions during multiprocessing
-
 (defmacro atomic-incf (var)
   #+openmcl-native-threads
   `(ccl::atomic-incf ,var)
-  #-openmcl-native-threads
+  #+sbcl
+  `(acl-compat.mp::atomic-incf ,var)
+  #-(or openmcl-native-threads sbcl)
   `(acl-compat.mp:without-scheduling (incf ,var)))
 
 (defmacro atomic-decf (var)
   #+openmcl-native-threads
   `(ccl::atomic-decf ,var)
-  #-openmcl-native-threads
+  #+sbcl
+  `(acl-compat.mp::atomic-decf ,var)
+  #-(or openmcl-native-threads sbcl)
   `(acl-compat.mp:without-scheduling (decf ,var)))
 
 
