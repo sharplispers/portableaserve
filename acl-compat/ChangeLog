@@ -1,3 +1,8 @@
+2005-08-05  Gabor Melis  <mega@hotpop.com>
+
+	* sbcl/acl-mp.lisp: updated to use the thread object api
+	  available since sbcl 0.9.2
+
 2004-02-17  Rudi Schlatte  <rudi@SLAW40.kfunigraz.ac.at>
 
 	* acl-excl-common.lisp (match-regexp): Make :return :index return
