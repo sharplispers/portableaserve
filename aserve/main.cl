@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.43 2005/08/05 09:26:39 melisgl Exp $
+;; $Id: main.cl,v 1.44 2005/08/05 09:52:37 melisgl Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -1322,26 +1322,33 @@ by keyword symbols and not by strings"
       )))
 
 (defun connection-reset-error (c)
-  ;; return true if this is what results from a connection reset
-  ;; by peer 
-  (if* (typep c 'stream-error)
-     then (or #+(or allegro lispworks)
-              (eq (stream-error-identifier c) :connection-reset)
-	      #+(and allegro unix)
-              (eq (stream-error-code c) 32) ; sigpipe
-	      #+(and allegro aix)
-              (eq (stream-error-code c) 73)
-              #+openmcl
-              (and (typep c 'ccl::simple-stream-error)
-                   (stringp (simple-condition-format-control c))
-                   (search "Connection reset by peer"
-                           (simple-condition-format-control c)
-                           :test #'char=))
-	      )))
+  ;; return true if this is what results from a connection reset by
+  ;; peer
+  (or (and (typep c 'stream-error)
+           (or #+(or allegro lispworks)
+               (eq (stream-error-identifier c) :connection-reset)
+               #+(and allegro unix)
+               (eq (stream-error-code c) 32) ; sigpipe
+               #+(and allegro aix)
+               (eq (stream-error-code c) 73)
+               #+openmcl
+               (and (typep c 'ccl::simple-stream-error)
+                    (stringp (simple-condition-format-control c))
+                    (search "Connection reset by peer"
+                            (simple-condition-format-control c)
+                            :test #'char=))
+               #+sbcl
+               (and (stringp (simple-condition-format-control c))
+                    (find "Connection reset by peer"
+                          (simple-condition-format-arguments c)
+                          :test #'equal))))
+      #+sbcl
+      (and (typep c 'simple-error)
+           (stringp (simple-condition-format-control c))
+           (search "SIGPIPE at "
+                   (simple-condition-format-control c)
+                   :test #'char=))))
 
-	  
-
-  
 (defun http-accept-thread ()
   ;; loop doing accepts and processing them
   ;; ignore sporatic errors but stop if we get a few consecutive ones

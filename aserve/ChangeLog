@@ -1,5 +1,8 @@
 2005-08-05  Gabor Melis  <mega@hotpop.com>
 
+	* main.cl (connection-reset-error): detect sigpipe and
+	  "connection reset by peer" on sbcl
+
 	* publish.cl: In http 1.1 keep alive is the default.
 	  Client needs to send "Connection: close". In http 1.0
 	  non-persistent connection is the default, client
