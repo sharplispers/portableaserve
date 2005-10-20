@@ -287,4 +287,25 @@
   (comm:attach-ssl socket-stream :ssl-ctx t :ssl-side :client)
   socket-stream)
 
+#+(and :lispworks4.4 (not :cl-ssl))
+(defun initialize-ssl-library ()
+  ;; Dunno how to force load yet
+  (comm:ensure-ssl))
+
+#+(and :lispworks4.4 (not :cl-ssl))
+(defmethod make-ssl-server-stream ((socket-stream bidirectional-binary-socket-stream) &key certificate  certificate-password)
+  (flet ((ctx-configure-callback (ctx)
+	   (comm:ssl-ctx-use-privatekey-file ctx
+					     certificate-password
+					     comm:SSL_FILETYPE_PEM))
+	 (ssl-configure-callback (ssl)
+	   (comm:ssl-use-certificate-file ssl
+					  certificate
+					  comm:SSL_FILETYPE_PEM)))
+    (comm:attach-ssl socket-stream
+		     :ssl-side :server
+		     :ctx-configure-callback #'ctx-configure-callback
+		     :ssl-configure-callback #'ssl-configure-callback))
+  socket-stream)
+
 (provide 'acl-socket)

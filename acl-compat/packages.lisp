@@ -133,6 +133,8 @@
    #:socket-control
    #+cl-ssl #:make-ssl-client-stream
    #+cl-ssl #:make-ssl-server-stream
+   #+(and :lispworks4.4 (not :cl-ssl)) #:make-ssl-client-stream
+   #+(and :lispworks4.4 (not :cl-ssl)) #:make-ssl-server-stream
    #+lispworks #:socket-os-fd
    )
   #-cormanlisp (:nicknames #-(or clisp allegro) socket #-allegro acl-socket))

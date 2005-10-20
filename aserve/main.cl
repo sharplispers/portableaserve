@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.44 2005/08/05 09:52:37 melisgl Exp $
+;; $Id: main.cl,v 1.45 2005/10/20 07:54:06 nhabedi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -988,7 +988,8 @@ by keyword symbols and not by strings"
   ;; return the server object
   #+mswindows
   (declare (ignore setuid setgid))
-  #-(and allegro (version>= 6 2 beta)) 
+  #-(or (and allegro (version>= 6 2 beta))
+			       (and :lispworks4.4 (not :cl-ssl)))
   (declare (ignore ssl-password))
 
   (declare (ignore debug))  ; for now
@@ -1015,8 +1016,10 @@ by keyword symbols and not by strings"
 	    #'(lambda (socket)
 		(funcall 'acl-compat.socket::make-ssl-server-stream socket
 			 :certificate ssl
-			 #+(and allegro (version>= 6 2 beta)) :certificate-password 
-			 #+(and allegro (version>= 6 2 beta)) ssl-password)))
+			 #+(or (and allegro (version>= 6 2 beta))
+			       (and :lispworks4.4 (not :cl-ssl))) :certificate-password
+			 #+(or (and allegro (version>= 6 2 beta))
+			       (and :lispworks4.4 (not :cl-ssl))) ssl-password)))
 	  (setq chunking nil) ; doesn't work well through ssl
 	  (if* (not port-p)
 	     then ; ssl defaults to port 443
