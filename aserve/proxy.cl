@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.16 2005/02/20 12:20:45 rudi Exp $
+;; $Id: proxy.cl,v 1.17 2006/01/21 16:51:44 rudi Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -930,7 +930,7 @@ cached connection = ~s~%" cond cached-connection))
 (defun write-body-buffers (sock buffers length)
   ;; write all the data in the buffers to the socket
   (if* (> length 0)
-     then (let ((len (if* buffers then (length (car buffers)))))
+     then (let ((len (if buffers (length (car buffers)) length)))
 	    (dolist (buff buffers)
 	      (write-sequence buff sock :end (min length len))
 	      (decf length len)

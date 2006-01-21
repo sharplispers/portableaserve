@@ -1,3 +1,8 @@
+2006-01-21  Rudi Schlatte  <rudi@constantly.at>
+
+	* sbcl/acl-excl.lisp (filesys-type, filesys-inode): use sb-posix
+	instead of sbcl internals
+
 2005-08-05  Gabor Melis  <mega@hotpop.com>
 
 	* sbcl/acl-mp.lisp: updated to use the thread object api

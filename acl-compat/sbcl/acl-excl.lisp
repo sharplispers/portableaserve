@@ -11,12 +11,11 @@
   stream)
 
 (defun filesys-type (file-or-directory-name)
-  (if (eq :directory (sb-unix:unix-file-kind
-                      (namestring file-or-directory-name)))
-      :directory
-      (if (probe-file file-or-directory-name)
-          :file
-          nil)))
+  (let ((mode (sb-posix:stat-mode (sb-posix:stat path))))
+    (cond
+      ((sb-posix:s-isreg mode) :file)
+      ((sb-posix:s-isdir mode) :directory)
+      (t nil))))
 
 (defmacro atomically (&body forms)
   `(acl-mp:without-scheduling ,@forms))
@@ -26,11 +25,7 @@
   (error "unix-signal not implemented in acl-excl-sbcl.lisp"))
 
 (defun filesys-inode (path)
-  (multiple-value-bind (found ign inode)
-      (sb-unix::unix-lstat path)
-    (if found
-        inode
-        (error "path ~s does not exist" path))))
+  (sb-posix:stat-ino (sb-posix:lstat path)))
 
 (defun cl-internal-real-time ()
   (round (/ (get-internal-real-time) internal-time-units-per-second)))
