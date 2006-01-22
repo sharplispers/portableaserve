@@ -67,6 +67,7 @@
     p))
 
 (defmacro defun/sb-thread (name args &body body)
+  #-sb-thread (declare (ignore body))
   `(defun ,name ,args
      #-sb-thread
      (declare (ignore ,@(remove-if

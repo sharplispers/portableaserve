@@ -11,7 +11,7 @@
   stream)
 
 (defun filesys-type (file-or-directory-name)
-  (let ((mode (sb-posix:stat-mode (sb-posix:stat path))))
+  (let ((mode (sb-posix:stat-mode (sb-posix:stat file-or-directory-name))))
     (cond
       ((sb-posix:s-isreg mode) :file)
       ((sb-posix:s-isdir mode) :directory)

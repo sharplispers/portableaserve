@@ -1,3 +1,10 @@
+2006-01-22  Rudi Schlatte  <rudi@constantly.at>
+
+	* sbcl/acl-mp.lisp (defun/sb-thread): silence compilation style
+	warning on single-threaded sbcl
+
+	* sbcl/acl-excl.lisp (filesys-type): Fix bogus variable name :(
+
 2006-01-21  Rudi Schlatte  <rudi@constantly.at>
 
 	* sbcl/acl-excl.lisp (filesys-type, filesys-inode): use sb-posix
