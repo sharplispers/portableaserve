@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.45 2005/10/20 07:54:06 nhabedi Exp $
+;; $Id: main.cl,v 1.46 2006/02/19 10:32:44 rudi Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -1522,8 +1522,8 @@ by keyword symbols and not by strings"
 		  (if* error-obj
 		     then (brief-logmess 
 			   (format nil "While reading http request~:_ from ~a:~:_ ~a" 
-				   (socket:ipaddr-to-dotted 
-				    (socket::remote-host sock))
+				   (acl-compat.socket:ipaddr-to-dotted 
+				    (acl-compat.socket:remote-host sock))
 				   error-obj)))
 
 		  ; notify the client if it's still listening
