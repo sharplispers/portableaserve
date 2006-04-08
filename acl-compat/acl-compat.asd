@@ -26,6 +26,7 @@
 (defmethod operation-done-p ((operation load-op) (c precompiled-file))
   nil)
 
+#-gray-streams
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (asdf:find-system :cmucl-graystream nil)
     (asdf:defsystem cmucl-graystream
@@ -174,7 +175,7 @@ lisp-system"))
                  :cl-ppcre
                  #+sbcl :sb-bsd-sockets
                  #+sbcl :sb-posix
-                 #+cmu :cmucl-graystream
+                 #+(and cmu (not gray-streams)) :cmucl-graystream
                  #+(and (or cmu lispworks) ssl-available) :cl-ssl
                  )
     :perform (load-op :after (op acl-compat)

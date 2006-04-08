@@ -185,6 +185,7 @@ program-controlled interception of a break."
   `(locally (declare (optimize (speed 3) (safety 0) (debug 0)))
 	    ,@forms))
 
+#-cmu
 (defun write-vector (sequence stream &key (start 0) end endian-swap)
   (declare (ignore endian-swap))
   (check-type sequence (or string (array (unsigned-byte 8) 1)
