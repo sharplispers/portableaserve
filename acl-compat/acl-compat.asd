@@ -103,7 +103,7 @@ lisp-system"))
 
 (defun lisp-system-shortname ()
   #+allegro :allegro #+lispworks :lispworks #+cmu :cmucl
-  #+mcl :mcl #+clisp :clisp #+scl :scl #+sbcl :sbcl) ;mcl/openmcl use the same directory
+  #+(or mcl openmcl) :mcl #+clisp :clisp #+scl :scl #+sbcl :sbcl) ;mcl/openmcl use the same directory
 
 (defmethod component-pathname ((component unportable-cl-source-file))
   (let ((pathname (call-next-method))
@@ -143,11 +143,11 @@ lisp-system"))
                              :depends-on ("packages" "acl-excl"
                                                      #-lispworks "lw-buffering"))
      ;; Multiprocessing
-     #+mcl (:unportable-cl-source-file "mcl-timers")
+     #+(or mcl openmcl) (:unportable-cl-source-file "mcl-timers")
      (:unportable-cl-source-file "acl-mp"
-                                 :depends-on ("packages" #+mcl "mcl-timers"))
+                                 :depends-on ("packages" #+(or mcl openmcl) "mcl-timers"))
      ;; Sockets, networking; TODO: de-frob this a bit
-     #-mcl
+     #-(or mcl openmcl)
      (:unportable-cl-source-file
       "acl-socket" :depends-on ("packages" "acl-excl"
                                            #-(or allegro (and mcl (not openmcl))) "chunked-stream-mixin"))
@@ -156,7 +156,7 @@ lisp-system"))
      #+(and mcl (not openmcl) (not carbon-compat)) 
      (:unportable-cl-source-file
       "mcl-stream-fix" :depends-on ("acl-socket-mcl"))
-     #+(and mcl openmcl)
+     #+openmcl
      (:unportable-cl-source-file
       "acl-socket-openmcl" :depends-on ("packages" "chunked-stream-mixin"))
      ;; Diverse macros, utility functions
@@ -166,9 +166,9 @@ lisp-system"))
                                  #+allegro ("packages"))
      (:unportable-cl-source-file "acl-sys" :depends-on ("packages"))
      ;; SSL
-     #+(and ssl-available (not (or allegro mcl clisp)))
+     #+(and ssl-available (not (or allegro mcl openmcl clisp)))
      (:file "acl-ssl" :depends-on ("acl-ssl-streams" "acl-socket"))
-     #+(and ssl-available (not (or allegro mcl clisp)))
+     #+(and ssl-available (not (or allegro mcl openmcl clisp)))
      (:file "acl-ssl-streams" :depends-on ("packages")))
     ;; Dependencies
     :depends-on (:puri

@@ -21,7 +21,7 @@
         #+clisp #:ext
         #+sbcl #:sb-ext #+sbcl #:sb-gray
         #+(or allegro cormanlisp) :excl
-        #+mcl :ccl
+        #+(or mcl openmcl) :ccl
         )
   #+lispworks (:import-from :common-lisp #:fixnump)
   #+sbcl (:import-from :sb-int #:fixnump)
@@ -46,12 +46,12 @@
    #:fast
    #:without-package-locks
    #:fixnump
-   #+(or lispworks mcl) #:socket-error
-   #+(or allegro lispworks mcl) #:run-shell-command
-   #+(or allegro mcl) #:fasl-read
-   #+(or allegro mcl) #:fasl-write
-   #+(or allegro cmu scl mcl lispworks) #:string-to-octets
-   #+(or allegro cmu scl mcl lispworks) #:write-vector
+   #+(or lispworks mcl openmcl) #:socket-error
+   #+(or allegro lispworks mcl openmcl) #:run-shell-command
+   #+(or allegro mcl openmcl) #:fasl-read
+   #+(or allegro mcl openmcl) #:fasl-write
+   #+(or allegro cmu scl mcl lispworks openmcl) #:string-to-octets
+   #+(or allegro cmu scl mcl lispworks openmcl) #:write-vector
    ))
 
 
@@ -181,7 +181,7 @@
 (defpackage :gray-stream
   (:use #:common-lisp)
   (:import-from #+lispworks :stream #+cmu :lisp #+clisp :gray #+cormanlisp :gray-streams
-                #+mcl :ccl #+allegro :excl #+sbcl :sb-gray
+                #+(or mcl openmcl) :ccl #+allegro :excl #+sbcl :sb-gray
                 #:fundamental-binary-input-stream
                 #:fundamental-binary-output-stream
                 #:fundamental-character-input-stream

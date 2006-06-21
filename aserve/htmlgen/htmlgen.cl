@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: htmlgen.cl,v 1.7 2003/12/02 14:20:39 rudi Exp $
+;; $Id: htmlgen.cl,v 1.8 2006/06/21 08:06:47 rudi Exp $
 
 ;; Description:
 ;;   html generator
@@ -91,7 +91,7 @@
 
 (defvar *html-stream* nil) ; where the output goes
 
-(defmacro html (&rest forms &environment env)
+(defmacro html (&body forms &environment env)
   ;; just emit html to the curfent stream
   (process-html-forms forms env))
 
