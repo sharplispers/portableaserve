@@ -128,6 +128,11 @@
           (setf index 0
                 limit read-bytes)))))
 
+(defmethod stream-listen ((stream buffered-stream-mixin))
+  (with-stream-input-buffer (buffer index limit) stream
+    (or (and index (< index limit))
+        (call-next-method))))
+
 (defmethod stream-read-byte ((stream buffered-bivalent-input-stream))
   (with-stream-input-buffer (buffer index limit) stream
      (unless (and index (< index limit))

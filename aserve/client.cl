@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.18 2005/02/20 12:20:45 rudi Exp $
+;; $Id: client.cl,v 1.19 2007/02/25 12:21:52 rudi Exp $
 
 ;; Description:
 ;;   http client code.
@@ -808,11 +808,12 @@ or \"foo.com:8000\", not ~s" proxy))
 ;; line
 
 (defvar *response-header-buffers* nil)
+(defvar *response-header-pool-lock* (acl-compat.mp:make-process-lock :name "ACLCompat response header buffer spool lock"))
 
 (defun get-header-line-buffer ()
   ;; return the next header line buffer
   (let (buff)
-    (acl-compat.excl::atomically
+    (acl-compat.mp:with-process-lock (*response-header-pool-lock*)
       (acl-compat.excl::fast (setq buff (pop *response-header-buffers*))))
     (if* buff
        thenret
@@ -820,7 +821,7 @@ or \"foo.com:8000\", not ~s" proxy))
 
 (defun put-header-line-buffer (buff &optional buff2)
   ;; put back up to two buffers
-  (acl-compat.mp:without-scheduling
+  (acl-compat.mp:with-process-lock (*response-header-pool-lock*)
     (push buff *response-header-buffers*)
     (if* buff2 then (push buff2 *response-header-buffers*))))
 

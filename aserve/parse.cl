@@ -26,7 +26,7 @@
 ;;
 
 ;;
-;; $Id: parse.cl,v 1.12 2005/02/20 12:20:45 rudi Exp $
+;; $Id: parse.cl,v 1.13 2007/02/25 12:21:52 rudi Exp $
 
 ;; Description:
 ;;   parsing and encoding code  
@@ -49,18 +49,19 @@
   (max  parseobj-size)
   )
 
-(defvar *parseobjs* nil) 
+(defvar *parseobjs* nil)
+(defvar *parseobj-lock* (acl-compat.mp:make-process-lock :name "Parse object lock"))
 
 (defun allocate-parseobj ()
   (let (res)
-    (acl-compat.mp:without-scheduling 
+    (acl-compat.mp:with-process-lock (*parseobj-lock*)
       (if* (setq res (pop *parseobjs*))
 	 then (setf (parseobj-next res) 0)
 	      res
 	 else (make-parseobj)))))
 
 (defun free-parseobj (po)
-  (acl-compat.mp:without-scheduling
+  (acl-compat.mp:with-process-lock (*parseobj-lock*)
     (push po *parseobjs*)))
 
 (defun add-to-parseobj (po start end)

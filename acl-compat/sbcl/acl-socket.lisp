@@ -43,7 +43,7 @@
       (let* ((socket (socket-accept (socket server-socket)))
              (stream (socket-make-stream socket
                                          :input t :output t
-                                        ; :buffering :none
+                                         ;; :buffering :none
                                          :element-type
                                          (element-type server-socket)
                                          :auto-close t)))
@@ -134,7 +134,13 @@ to read about the missing parts."
        (socket-connect socket (lookup-hostname remote-host) remote-port)
        (let ((stream (socket-make-stream socket :input t :output t
                                          :element-type element-type
-                                        ; :buffering :none
+                                         ;; No buffering temporarily
+                                         ;; for SBCL due to fd-stream
+                                         ;; problems, see
+                                         ;; portableaserve-help Mail
+                                         ;; "Various fixes" (Hannu
+                                         ;; Koivisto, 2007-02-25)
+                                         #+sbcl :buffering #+sbcl :none
                                            )))
            (if (eq :bivalent format)
                ;; HACK: remember socket, so we can do peer lookup
