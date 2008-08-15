@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.17 2006/01/21 16:51:44 rudi Exp $
+;; $Id: proxy.cl,v 1.18 2008/08/15 00:30:14 kevinrosenberg Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -2650,20 +2650,6 @@ cached connection = ~s~%" cond cached-connection))
 (defmethod make-load-form ((obj acl-mp:process-lock) &optional env)
   (make-load-form-saving-slots obj :environment env))
 
-; this is just temporary until we get a patch for this in uri.fasl
-(defmethod make-load-form ((self puri:uri) &optional env)
-  (declare (ignore env))
-  `(make-instance ',(class-name (class-of self))
-     :scheme ,(uri-scheme self)
-     :host ,(uri-host self)
-     :port ,(uri-port self)
-     :path ',(uri-path self)
-     :query ,(uri-query self)
-     :fragment ,(uri-fragment self)
-     :plist ',(uri-plist self)
-     :string ,(puri::uri-string self)
-     ; bug is missing ' in parsed-path value
-     :parsed-path ',(puri::uri-parsed-path self)))
 )
 
 (defun save-proxy-cache (filename &key (server *wserver*))

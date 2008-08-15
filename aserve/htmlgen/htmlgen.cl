@@ -24,7 +24,7 @@
 ;;
 
 ;;
-;; $Id: htmlgen.cl,v 1.8 2006/06/21 08:06:47 rudi Exp $
+;; $Id: htmlgen.cl,v 1.9 2008/08/15 00:30:14 kevinrosenberg Exp $
 
 ;; Description:
 ;;   html generator
@@ -66,8 +66,6 @@
       (write-string string stream :start start :end (or end (length string)))))
 
 ;; html generation
-
-(defvar *html-stream*)	; all output sent here
 
 (defstruct (html-process (:type list) (:constructor
 				       make-html-process (key has-inverse

@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.46 2006/02/19 10:32:44 rudi Exp $
+;; $Id: main.cl,v 1.47 2008/08/15 00:30:14 kevinrosenberg Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -267,8 +267,7 @@
 )
 
 ;; specials from other files
-(defvar *header-block-sresource*)
-(defvar *header-index-sresource*)
+(declaim (special *header-block-sresource* *header-index-sresource*))
 (defvar *header-keyword-array*
     ;; indexed by header-number, holds the keyword naming this header
     )
