@@ -46,6 +46,7 @@
 ;; Import equivalent parts from the LispWorks MP package ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
 (shadowing-import '(
                     mp:*current-process*
                     mp:process-kill
@@ -63,7 +64,9 @@
                     mp:process-wait
 		    mp::process-active-p
                     ))
+)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
 (export '(          *current-process*
                     process-kill
                     process-enable
@@ -80,6 +83,7 @@
                     process-wait
 	            process-active-p
                     ))
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implement missing (and differing) functions ;;
@@ -89,7 +93,12 @@
                           resume-hook suspend-hook initial-bindings run-immediately)
   (declare (ignore priority quantum reset-action resume-hook suspend-hook run-immediately))
   (let ((mp:*process-initial-bindings* initial-bindings))
-    (mp:create-process name :run-reasons run-reasons :arrest-reasons arrest-reasons)))
+    #+(or lispworks4 lispworks5.0)
+    (mp:create-process name :run-reasons run-reasons :arrest-reasons arrest-reasons)
+    #-(or lispworks4 lispworks5.0)
+    (if arrest-reasons
+        (error "Cannot set arrest-reasons in this version of LispWorks.")
+      (mp:create-process name :run-reasons run-reasons))))
 
 (defun process-run-function (name-or-options preset-function &rest preset-arguments)
   (let ((process (ctypecase name-or-options
