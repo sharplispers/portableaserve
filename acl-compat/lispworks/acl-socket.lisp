@@ -308,4 +308,50 @@
 		     :ssl-configure-callback #'ssl-configure-callback))
   socket-stream)
 
+
+;; SSL support using built-in LispWorks OpenSSL interface
+
+(defvar *certificate-ctx-map* (make-hash-table :test 'equal))
+(defvar *certificate-ctx-map-lock* (mp:make-lock))
+(defvar *share-ssl-ctx-p* nil) ; needs to remain as NIL for ACL compatibility?
+
+(defun ensure-ssl-ctx-for-certificate (certificate-file
+                                       key
+                                       certificate-password)
+  (if *share-ssl-ctx-p*
+      (mp:with-lock (*certificate-ctx-map-lock*)
+        (or (gethash certificate-file *certificate-ctx-map*)
+            (setf (gethash certificate-file *certificate-ctx-map*)
+                  (make-ssl-ctx-for-certificate certificate-file
+                                                key
+                                                certificate-password))))
+    (make-ssl-ctx-for-certificate certificate-file
+                                  key
+                                  certificate-password)))
+
+(defun make-ssl-ctx-for-certificate (certificate-file
+                                     key
+                                     certificate-password)
+  (let ((ssl-ctx (comm:make-ssl-ctx :ssl-side :server)))
+    (when certificate-password
+      (comm:set-ssl-ctx-password-callback ssl-ctx :password certificate-password))
+    (comm:ssl-ctx-use-certificate-chain-file ssl-ctx (namestring certificate-file))
+    (comm:ssl-ctx-use-rsaprivatekey-file ssl-ctx
+                                         (namestring (or key certificate-file))
+                                         comm:ssl_filetype_pem)
+    ;; (comm:set-ssl-ctx-dh ssl-ctx :filename dh-file)
+    ssl-ctx))
+
+(defmethod make-ssl-server-stream ((stream comm:socket-stream) &key
+                                   certificate key certificate-password
+                                   ;; method verify max-depth   ; client cert options
+                                   ;; ca-file ca-directory      ;   not implemented yet
+                                   )
+  (let ((ctx (ensure-ssl-ctx-for-certificate certificate
+                                             key
+                                             certificate-password)))
+    (comm:attach-ssl stream :ssl-side :server :ssl-ctx ctx)
+    ;; Return the same stream -- is this allowed?
+    stream))
+
 (provide 'acl-socket)
