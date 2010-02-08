@@ -45,8 +45,7 @@
                                          :input t :output t
                                          ;; :buffering :none
                                          :element-type
-                                         (element-type server-socket)
-                                         :auto-close t)))
+                                         (element-type server-socket))))
         (if (eq (stream-type server-socket) :bivalent)
             ;; HACK: remember socket, so we can do peer lookup
             (make-bivalent-stream stream :plist `(:socket ,socket))

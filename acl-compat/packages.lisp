@@ -26,6 +26,7 @@
   #+lispworks (:import-from :common-lisp #:fixnump)
   #+sbcl (:import-from :sb-int #:fixnump)
   #+sbcl (:import-from :sb-ext #:without-package-locks)
+  #+sbcl (:import-from :sb-ext #:string-to-octets)
   #+cmu (:import-from :ext #:without-package-locks)
   #+allegro (:shadowing-import-from :excl #:filesys-size
 	    #:filesys-write-date #:intern* #:filesys-type #:atomically #:fast)
@@ -50,8 +51,8 @@
    #+(or allegro lispworks mcl openmcl) #:run-shell-command
    #+(or allegro mcl openmcl) #:fasl-read
    #+(or allegro mcl openmcl) #:fasl-write
-   #+(or allegro cmu scl mcl lispworks openmcl) #:string-to-octets
-   #+(or allegro cmu scl mcl lispworks openmcl) #:write-vector
+   #+(or allegro cmu scl mcl lispworks openmcl sbcl) #:string-to-octets
+   #+(or allegro cmu scl mcl lispworks openmcl sbcl) #:write-vector
    ))
 
 
