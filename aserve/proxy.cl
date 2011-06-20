@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.18 2008/08/15 00:30:14 kevinrosenberg Exp $
+;; $Id: proxy.cl,v 1.19 2011/06/20 18:06:23 kevinrosenberg Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -955,6 +955,12 @@ cached connection = ~s~%" cond cached-connection))
   socket
   )
 
+(defvar *connection-cache-queue-lock* (acl-compat.mp:make-process-lock :name "Connection-Cache-Queue"))
+
+(defmacro with-connection-cache-queue-lock (&body body)
+  `(acl-compat.mp:with-process-lock (*connection-cache-queue-lock*)
+      ,@body))
+
   
 (defun add-to-connection-cache (socket host port)
   (let* ((now (get-universal-time))
@@ -965,9 +971,10 @@ cached connection = ~s~%" cond cached-connection))
 		     :socket socket)))
 	 (queue *connection-cache-queue*))
     
-    (incf *connections-cached*)
+
     
-    (acl-compat.mp:without-scheduling
+    (with-connection-cache-queue-lock
+     (incf *connections-cached*)
       (let ((start (first-valid-entry now queue)))
 		
 	(if* (null start)
@@ -1005,7 +1012,7 @@ cached connection = ~s~%" cond cached-connection))
   ;; build a new one if there isn't  one cached
   (let ((now (get-universal-time))
 	(queue *connection-cache-queue*))
-    (acl-compat.mp:without-scheduling
+    (with-connection-cache-queue-lock
       (let ((start (first-valid-entry now queue))
 	    (prev nil))
 	(loop
@@ -1026,11 +1033,12 @@ cached connection = ~s~%" cond cached-connection))
 		    (values (connection-cache-ent-socket (car start)) t)))
 	  
 	  (setq prev start
-		start (cdr start)))))
+		start (cdr start))))
 	
     ; get here if there is no match
 
-    (incf *connections-made*)
+    (incf *connections-made*))
+
 ;    (acl-compat.socket:with-pending-connect
 	(acl-compat.mp:with-timeout (*connection-timed-out-wait*   ; ok w-t
 			  (error "connection timed out"))

@@ -30,7 +30,13 @@
       (t (error "path ~a does not exist." path)))))
 
 (defmacro atomically (&body forms)
-  `(mp:without-preemption ,@forms))
+  (declare (ignorable forms))
+  #+(or lispworks4 lispworks5)
+  `(mp:without-preemption ,@forms)
+  #-(or lispworks4 lispworks5)
+  (progn
+    (warn "Using ATOMICALLY, will give an error at runtime.")
+    `(error "Trying to execute ATOMICALLY")))
 
 (defmacro without-package-locks (&body forms)
   `(progn ,@forms))

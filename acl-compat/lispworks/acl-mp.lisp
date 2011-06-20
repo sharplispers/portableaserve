@@ -156,40 +156,65 @@
     collected-fds))
 
 (defmacro without-scheduling (&body forms)
-  `(mp:without-preemption ,@forms))
+  (declare (ignorable forms))
+  #+(or lispworks4 lispworks5)
+  `(mp:without-preemption ,@forms)
+  #-(or lispworks4 lispworks5)
+  (progn
+    (Warn "Using without-scheduling, will give an error at runtime.")
+    `(error "Executing WITHOUT-SCHEDULING."))
+  )
 
 (defun process-allow-schedule (&optional process)
   (declare (ignore process))
   (mp:process-allow-scheduling))
 
 (defun process-revoke-run-reason (process object)
+  #+(or lispworks4 lispworks5)
   (mp:without-preemption
    (setf (mp:process-run-reasons process)
          (remove object (mp:process-run-reasons process))))
+  #-(or lispworks4 lispworks5)
+  (error "Do not use process-revoke-run-reason in this version of LispWorks.")
   (when (and (eq process mp:*current-process*)
              (not mp:*inhibit-scheduling-flag*))
     (mp:process-allow-scheduling)))
 
 (defun process-add-run-reason (process object)
-  (setf (mp:process-run-reasons process) (pushnew object (mp:process-run-reasons process))))
+  #+(or lispworks4 lispworks5)
+  (mp:without-preemption
+    (setf (mp:process-run-reasons process) 
+          (pushnew object (mp:process-run-reasons process))))
+  #-(or lispworks4 lispworks5)
+  (error "Do not use process-add-run-reason in this version of LispWorks."))
 
-;revised version from alain picard
+(defvar *invoke-with-timeout-level* nil)
+
+(defun invoke-with-timeout-interrupt-function (timeoutfn timeout-cons)
+  (loop for cons on *invoke-with-timeout-level*
+        when (eq cons timeout-cons)
+        do (throw timeout-cons
+                  (funcall timeoutfn))))
+
+(defun invoke-with-timeout-timer-function (process timeoutfn timeout-cons)
+  (mp:process-interrupt 
+   process
+   'invoke-with-timeout-interrupt-function
+    timeoutfn timeout-cons))
+
 (defun invoke-with-timeout (timeout bodyfn timeoutfn)
-  (block timeout
-    (let* ((process mp:*current-process*)
-           (unsheduled? nil)
-           (timer (mp:make-timer
-                   #'(lambda ()
-                       (mp:process-interrupt process
-                                             #'(lambda ()
-                                                 (unless unsheduled?
-                                                   (return-from timeout
-                                                     (funcall timeoutfn)))))))))
-      (mp:schedule-timer-relative timer timeout)
-      (unwind-protect (funcall bodyfn)
-        (without-interrupts
-         (mp:unschedule-timer timer)
-         (setf unsheduled? t))))))
+  (let ((timeout-cons (cons 0 *invoke-with-timeout-level*))
+        (process mp:*current-process*))
+    (let ((timer (mp:make-timer 
+                  'invoke-with-timeout-timer-function 
+                  process  timeoutfn timeout-cons)))
+
+      (catch timeout-cons
+        (mp:schedule-timer-relative timer timeout)
+        (unwind-protect
+            (let ((*invoke-with-timeout-level* timeout-cons))
+              (funcall bodyfn))
+          (mp:unschedule-timer timer))))))
 
 
 (defmacro with-timeout ((seconds &body timeout-forms) &body body)
@@ -215,4 +240,9 @@ and evaluate TIMEOUT-FORMS."
 		  ,@(when whostate (list :whostate whostate))
 		  ,@(when timeout (list :timeout timeout)))
     ,@forms))
+
+
+
+#-(or lispworks4 lispworks5)
+(pushnew :aserve-not-using-run-reasons *features*)
 

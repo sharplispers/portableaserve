@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.48 2008/08/15 00:35:05 kevinrosenberg Exp $
+;; $Id: main.cl,v 1.49 2011/06/20 18:06:23 kevinrosenberg Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -601,8 +601,80 @@ Problems with protocol may occur." (ef-name ef)))))
   #-(or openmcl-native-threads sbcl)
   `(acl-compat.mp:without-scheduling (decf ,var)))
 
+(defun atomic-change-wserver-free-workers (server incf)
+  #-(and lispworks (not (or lispworks4 lispworks5)))
+  (if incf 
+      (atomic-incf (wserver-free-workers server))
+    (atomic-decf (wserver-free-workers server)))
+  ;;; Tis is quite inefficient, and can be much much faster
+  ;;; if it was another accessor. But it i snot used that often. 
+  #+(and lispworks (not (or lispworks4 lispworks5)))
+  (sys:atomic-incf (slot-value server 'free-workers) 
+                   (if incf 1 -1)))
 
 ;;;;;;;;; end macros
+
+#+aserve-not-using-run-reasons
+(progn 
+  (defun accept-thread-maybe-activate-worker-thread (thread socket)
+    #+lispworks 
+    (lw:when-let (mailbox (mp:process-mailbox thread))
+      (when (and (mp:mailbox-empty-p mailbox)
+                 (not (mp:get-process-private-property 'busy thread)))
+        (mp:process-send thread socket) ;; process-send also "Poke" it,  which 
+        ;; is needed because we use process-wait-local
+        t)))
+
+  (defun worker-thread-get-socket-for-connection ()
+    #+lispworks 
+    (let ((mailbox (mp:ensure-process-mailbox)))
+      (setf (mp:process-private-property 'busy) nil)
+      (mp:process-wait-local "Waiting for a socket in the mailbox"
+                             'mp:mailbox-peek mailbox)
+      (setf (mp:process-private-property 'busy) t) ;;; before reading the message
+      (sys:ensure-memory-after-store)
+      (mp:mailbox-read mailbox)))
+
+  ;; This is needed just because the code with run-reason needs it. 
+  (defun worker-thread-done-processing (sock)
+    (declare (ignorable sock)))
+
+  (defun make-worker-thread-internal (name initial-bindings)
+    #+lispworks  (let ((mp:*process-initial-bindings* initial-bindings))
+                   (atomic-change-wserver-free-workers *wserver* t)
+                   (mp:process-run-function name  () 'http-worker-thread)))
+  ) ; progn #+not-using-run-reasons
+
+
+
+#-aserve-not-using-run-reasons
+(progn 
+  (defun accept-thread-maybe-activate-worker-thread (thread socket)
+    (when (null (acl-compat.mp:process-run-reasons thread))
+      (acl-compat.mp:process-add-run-reason thread socket)
+      t))
+  (defun worker-thread-get-socket-for-connection ()
+    (car (acl-compat.mp:process-run-reasons acl-compat.mp:*current-process*)))
+
+  (defun worker-thread-done-processing (sock)
+    (acl-compat.mp:process-revoke-run-reason acl-compat.mp:*current-process* sock))
+
+(defun make-worker-thread-internal (name initial-bindings)
+  (let ((proc (acl-compat.mp:make-process :name name
+                                          :initial-bindings initial-bindings)))
+    (acl-compat.mp:process-preset proc #'http-worker-thread)
+
+    #-openmcl-native-threads
+    (atomic-change-wserver-free-workers *wserver* t)
+    #+openmcl-native-threads
+    (ccl:process-enable proc)
+
+    proc))
+
+
+
+  ) ;; progn #-aserve-not-using-run-reasons
+
 
 
 
@@ -1240,25 +1312,21 @@ by keyword symbols and not by strings"
            :run-reasons '(:enable))
      #'http-accept-thread)))
 
-(defun make-worker-thread ()
-  (let* ((name (format nil "~d-aserve-worker" (incf *thread-index*)))
-	 (proc (acl-compat.mp:make-process :name name
-				:initial-bindings
-				`((*wserver*  . ',*wserver*)
-				  #+ignore (*debug-io* . ',(wserver-terminal-io
-						   *wserver*))
-				  ,@acl-compat.excl:*cl-default-special-bindings*)
-				)))
-    (acl-compat.mp:process-preset proc #'http-worker-thread)
-    (push proc (wserver-worker-threads *wserver*))
-    #-openmcl-native-threads
-    (atomic-incf (wserver-free-workers *wserver*))
-    #+openmcl-native-threads
-    (ccl:process-enable proc)
-    (setf (getf (acl-compat.mp:process-property-list proc) 'short-name)
-      (format nil "w~d" *thread-index*))
-    ))
 
+
+(defun make-worker-thread ()
+  (let* ((name (format nil "~d-aserve-worker" (incf *thread-index*))))
+    (let ((new-worker
+           (make-worker-thread-internal name 
+                                      `((*wserver*  . ',*wserver*)
+                                        #+ignore (*debug-io* . ',(wserver-terminal-io
+                                                                  *wserver*))
+                                        ,@acl-compat.excl:*cl-default-special-bindings*) )))
+
+      (push new-worker (wserver-worker-threads *wserver*))
+      (setf (getf (acl-compat.mp:process-property-list new-worker) 'short-name)
+            (format nil "w~d" *thread-index*))
+      )))
 
 (defun http-worker-thread ()
   ;; made runnable when there is an socket on which work is to be done
@@ -1278,7 +1346,7 @@ by keyword symbols and not by strings"
 	  (ccl::locked-dll-header-enqueue qelem (wserver-work-list *wserver*))
 	  (ccl:signal-semaphore (wserver-free-workers *wserver*)) ; tell the server that a worker thread is available
 	  (ccl:wait-on-semaphore semaphore)) ;wait until we have a socket
-      (let ((sock #-openmcl-native-threads (car (acl-compat.mp:process-run-reasons acl-compat.mp:*current-process*))
+      (let ((sock #-openmcl-native-threads (worker-thread-get-socket-for-connection)
 		  #+openmcl-native-threads (work-list-element-socket qelem)))
 	#-allegro
 	(when (eq sock :kill) (return))
@@ -1318,8 +1386,8 @@ by keyword symbols and not by strings"
 	    nil))
         #-openmcl-native-threads
         (progn
-          (atomic-incf (wserver-free-workers *wserver*))
-	  (acl-compat.mp:process-revoke-run-reason acl-compat.mp:*current-process* sock)))
+          (atomic-change-wserver-free-workers *wserver* t)
+          (worker-thread-done-processing sock)))
 
       )))
 
@@ -1419,10 +1487,8 @@ by keyword symbols and not by strings"
 
 			    (setq workers (wserver-worker-threads server))
 			    (incf looped))
-		    (if* (null (acl-compat.mp:process-run-reasons (car workers)))
-		       then (atomic-decf (wserver-free-workers server))
-			    (acl-compat.mp:process-add-run-reason (car workers) sock)
-			    (pop workers)
+		    (if* (accept-thread-maybe-activate-worker-thread (car workers) sock)
+		       then (atomic-change-wserver-free-workers server nil)
 			    (return) ; satisfied
 			    )
 		    (pop workers)))
@@ -1455,9 +1521,11 @@ by keyword symbols and not by strings"
 		 then (logmess "accept: too many errors, bailing")
 		      (return-from http-accept-thread nil)))))
       (ignore-errors (progn
-		       (acl-compat.mp:without-scheduling
-			 (if* (eql (wserver-socket server) main-socket)
-			    then (setf (wserver-socket server) nil)))
+                       ;; This used to ne inside without-scheduling, but the 
+                       ;; current process is the accept thread, of which there is
+                       ;; only one, and and it is the only one that manipulates the slot.
+		       (if* (eql (wserver-socket server) main-socket)
+                            then (setf (wserver-socket server) nil))
 		       (close main-socket))))))
 
 

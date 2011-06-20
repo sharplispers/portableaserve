@@ -148,7 +148,7 @@
 (defmethod stream-input-available ((stream socket::passive-socket))
   (comm::socket-listen (socket::socket-os-fd stream)))
 
-
+(defvar *passive-socket-backlog* 10) 
 (defmethod accept-connection ((passive-socket passive-socket)
 			      &key (wait t))
   (if (or wait (stream-input-available passive-socket))
@@ -159,7 +159,8 @@
 
 (defun %new-passive-socket (local-port)
   (multiple-value-bind (socket error-location error-code)
-      (comm::create-tcp-socket-for-service local-port)
+      (comm::create-tcp-socket-for-service local-port :backlog *passive-socket-backlog*
+                                           )
     (cond (socket socket)
 	  (t (error 'socket-error :action error-location :code error-code :identifier :unknown)))))
 

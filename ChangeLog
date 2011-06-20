@@ -1,3 +1,9 @@
+2011-06-20  Kevin Rosenberg <kevin@rosenberg.net>
+	* aserve/main.cl, aserver/proxy.cl,
+	* acl-compat/lispworks/acl-{excl,mp,socket}.lisp:
+	Apply patches from Lispworks, Inc to support Lispworks 6
+
+
 2006-01-21  Rudi Schlatte  <rudi@constantly.at>
 
 	* aserve/proxy.cl (write-body-buffers): initialize len to numeric
