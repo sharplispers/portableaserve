@@ -1,3 +1,31 @@
+2012-04-01  Kevin Rosenberg <kevin@rosenberg.net>
+	Apply patch from Dave Cooper
+        * aserve/aserve.asd: Allow aserve.asd to be asdf loaded
+	uneventfully into Allegro (which ends up using native aserve in
+	Allegro) -- currently this is throwing an error if one tries to
+	asdf load it (requiring messy conditionals in :depends-on clause
+	in asd systems which depend on aserve or paserve).
+	* aserve/main.cl: Adds a request-date to the request object, which
+	keeps track of when the request was received in addition to when
+	it was responded to. (this is in original Franz allegroserve now
+	as well).
+	* aserve/main.cl: Adds (:mailbox t) to the LispWorks
+	make-worker-thread-internal, as suggested by Martin Simmons.
+	* aserve/main.cl: Fixes parsing for request-query from Ajax
+	submission, searching for "application/x-www-form-urlencoded"
+	instead of looking for an exact match. (this is in original Franz
+	allegroserve now as well).
+	* aserve/proxy.cl: Adds a comment for the comment in proxy
+	response in proxy.cl, that should be wrapped with
+	(octets-to-string), this is in original Franz allegroserve now as
+	well. There doesn't appear to be a portable octets-to-string
+	available in paserve at present, for future we might consider
+	depending on flexi-streams:octets-to-string -- but for now I just
+	put the comment there as a placeholder in an attempt to keep
+	things synced with original allegroserve. Currently we are not
+	using the allegroserve proxy in non-Allegro platforms, but others
+	might.
+
 2011-06-20  Kevin Rosenberg <kevin@rosenberg.net>
 	* aserve/main.cl, aserver/proxy.cl,
 	* acl-compat/lispworks/acl-{excl,mp,socket}.lisp:

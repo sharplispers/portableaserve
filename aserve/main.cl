@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.49 2011/06/20 18:06:23 kevinrosenberg Exp $
+;; $Id: main.cl,v 1.50 2012/04/01 23:04:58 kevinrosenberg Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -642,7 +642,7 @@ Problems with protocol may occur." (ef-name ef)))))
   (defun make-worker-thread-internal (name initial-bindings)
     #+lispworks  (let ((mp:*process-initial-bindings* initial-bindings))
                    (atomic-change-wserver-free-workers *wserver* t)
-                   (mp:process-run-function name  () 'http-worker-thread)))
+                   (mp:process-run-function name  '(:mailbox t) 'http-worker-thread)))
   ) ; progn #+not-using-run-reasons
 
 
@@ -941,6 +941,10 @@ by keyword symbols and not by strings"
    (reply-code   ;; one of the *response-xx* objects
     :initform nil
     :accessor request-reply-code)
+
+   (request-date
+    :initform nil
+    :accessor request-request-date)
 
    (reply-date
     :initform (get-universal-time)  ; when we're responding
@@ -1602,10 +1606,16 @@ by keyword symbols and not by strings"
 
 		  (return-from process-connection nil)
 	     else ;; got a request
-		  (setq *worker-request* req)
+
+	          (setf (request-request-date req) (get-universal-time))
+
+   	          (setq *worker-request* req)
 
 		  (handle-request req)
+
 		  (force-output-noblock (request-socket req))
+
+		  (setf (request-reply-date req) (get-universal-time))
 
 		  (log-request req)
 
@@ -2612,8 +2622,8 @@ in get-multipart-sequence"))
 
       (if* post
 	 then (if* (and (eq (request-method req) :post)
-			(equal (header-slot-value req :content-type)
-			    "application/x-www-form-urlencoded"))
+			(search "application/x-www-form-urlencoded"
+                                (header-slot-value req :content-type)))
 		 then (setf res
 			(append res
 				(form-urlencoded-to-query

@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.19 2011/06/20 18:06:23 kevinrosenberg Exp $
+;; $Id: proxy.cl,v 1.20 2012/04/01 23:04:58 kevinrosenberg Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -761,7 +761,13 @@ cached connection = ~s~%" cond cached-connection))
 		       (let ((rsock (request-socket req)))
 		
 			 (format rsock "HTTP/1.1 ~d ~a~a" response comment *crlf*)
-      
+			 ;;
+			 ;; FLAG -- the comment should have octets-to-string wrapped around it, this is from 
+			 ;;         allegro's excl package, consider use of flexi-streams:octets-to-string. 
+			 ;;         
+			 ;;
+			 ;;(format rsock "HTTP/1.1 ~d ~a~a" response (and comment (octets-to-string comment)) *crlf*)
+			 ;;
 			 (write-sequence clibuf rsock :end cliend)
 			 (if* body-length 
 			    then (write-body-buffers rsock body-buffers 

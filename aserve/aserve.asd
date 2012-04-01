@@ -80,6 +80,9 @@ indicate failure."))
   ((loaded :initform nil :accessor loaded)))
 
 #+allegro
+(defmethod asdf:source-file-type ((c original-aserve) (s module)) "dummy")
+
+#+allegro
 (defmethod asdf:perform ((op asdf:load-op) (c original-aserve))
   #+common-lisp-controller (c-l-c:original-require 'aserve)
   #-common-lisp-controller (require 'aserve)
