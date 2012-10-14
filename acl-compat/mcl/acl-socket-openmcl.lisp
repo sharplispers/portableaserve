@@ -47,9 +47,10 @@
 
 
 (defmethod accept-connection ((server-socket server-socket)
-			      &key (wait t))
+                              &key (wait t) stream-args)
   "Return a bidirectional stream connected to socket."
-  (let ((stream (accept-connection (socket server-socket) :wait wait)))
+  (let ((stream (accept-connection (socket server-socket)
+                                   :wait wait :stream-args stream-args)))
     (when stream (make-chunked-stream stream))))
 
 
