@@ -7,13 +7,6 @@
 
 (in-package :acl-compat.excl)
 
-;#-openmcl
-;(defun fixnump (x)
-;  (ccl::fixnump x))
-
-#-openmcl
-(import 'ccl::fixnump)
-
 #+openmcl
 (defun filesys-inode (path)
     (or (nth-value 4 (ccl::%stat (ccl::native-translated-namestring path)))

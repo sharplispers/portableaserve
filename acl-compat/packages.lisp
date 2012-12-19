@@ -30,6 +30,7 @@
   #+cmu (:import-from :ext #:without-package-locks)
   #+allegro (:shadowing-import-from :excl #:filesys-size
 	    #:filesys-write-date #:intern* #:filesys-type #:atomically #:fast)
+  #+(or mcl openmcl) (:shadowing-import-from :ccl #:fixnump)
   (:export
    #:if*
    #:*initial-terminal-io*
