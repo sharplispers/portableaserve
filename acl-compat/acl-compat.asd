@@ -116,6 +116,9 @@ lisp-system"))
 
 #+(and mcl (not openmcl)) (require :ansi-make-load-form)
 
+#-(or lispworks cmu sbcl mcl openmcl clisp allegro)
+(error "The acl-compat library is not yet supported on this lisp implementation.")
+
 (defsystem acl-compat
     :name "acl-compat"
     :author "The acl-compat team"

@@ -53,7 +53,8 @@ indicate failure."))
 	(:error (error 'compile-failed :component c :operation operation))
 	(:ignore nil)))))
 
-#+(or lispworks cmu sbcl mcl openmcl clisp)
+
+#-allegro
 (defsystem aserve
     :name "AllegroServe (portable)"
     :author "John K. Foderaro"
