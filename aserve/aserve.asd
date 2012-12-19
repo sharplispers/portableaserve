@@ -58,7 +58,7 @@ indicate failure."))
 (defsystem aserve
     :name "AllegroServe (portable)"
     :author "John K. Foderaro"
-    :version "1.2.35"
+    :version "1.2.42"
     :licence "LLGPL"
     :default-component-class acl-file
     :components ((:file "packages")
