@@ -587,7 +587,7 @@ Problems with protocol may occur." (ef-name ef)))))
 
 (defmacro atomic-incf (var)
   #+openmcl-native-threads
-  `(ccl::atomic-incf ,var)
+  `(ccl:signal-semaphore ,var)
   #+sbcl
   `(acl-compat.mp::atomic-incf ,var)
   #-(or openmcl-native-threads sbcl)
@@ -595,7 +595,7 @@ Problems with protocol may occur." (ef-name ef)))))
 
 (defmacro atomic-decf (var)
   #+openmcl-native-threads
-  `(ccl::atomic-decf ,var)
+  `(ccl:wait-on-semaphore ,var)
   #+sbcl
   `(acl-compat.mp::atomic-decf ,var)
   #-(or openmcl-native-threads sbcl)
