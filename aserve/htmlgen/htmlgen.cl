@@ -2,7 +2,8 @@
 ;;
 ;; htmlgen.cl
 ;;
-;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA 
+;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA  - All rights reserved.
+;; copyright (c) 2000-2012 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -639,7 +640,7 @@
 (def-std-html :blockquote  t nil)
 (def-std-html :body      t nil)
 (def-std-html :br       nil nil)
-(def-std-html :button   nil nil)
+(def-std-html :button   t nil)
 
 (def-std-html :caption  t nil)
 (def-std-html :center   t nil)
