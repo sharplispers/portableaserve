@@ -948,7 +948,7 @@ by keyword symbols and not by strings"
 
    (reply-date
     :initform (get-universal-time)  ; when we're responding
-    :reader request-reply-date)
+    :accessor request-reply-date)
 
    (reply-headers  ;; alist of headers to send out
     :initform nil
