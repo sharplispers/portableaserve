@@ -8,15 +8,12 @@
   (:use #:cl #:asdf))
 (in-package #:aserve-system)
 
-(defclass acl-file (cl-source-file) ())
-(defmethod asdf:source-file-type ((c acl-file) (s module)) "cl")
-
 ;;;; ignore warnings
 ;;;;
 ;;;; FIXME: should better fix warnings instead of ignoring them
 ;;;; FIXME: (perform legacy-cl-sourcefile) duplicates ASDF code
 
-(defclass legacy-acl-source-file (acl-file)
+(defclass legacy-acl-source-file (cl-source-file.cl)
     ()
   (:documentation
    "Common Lisp source code module with (non-style) warnings.
@@ -60,7 +57,7 @@ indicate failure."))
     :author "John K. Foderaro"
     :version "1.2.42"
     :licence "LLGPL"
-    :default-component-class acl-file
+    :default-component-class cl-source-file.cl
     :components ((:file "packages")
                  (:file "macs" :depends-on ("packages"))
                  (:legacy-acl-source-file "main" :depends-on ("macs"))
