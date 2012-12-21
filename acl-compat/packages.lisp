@@ -54,6 +54,9 @@
    #+(or allegro mcl openmcl) #:fasl-write
    #+(or allegro cmu scl mcl lispworks openmcl sbcl) #:string-to-octets
    #+(or allegro cmu scl mcl lispworks openmcl sbcl) #:write-vector
+   #:md5-init
+   #:md5-update
+   #:md5-final
    ))
 
 

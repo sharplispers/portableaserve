@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.167 2005/01/14 18:24:12 jkf Exp $
+;; $Id: main.cl,v 1.168 2005/02/21 23:28:52 jkf Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -38,7 +38,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 42))
+(defparameter *aserve-version* '(1 2 43))
 
 #+allegro
 (eval-when (eval load)
@@ -175,7 +175,7 @@
     (ff:def-foreign-call (unix-fork "fork") (:void) :returning :int)
     (ff:def-foreign-call (unix-kill "kill") ((pid :int) (sig :int))
       :returning :int)
-
+    
 )
 #+(and lispworks unix)
 (progn
@@ -235,7 +235,7 @@
 (defvar *debug-connection-reset-by-peer* nil) ; true to signal these too
 
 
-;; NDL 2004-06-04 -- external-formats are implementation-dependent...
+;; TODO (rudi 2012-12-21): add more external formats here
 (defvar *default-aserve-external-format* #-lispworks :latin1-base #+lispworks :latin-1)
 
 

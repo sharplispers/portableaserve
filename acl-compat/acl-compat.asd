@@ -176,6 +176,7 @@ lisp-system"))
     ;; Dependencies
     :depends-on (:puri
                  :cl-ppcre
+                 :ironclad
                  #+sbcl :sb-bsd-sockets
                  #+sbcl :sb-posix
                  #+(and cmu (not gray-streams)) :cmucl-graystream

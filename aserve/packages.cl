@@ -206,6 +206,7 @@
    #:client-request-socket
    #:client-request-uri
    #:client-response-header-value
+   #:compute-digest-authorization
    #:cookie-item
    #:cookie-item-expires
    #:cookie-item-name
@@ -213,6 +214,10 @@
    #:cookie-item-secure
    #:cookie-item-value
    #:cookie-jar     ; class
+   #:digest-authorization
+   #:digest-password
+   #:digest-realm
+   #:digest-username
    #:do-http-request
    #:make-http-client-request
    #:read-client-response-headers
