@@ -1,7 +1,7 @@
 ;;
 ;; chat.cl
 ;;
-;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA 
+;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA 
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of

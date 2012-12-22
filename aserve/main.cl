@@ -2,7 +2,7 @@
 ;;
 ;; main.cl
 ;;
-;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA  - All rights reserved.
+;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA  - All rights reserved.
 ;; copyright (c) 2000-2004 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.168 2005/02/21 23:28:52 jkf Exp $
+;; $Id: main.cl,v 1.171 2006/03/29 21:02:10 jkf Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -38,7 +38,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 43))
+(defparameter *aserve-version* '(1 2 44))
 
 #+allegro
 (eval-when (eval load)
@@ -444,7 +444,7 @@
   (print-unreadable-object (wserver stream :type t :identity t)
     (format stream "port ~a" 
 	    (let ((sock (wserver-socket wserver)))
-	      (if* sock
+	      (if* sock 
 		 then (acl-compat.socket:local-port sock)
 		 else "-no socket-")))))
 
@@ -1612,8 +1612,8 @@ by keyword symbols and not by strings"
 
 	          (setf (request-request-date req) (get-universal-time))
 
-   	          (setq *worker-request* req)
-
+		  (setq *worker-request* req) 
+		  
 		  (handle-request req)
 		  (force-output-noblock (request-socket req))
 
@@ -1853,8 +1853,37 @@ by keyword symbols and not by strings"
 			       elseif ch
 				 then (unread-char ch (request-socket
 						       req)))))
-				      
-				      
+		   elseif (equalp "chunked" (header-slot-value req
+							       :transfer-encoding))
+		     then ; chunked body
+			  (acl-compat.socket:socket-control (request-socket req)
+						 :input-chunking t)
+			  
+			  (with-timeout-local
+			      (*read-request-body-timeout* nil)
+			    (let ((ans (make-array 
+					2048 
+					:element-type 'character
+					:fill-pointer 0))
+				  (sock (request-socket req))
+				  (ch))
+			      (handler-case 
+				  (loop (if* (eq :eof 
+						 (setq ch
+						   (read-char 
+						    sock nil :eof)))
+					   then ; should never happen
+						(return  ans)
+					   else (vector-push-extend
+						 ch ans)))
+				(acl-compat.excl::socket-chunking-end-of-file
+				    (cond)
+				  (declare (ignore cond))
+				  (acl-compat.socket:socket-control (request-socket req)
+							 :input-chunking nil)
+				  ans))))
+
+			  
 		     else	; no content length given
 			  
 			  (if* (equalp "keep-alive" 

@@ -1,3 +1,14 @@
+2006-03-29  John Foderaro  <jkf@tiger.franz.com>
+1.2.44
+	* cgi.cl - add terminate argument to run-cgi-program
+
+2006-03-24    <jkf@max.verada.com>
+
+	* main.cl - handle a client request that includes a chunked body.
+	 (not tested yet since I can't find a client making such a request).
+
+	* proxy.cl - create appropriate Host header.
+
 2005-08-05  Gabor Melis  <mega@hotpop.com>
 
 	* main.cl (connection-reset-error): detect sigpipe and
@@ -9,6 +20,14 @@
 	  needs to send "Connection: keep-alive".
 
 	* main.cl: fixed atomic-{incf,decf} for sbcl
+
+2005-03-06  John Foderaro  <jkf@max.verada.com>
+
+	* client.cl - handle single line set-cookie lines that end in a semicolon
+
+2005-02-21  John Foderaro  <jkf@max.verada.com>
+1.2.43
+	* add digest-authorization to the aserve client code
 
 2005-01-13 John Foderaro  <jkf@tiger.franz.com>
 1.2.42

@@ -2,7 +2,7 @@
 ;;
 ;; client.cl
 ;;
-;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA  - All rights reserved.
+;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA  - All rights reserved.
 ;; copyright (c) 2000-2004 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
@@ -692,7 +692,7 @@ or \"foo.com:8000\", not ~s" proxy))
 	  (let ((jar (client-request-cookies creq)))
 	    (if* jar
 	       then ; do all set-cookie requests
-		    (let (prev)
+		    (let (prev cs)
 		      ; Netscape v3 web server bogusly splits set-cookies
 		      ; over multiple set-cookie lines, so we look for
 		      ; incomplete lines (those ending in #\;) and combine
@@ -705,11 +705,20 @@ or \"foo.com:8000\", not ~s" proxy))
 				   else (setq prev (cdr headval)))
 				
 				(if* (not (eq #\; (last-character prev)))
-				   then (save-cookie (client-request-uri creq)
-						     jar
-						     prev)
+				   then (push prev cs)
+					(setq prev nil))
 					
-					(setq prev nil)))))))
+			 elseif prev
+			   then (push prev cs)
+				(setq prev nil)))
+		      
+		      (if* prev
+			 then (push prev cs))
+		      
+		      (dolist (cc (nreverse cs))
+			(save-cookie (client-request-uri creq)
+				     jar
+				     cc)))))
 	  
 	  
 	  (if* (eq :head (client-request-method creq))
@@ -913,7 +922,6 @@ or \"foo.com:8000\", not ~s" proxy))
   ;; return true if did the authentication thing
   (let ((val (cdr (assoc :www-authenticate (client-request-headers creq))))
 	(params))
-    (format t "auth on ~s~%" val)
     
     
     (if* (not (and val
@@ -941,7 +949,6 @@ or \"foo.com:8000\", not ~s" proxy))
       (md5-update md ":")
       (md5-update md (digest-password da))
       (setq ha1 (md5-final md :return :hex))
-      (format t " ha1 is ~s~%" ha1)
       
       ; compute a2
       
@@ -958,7 +965,6 @@ or \"foo.com:8000\", not ~s" proxy))
       
       (setq ha2 (md5-final md :return :hex))
       
-      (format t "ha2 is ~s~%" ha2)
       
       
       

@@ -2,7 +2,8 @@
 ;;
 ;; t-aserve.cl
 ;;
-;; copyright (c) 1986-2000 Franz Inc, Berkeley, CA 
+;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA  - All rights reserved.
+;; copyright (c) 2000-2004 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -1588,7 +1589,13 @@
 	(x-do-http-request (format nil "~a/cgi-2"
 				   prefix-local)
 			   :redirect nil)
-      (test "go to franz" body :test #'equal)
+      
+      ; some /bin/sh's don't' support "-n" so accept either one.
+      ; We don't want to search for something exact since if -n
+      ; fails we get an appened lf, or cllf and we don't want to
+      ; conditionalize on the machine's line ending convention.
+      (test t (not (null (search "go to franz" body))))
+      
       (test 301 code)
       (test "http://www.franz.com" (cdr (assoc :location headers))
 	    :test #'equal)
@@ -1624,9 +1631,9 @@
 				  eof
 				  )))))
     (setq error-buffer (make-array 10 
-				  :element-type 'character
-				  :adjustable t
-				  :fill-pointer 0))
+				   :element-type 'character
+				   :adjustable t
+				   :fill-pointer 0))
         
     (multiple-value-bind (body rescode)
 	(x-do-http-request (format nil "~a/cgi-4" prefix-local))
