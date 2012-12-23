@@ -49,7 +49,7 @@
   (max  parseobj-size)
   )
 
-(defvar *parseobjs* nil)
+(defvar *parseobjs* nil) 
 (defvar *parseobj-lock* (acl-compat.mp:make-process-lock :name "Parse object lock"))
 
 (defun allocate-parseobj ()
@@ -363,12 +363,13 @@
 (defun header-value-member (val parsed-value)
   ;; test to see if the given value is a member of the list
   ;; of values in the parsed value.  parse the value if needed
-  (setq parsed-value (ensure-value-parsed parsed-value))
-  (dolist (par parsed-value)
-    (if* (consp par)
-       then (setq par (cadr par)))
-    (if* (equalp val par)
-       then (return t))))
+  (if* parsed-value
+     then (setq parsed-value (ensure-value-parsed parsed-value))
+	  (dolist (par parsed-value)
+	    (if* (consp par)
+	       then (setq par (cadr par)))
+	    (if* (equalp val par)
+	       then (return t)))))
 
 (defun ensure-value-parsed (str &optional singlep)
   ;; parse the header value if it hasn't been parsed.

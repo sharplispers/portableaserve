@@ -133,11 +133,14 @@
 
 (defmacro with-better-scan-macros (&body body)
   ;; define the macros for scanning characters in a string
-  `(macrolet ((collect-to (ch buffer i max &optional downcasep)
+  `(macrolet ((collect-to (ch buffer i max &optional downcasep eol-ok)
 		;; return a string containing up to the given char
 		`(let ((start ,i))
 		   (loop
-		     (if* (>= ,i ,max) then (fail))
+		     (if* (>= ,i ,max) 
+			then ,(if* eol-ok
+				 then `(return (buf-substr start ,i ,buffer ,downcasep))
+				 else `(fail)))
 		     (if* (eql ,ch (schar ,buffer ,i)) 
 			then (return (buf-substr start ,i ,buffer ,downcasep)))
 		     (incf ,i)
@@ -164,8 +167,8 @@
 		`(loop
 		   (if* (>= ,i ,max) 
 		      then ,(if* errorp 
-			      then `(fail)
-			      else `(return)))
+			       then `(fail)
+			       else `(return)))
 		   (if* (not (eq ,ch (schar ,buffer ,i)))
 		      then (return))
 		   (incf ,i)))
@@ -325,8 +328,7 @@
 	    (if* res
 	       then			; multiple items
 		    (let* ((total-size (+ (* 1024 (length res)) start))
-			   (bigarr (make-array total-size :element-type '(unsigned-byte 8)) ; was atype)
-                             ))
+			   (bigarr (make-array total-size :element-type '(unsigned-byte 8)))) ; was atype)
 		      (let ((sstart 0))
 			(dolist (arr (reverse res))
 			  (replace bigarr arr :start1 sstart)
@@ -687,7 +689,7 @@ or \"foo.com:8000\", not ~s" proxy))
 				 (collect-to-eol buff i len)))))
 	    (setq protocol (collect-to #\space buff pos len))
 	    (skip-to-not #\space buff pos len)
-	    (setq response (collect-to #\space buff pos len))
+	    (setq response (collect-to #\space buff pos len nil t))
 	    ; some servers don't return a comment, so handle that
 	    (skip-to-not #\space buff pos len nil)
 	    (setq comment (collect-to-eol buff pos len)))

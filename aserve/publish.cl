@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.19 2005/08/05 09:26:39 melisgl Exp $
+;; $Id: publish.cl,v 1.84 2006/06/08 00:29:51 jkf Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -1296,7 +1296,10 @@
 		(if* (null (errorset 
 			    (setq p (open (file ent) 
 					  :direction :input
-					  :element-type #+cormanlisp 'unsigned-byte #-cormanlisp '(unsigned-byte 8)))))
+					  #-(and allegro (version>= 6))
+					  :element-type
+					  #-(and allegro (version>= 6))
+					  '(unsigned-byte 8)))))
 		   then ; file not readable
 		      
 			(return-from process-entity nil))
@@ -2085,6 +2088,7 @@
 	     (extra-headers (request-reply-headers req))
 	     (post-headers (member :post-headers strategy :test #'eq))
 	     (content)
+	     (*print-readably* nil) ; set by w-s-io-syntax and not desired
 	     (chunked-p (member :chunked strategy :test #'eq))
 	     (code (request-reply-code req))
 	     (send-headers
