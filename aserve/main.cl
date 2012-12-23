@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.171 2006/03/29 21:02:10 jkf Exp $
+;; $Id: main.cl,v 1.172 2006/04/20 00:12:54 jkf Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -38,7 +38,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 44))
+(defparameter *aserve-version* '(1 2 45))
 
 #+allegro
 (eval-when (eval load)
@@ -1336,14 +1336,14 @@ by keyword symbols and not by strings"
 (defun http-worker-thread ()
   ;; made runnable when there is an socket on which work is to be done
   (let* ((*print-level* 5)
-         (*worker-request* nil)
-         (*default-aserve-external-format*
-          (wserver-external-format *wserver*))
+	(*worker-request* nil)
+	(*default-aserve-external-format* 
+	 (wserver-external-format *wserver*))
          #+openmcl-native-threads (semaphore (ccl:make-semaphore))
          #+openmcl-native-threads (qelem (make-work-list-element
                                           :semaphore semaphore))
-        )
-    ;; lots of circular data structures in the caching code.. we
+	)
+    ;; lots of circular data structures in the caching code.. we 
     ;; need to restrict the print level
     (loop
       #+openmcl-native-threads
@@ -1597,7 +1597,7 @@ by keyword symbols and not by strings"
 		     then (brief-logmess
 			   (format nil "While reading http request~:_ from ~a:~:_ ~a"
 				   (acl-compat.socket:ipaddr-to-dotted
-				    (acl-compat.socket:remote-host sock))
+				    (acl-compat.socket::remote-host sock))
 				   error-obj)))
 
 		  ; notify the client if it's still listening

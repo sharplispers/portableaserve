@@ -204,10 +204,12 @@
 			keep-alive   ; if true, set con to keep alive
 			headers	    ; extra header lines, alist
 			proxy	    ; naming proxy server to access through
+			proxy-basic-authorization  ; (name . password)
 			user-agent
 			(external-format *default-aserve-external-format*)
 			ssl		; do an ssl connection
 			skip-body ; fcn of request object
+			timeout  
 			
 			;; internal
 			recursing-call ; true if we are calling ourself
@@ -229,9 +231,11 @@
 	       :keep-alive keep-alive
 	       :headers headers
 	       :proxy proxy
+	       :proxy-basic-authorization proxy-basic-authorization
 	       :user-agent user-agent
 	       :external-format external-format
 	       :ssl ssl
+	       :timeout timeout
 	       )))
 
     (unwind-protect
@@ -388,13 +392,17 @@
 				     query
 				     headers
 				     proxy
+				     proxy-basic-authorization
 				     user-agent
 				     (external-format 
 				      *default-aserve-external-format*)
 				     ssl
+				     timeout
 				     )
   
 
+  (declare (ignorable timeout))
+  
   (let (host sock port fresh-uri scheme-default-port)
     ;; start a request 
   
@@ -463,6 +471,14 @@ or \"foo.com:8000\", not ~s" proxy))
        then (schedule-finalization 
 	     sock 
 	     #'net.aserve::check-for-open-socket-before-gc))
+    
+    #+io-timeout
+    (if* (integerp timeout)
+       then (socket:socket-control 
+		 sock 
+		 :read-timeout timeout
+		 :write-timeout timeout))
+	    
     
     (if* query
        then (case method
@@ -554,6 +570,14 @@ or \"foo.com:8000\", not ~s" proxy))
 				     (format nil "~a:~a" 
 					     (car basic-authorization)
 					     (cdr basic-authorization)))
+				    crlf))
+    
+    (if* proxy-basic-authorization
+       then (net.aserve::format-dif :xmit sock "Proxy-Authorization: Basic ~a~a"
+				    (base64-encode
+				     (format nil "~a:~a" 
+					     (car proxy-basic-authorization)
+					     (cdr proxy-basic-authorization)))
 				    crlf))
     
     (if* (and digest-authorization

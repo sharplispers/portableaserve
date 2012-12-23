@@ -1,6 +1,6 @@
 ;; load in aserve
 ;;
-;; $Id: load.cl,v 1.5 2004/04/26 18:18:37 kevinrosenberg Exp $
+;; $Id: load.cl,v 1.65 2006/03/29 21:55:59 jkf Exp $
 ;;
 
 ;
@@ -309,7 +309,7 @@ passed a non-logical pathname"
 	   aserve-version-name)
    :show-window :hide)
   (run-shell-command 
-   (format nil "cp ~aaserve-src/~a.tgz /net/cobweb/home/ftp/pub/aserve"
+   (format nil "cp ~aaserve-src/~a.tgz /fi/ftp/pub/aserve"
 	   *aserve-root*
 	   aserve-version-name)
    :show-window :hide))
@@ -317,7 +317,7 @@ passed a non-logical pathname"
 (defun publish-docs ()
   ;; copy documentation to the external web site
   (run-shell-command
-   (format nil "cp ~adoc/htmlgen.html ~adoc/aserve.html ~adoc/tutorial.html /net/cobweb/www/opensource/devel/www/aserve"
+   (format nil "cp ~adoc/htmlgen.html ~adoc/aserve.html ~adoc/tutorial.html /fi/www/sites/opensource/devel/www/aserve"
 	   *aserve-root*
 	   *aserve-root*
 	   *aserve-root*)
@@ -337,7 +337,10 @@ passed a non-logical pathname"
   
   (let ((buffer (make-array 4096 :element-type '(unsigned-byte 8))))
     (with-open-file (p dest :direction :output :if-exists :supersede
-		     :element-type '(unsigned-byte 8))
+		     #-(and allegro (version>= 6))
+		     :element-type
+		     #-(and allegro (version>= 6))
+		     '(unsigned-byte 8))
       (if* verbose
 	 then (format t "Creating ~s~%" dest))
       (dolist (file files)
@@ -345,7 +348,11 @@ passed a non-logical pathname"
 	(if* (and (null (pathname-type file))
 		  (not (probe-file file)))
 	   then (setq file (concatenate 'string file  ".fasl")))
-	(with-open-file (in file :element-type '(unsigned-byte 8))
+	(with-open-file (in file
+			 #-(and allegro (version>= 6))
+			 :element-type
+			 #-(and allegro (version>= 6))
+			 '(unsigned-byte 8))
 	  (loop
 	    (let ((count (read-sequence buffer in)))
 	      (if* (<= count 0) then (return))
