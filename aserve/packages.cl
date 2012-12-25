@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: packages.cl,v 1.6 2005/02/20 12:20:45 rudi Exp $
+;; $Id: packages.cl,v 1.15 2006/12/20 20:51:21 layer Exp $
 
 ;; Description:
 ;;   packages and exports for AllegroServe
@@ -150,6 +150,7 @@
    #:*http-response-timeout*
    #:*mime-types*
    #:*response-accepted*
+   #:*response-no-content*
    #:*response-bad-request*
    #:*response-continue*
    #:*response-created*

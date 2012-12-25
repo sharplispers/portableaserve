@@ -283,11 +283,13 @@
 		  
 		  
 	  
-	  (if* (and (null new-location) 
-		    ; not called when redirecting
-		    (if* (functionp skip-body)
-		       then (funcall skip-body creq)
-		       else skip-body))
+	  (if* (or (and (null new-location) 
+					; not called when redirecting
+			(if* (functionp skip-body)
+			     then (funcall skip-body creq)
+			     else skip-body))
+		   (= (client-request-response-code creq)
+		      #.(net.aserve::response-number *response-no-content*)))
 	     then
 		  (return-from do-http-request
 		    (values 
