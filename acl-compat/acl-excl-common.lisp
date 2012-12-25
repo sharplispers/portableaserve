@@ -123,7 +123,7 @@
 ;; TODO: a compiler macro for constant string regexps would be nice,
 ;; so that the create-scanner call at runtime can be evaded.
 (defun match-regexp (string-or-regexp string-to-match
-                     &key newlines-special case-fold return
+                     &key newlines-special case-fold (return :string)
                      (start 0) end shortest)
   "Note: if a regexp compiled with compile-regexp is passed, the
   options newlines-special and case-fold shouldn't be used, since
