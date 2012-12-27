@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: publish.cl,v 1.85 2006/07/24 18:54:34 jkf Exp $
+;; $Id: publish.cl,v 1.86 2006/12/22 21:11:58 jkf Exp $
 
 ;; Description:
 ;;   publishing urls
@@ -1996,13 +1996,13 @@
   ;; determine how we'll respond to this request
   
   (let ((strategy nil)
-	(keep-alive-possible-p (keep-alive-possible-p req)))
+	(keep-alive-possible (keep-alive-possible-p req)))
     (if* (eq (request-method req) :head)
        then ; head commands are particularly easy to reply to
 	    (setq strategy '(:use-socket-stream
 			     :omit-body))
 	    
-	    (if* keep-alive-possible-p
+	    (if* keep-alive-possible
 	       then (push :keep-alive strategy))
 	    
      elseif (and  ;; assert: get command
@@ -2010,11 +2010,11 @@
 	     (eq (request-protocol req) :http/1.1)
 	     (null (content-length ent)))
        then ;; http/1.1 so we can chunk
-	    (if* keep-alive-possible-p
+	    (if* keep-alive-possible
 	       then (setq strategy '(:keep-alive :chunked :use-socket-stream))
 	       else (setq strategy '(:chunked :use-socket-stream)))
        else ; can't chunk, let's see if keep alive is requested
-	    (if* keep-alive-possible-p
+	    (if* keep-alive-possible
 	       then ; a keep alive is requested..
 		    ; we may want reject this if we are running
 		    ; short of processes to handle requests.
@@ -2052,11 +2052,11 @@
   ;; for files we can always use the socket stream and keep alive
   ;; since we konw the file length ahead of time
   (declare (ignore format))
-  (let ((keep-alive-possible-p (keep-alive-possible-p req))
+  (let ((keep-alive (keep-alive-possible-p req))
 	(strategy))
     
     (if*  (eq (request-method req) :get)
-       then (setq strategy (if* keep-alive-possible-p
+       then (setq strategy (if* keep-alive
 			      then '(:use-socket-stream :keep-alive)
 			      else '(:use-socket-stream)))
        else (setq strategy (call-next-method)))
@@ -2133,7 +2133,8 @@
 		   then ; must do ext format conversion now
 			; so we can compute the length
 			(setq content
-			  (string-to-octets content :external-format sos-ef)))
+			  (string-to-octets content :external-format sos-ef
+					    :null-terminate nil)))
 	      
 		(setf (request-reply-content-length req) (length content)))
       	

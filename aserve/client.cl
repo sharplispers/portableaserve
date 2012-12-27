@@ -250,6 +250,7 @@
 	    (if* (not (eql 100 (client-request-response-code creq)))
 	       then (return)))
 	  
+		  
 	  (if* (and (member (client-request-response-code creq)
 			    '(#.(net.aserve::response-number *response-found*)
 			      #.(net.aserve::response-number *response-moved-permanently*)
@@ -284,12 +285,16 @@
 		  
 	  
 	  (if* (or (and (null new-location) 
-					; not called when redirecting
+			; not called when redirecting
 			(if* (functionp skip-body)
-			     then (funcall skip-body creq)
-			     else skip-body))
-		   (= (client-request-response-code creq)
-		      #.(net.aserve::response-number *response-no-content*)))
+			   then (funcall skip-body creq)
+			   else skip-body))
+		   (member (client-request-response-code creq)
+			   ' (#.(net.aserve::response-number 
+				 *response-no-content*)
+				#.(net.aserve::response-number 
+				   *response-not-modified*)
+			      )))
 	     then
 		  (return-from do-http-request
 		    (values 
@@ -538,7 +543,7 @@ or \"foo.com:8000\", not ~s" proxy))
                   ;;strings are not character arrays
 		  ((or (array character (*)) (array base-char (*)))
 		   (if* (null content-length)
-		      then (incf computed-length
+		      then (incf computed-length 
                                  #+allegro
 				 (native-string-sizeof 
 				  content-piece
