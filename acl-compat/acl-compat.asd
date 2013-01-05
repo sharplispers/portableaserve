@@ -48,35 +48,9 @@
 In contrast to CL-SOURCE-FILE, this class does not think that such warnings
 indicate failure."))
 
-(defmethod perform ((operation compile-op) (c legacy-cl-source-file))
-  (let ((source-file (component-pathname c))
-	(output-file (car (output-files operation c)))
-	(warnings-p nil)
-	(failure-p nil))
-    (setf (asdf::component-property c 'last-compiled) nil)
-    (handler-bind ((warning (lambda (c)
-			      (declare (ignore c))
-			      (setq warnings-p t)))
-		   ;; _not_ (or error (and warning (not style-warning)))
-		   (error (lambda (c)
-			    (declare (ignore c))
-			    (setq failure-p t))))
-      (compile-file source-file
-		    :output-file output-file))
-    ;; rest of this method is as for CL-SOURCE-FILE
-    (setf (asdf::component-property c 'last-compiled) (file-write-date output-file))
-    (when warnings-p
-      (case (asdf::operation-on-warnings operation)
-	(:warn (warn "COMPILE-FILE warned while performing ~A on ~A"
-		     c operation))
-	(:error (error 'compile-warned :component c :operation operation))
-	(:ignore nil)))
-    (when failure-p
-      (case (asdf::operation-on-failure operation)
-	(:warn (warn "COMPILE-FILE failed while performing ~A on ~A"
-		     c operation))
-	(:error (error 'compile-failed :component c :operation operation))
-	(:ignore nil)))))
+(defmethod perform :around ((operation compile-op) (c legacy-cl-source-file))
+  (handler-bind (((or style-warning warning) #'muffle-warning))
+    (call-next-method)))
 
 ;;;
 ;;; This is thought to reduce reader-conditionals in the system definition
