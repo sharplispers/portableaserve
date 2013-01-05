@@ -79,12 +79,10 @@
                           if-input-does-not-exist if-output-exists
                           if-error-output-exists wait environment show-window)
   (declare (ignore show-window))
-  ;; KLUDGE: split borrowed from asdf, this shouldn't be done -- it
-  ;; would be better to use split-sequence or define one ourselves ...
   ;; TODO: On Unix, acl also handles a vector of simple-strings as
   ;; value for program, with different semantics.
   (let* ((program-and-arguments
-          (delete "" (asdf::split program) :test #'string=))
+          (delete "" (asdf-utils:split-string program) :test #'string=))
          (program (car program-and-arguments))
          (arguments (cdr program-and-arguments)))
    (when environment

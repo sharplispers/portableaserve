@@ -155,6 +155,7 @@ lisp-system"))
                  #+sbcl :sb-posix
                  #+(and cmu (not gray-streams)) :cmucl-graystream
                  #+(and (or cmu lispworks) ssl-available) :cl-ssl
+                 #+ccl :asdf-utils      ; for split-string
                  )
     :perform (load-op :after (op acl-compat)
                       (pushnew :acl-compat cl:*features*)))
