@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.178 2006/12/22 21:11:58 jkf Exp $
+;; $Id: main.cl,v 1.179 2007/03/22 16:44:42 layer Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -38,7 +38,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 49))
+(defparameter *aserve-version* '(1 2 50))
 
 #+allegro
 (eval-when (eval load)
@@ -1060,8 +1060,13 @@ by keyword symbols and not by strings"
 		   debug-stream  ; stream to which to send debug messages
 		   accept-hook
 		   ssl		 ; enable ssl
-		   ssl-password ; for ssl: pswd to decode priv key in cert
-		   os-processes  ; to fork and run multiple instances
+		   ssl-key       ; File containing private key. 
+		   ssl-password  ; for ssl: pswd to decode priv key
+		   verify
+		   ca-file
+		   ca-directory
+		   max-depth
+		   os-processes	 ; to fork and run multiple instances
 		   (external-format nil efp); to set external format
 		   )
   ;; -exported-
@@ -1070,12 +1075,11 @@ by keyword symbols and not by strings"
   ;; return the server object
   #+mswindows
   (declare (ignore setuid setgid))
-  #-(or (and allegro (version>= 6 2 beta))
-			       (and :lispworks (not :cl-ssl)))
-  (declare (ignore ssl-password))
 
   (declare (ignore debug))  ; for now
 
+  (declare (ignorable ssl-key ssl-password verify ca-file ca-directory max-depth))
+  
   (if* debug-stream 
      then (setq *aserve-debug-stream* 
 	    (if* (eq debug-stream t)
@@ -1096,12 +1100,26 @@ by keyword symbols and not by strings"
 	  
 	  (setq accept-hook 
 	    #'(lambda (socket)
+		#+(and allegro (version>= 8 0))
 		(funcall 'acl-compat.socket::make-ssl-server-stream socket
 			 :certificate ssl
-			 #+(or (and allegro (version>= 6 2 beta))
-			       (and :lispworks (not :cl-ssl))) :certificate-password
-			 #+(or (and allegro (version>= 6 2 beta))
-			       (and :lispworks (not :cl-ssl))) ssl-password)))
+			 :certificate-password ssl-password
+			 :key ssl-key
+			 :verify verify
+			 :ca-file ca-file
+			 :ca-directory ca-directory
+			 :max-depth max-depth)
+		#+(and allegro (not (version>= 8 0)))
+		(funcall 'acl-compat.socket::make-ssl-server-stream socket
+			 :certificate ssl
+			 :certificate-password ssl-password)
+        #-allegro
+        (funcall 'acl-compat.socket::make-ssl-server-stream socket
+			 :certificate ssl
+             #+(and :lispworks (not :cl-ssl)) :certificate-password
+             #+(and :lispworks (not :cl-ssl)) ssl-password)
+		))
+	    
 	  (setq chunking nil) ; doesn't work well through ssl
 	  (if* (not port-p)
 	     then ; ssl defaults to port 443
@@ -1573,13 +1591,13 @@ by keyword symbols and not by strings"
   ;; When this function returns the given socket has been closed.
   ;;
   
-  ; run the accept hook on the socket if there is one
-  (let ((ahook (wserver-accept-hook *wserver*)))
-    (if* ahook then (setq sock (funcall ahook sock))))
-  
-	
   (unwind-protect
       (let (req error-obj (chars-seen (list nil)))
+
+	;; run the accept hook on the socket if there is one
+	(let ((ahook (wserver-accept-hook *wserver*)))
+	  (if* ahook then (setq sock (funcall ahook sock))))
+	
 	;; get first command
 	(loop
 	   
@@ -2339,8 +2357,8 @@ in get-multipart-sequence"))
       ((array character (*))
        (setq text-mode t))
       #+lispworks (string (setq text-mode t))
-      (t
-       (error
+      (t 
+       (error 
 	"This function only accepts (array (unsigned-byte 8)) or character arrays")))
     (if* (null mp-info)
        then (error "get-multipart-sequence called before get-multipart-header"))
