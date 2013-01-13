@@ -2,6 +2,9 @@
 
 (in-package "CL-USER")
 
+(cerror "Continue anyway."
+        "QuickLisp (http://quicklisp.org) is the recommended way of installing Portable AllegroServe.")
+
 (defun ensure-asdf ()
   #+asdf (return-from ensure-asdf t)
   #+sbcl (require :asdf)
