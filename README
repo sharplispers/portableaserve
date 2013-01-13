@@ -10,9 +10,10 @@ in the subdirectories of this archive
  ./logical-hostnames.lisp Some logical-pathname-translations needed by defsys
  ./README                 This file
  ./README.cmucl           Additional documentation for CMU Common Lisp
- ./INSTALL.lisp           Quick installation
+ ./INSTALL.lisp           Quick installation (deprecated)
  
- The quick-installation script compiles and loads Portable AllegroServe.
+ To run Portable AllegroServe, best install QuickLisp
+ (http://quicklisp.org/) and evalute (ql:quickload :aserve).
 
  Loading the file aserve:example.cl and evaluating
  (aserve-example::start-server :port 2001) starts an AllegroServe
