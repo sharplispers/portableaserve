@@ -59,6 +59,9 @@ indicate failure."))
   (setf (loaded c) t))
 
 #+allegro
+(defmethod asdf:perform ((op asdf:compile-op) (c original-aserve)))
+
+#+allegro
 (defmethod asdf:operation-done-p ((op asdf:load-op) (c original-aserve))
   (loaded c))
 
