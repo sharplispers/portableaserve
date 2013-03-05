@@ -46,32 +46,14 @@ indicate failure."))
                       (pushnew :aserve cl:*features*)))
 
 #+allegro
-(defclass original-aserve (asdf:component)
-  ((loaded :initform nil :accessor loaded)))
-
-#+allegro
-(defmethod asdf:source-file-type ((c original-aserve) (s module)) "dummy")
-
-#+allegro
-(defmethod asdf:perform ((op asdf:load-op) (c original-aserve))
-  #+common-lisp-controller (c-l-c:original-require 'aserve)
-  #-common-lisp-controller (require 'aserve)
-  (setf (loaded c) t))
-
-#+allegro
-(defmethod asdf:perform ((op asdf:compile-op) (c original-aserve)))
-
-#+allegro
-(defmethod asdf:operation-done-p ((op asdf:load-op) (c original-aserve))
-  (loaded c))
-
-#+allegro
-(defmethod asdf:operation-done-p ((op asdf:compile-op) (c original-aserve))
-  t)
-
-#+allegro
 (defsystem aserve
-    :components ((:original-aserve "dummy")))
+    :name "AllegroServe (portable)"
+    :author "John K. Foderaro"
+    :version "1.3.19"
+    :licence "LLGPL"
+    :default-component-class cl-source-file.cl
+    :components ((:file "require-original-aserve")))
+
 
 ;;; Logical pathname is needed by AllegroServe examples
 #+(or lispworks cmu mcl openmcl clisp sbcl)
