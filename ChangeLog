@@ -1,3 +1,15 @@
+2013-03-09 Dave Cooper <david.cooper@genworks.com>
+	* libs/: removed, because asdf is available on all currently
+	supported platforms and other libs are available through Quicklisp
+	* acl-compat/acl-compat.asd: removed :depends-on :asdf-utils for
+	CCL.
+	* acl-compat/mcl/acl-excl.lisp: replaced (asdf-utils:split-string
+	...)  with (cl-ppcre:split "\\s" ...).
+	* as mentioned by Rudi in a message to the mailing list, large
+	swaths of acl-compat stuff is ripe to be replaced by stuff from
+	Quicklisp these days.
+	* Updated the README.cmucl to remove outdated asdf info.
+
 2012-04-01  Kevin Rosenberg <kevin@rosenberg.net>
 	Apply patch from Dave Cooper
         * aserve/aserve.asd: Allow aserve.asd to be asdf loaded

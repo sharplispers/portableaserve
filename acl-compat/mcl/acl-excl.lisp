@@ -82,7 +82,7 @@
   ;; TODO: On Unix, acl also handles a vector of simple-strings as
   ;; value for program, with different semantics.
   (let* ((program-and-arguments
-          (delete "" (asdf-utils:split-string program) :test #'string=))
+          (delete "" (cl-ppcre:split "\\s" program) :test #'string=))
          (program (car program-and-arguments))
          (arguments (cdr program-and-arguments)))
    (when environment
