@@ -23,7 +23,7 @@
         #+(or allegro cormanlisp) :excl
         #+(or mcl openmcl) :ccl
         )
-  #+lispworks (:import-from :common-lisp #:fixnump)
+  #+lispworks (:import-from :lispworks #:fixnump)
   #+sbcl (:import-from :sb-int #:fixnump)
   #+sbcl (:import-from :sb-ext #:without-package-locks)
   #+sbcl (:import-from :sb-ext #:string-to-octets)
