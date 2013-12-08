@@ -59,7 +59,7 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
 
 (defun make-process-lock (&key name)
   (declare (ignore name))
-  (error "Attempting to use multithreading with clisp."))
+  (list 'dummy-lock name))
 
 (defmacro with-process-lock ((lock &key norecursive whostate timeout)
 			     &body forms)
