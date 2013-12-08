@@ -43,7 +43,8 @@ indicate failure."))
                  (:file "proxy" :depends-on ("main" "headers")))
     :depends-on (htmlgen acl-compat)
     :perform (load-op :after (op aserve)
-                      (pushnew :aserve cl:*features*)))
+                      (pushnew :aserve cl:*features*))
+    :perform (test-op (op c) (load-system :aserve-test :force t)))
 
 #+allegro
 (defsystem aserve
@@ -80,6 +81,17 @@ indicate failure."))
                           ;:case :common
                           )
            *load-truename*))))
+
+(defsystem aserve-test
+    :name "Tests for AllegroServe (portable)"
+    :author "John K. Foderaro"
+    :version "1.2.50"
+    :licence "LLGPL"
+    :default-component-class cl-source-file.cl
+    :components ((:module "test"
+                          :components ((:file "t-aserve"))))
+    :depends-on (ptester))
+
 #+cmu
 (defun cl-user::init-aserve-cmu ()
   ;; this isn't strictly necessary, but scheduling feels very coarse
