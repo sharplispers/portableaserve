@@ -500,7 +500,7 @@ or \"foo.com:8000\", not ~s" proxy))
 			       :max-depth max-depth))
 		    #-(and allegro (version>= 8 0))
 		    (setq sock
-		      (funcall 'socket::make-ssl-client-stream sock))
+		      (funcall 'acl-compat.socket::make-ssl-client-stream sock))
 		    )
 	    )
 
