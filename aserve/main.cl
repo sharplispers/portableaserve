@@ -215,7 +215,7 @@
 )
 
 #+(and clisp unix)
-(defun getpid () (unix:getpid))
+(defun getpid () (os:process-id))
 
 #+ (and sbcl unix)
 (progn
