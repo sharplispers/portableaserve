@@ -3,7 +3,7 @@
 ;; packages.cl
 ;;
 ;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA  - All rights reserved.
-;; copyright (c) 2002-2004 Franz Inc, Oakland, CA - All rights reserved.
+;; copyright (c) 2002-2007 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: packages.cl,v 1.18 2007/03/22 16:44:42 layer Exp $
+;; $Id: packages.cl,v 1.20 2007/04/17 22:05:04 layer Exp $
 
 ;; Description:
 ;;   packages and exports for AllegroServe
@@ -222,6 +222,7 @@
    #:digest-realm
    #:digest-username
    #:do-http-request
+   #:http-copy-file
    #:make-http-client-request
    #:read-client-response-headers
    ))

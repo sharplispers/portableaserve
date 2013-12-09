@@ -3,7 +3,7 @@
 ;; urian.cl
 ;;
 ;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA  - All rights reserved.
-;; copyright (c) 2000-2004 Franz Inc, Oakland, CA - All rights reserved.
+;; copyright (c) 2000-2007 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: urian.cl,v 1.7 2005/12/08 21:19:04 layer Exp $
+;; $Id: urian.cl,v 1.9 2007/04/17 22:05:04 layer Exp $
 
 ;; Description:
 ;;   urian example
@@ -368,13 +368,13 @@
     (let ((arg-tag (car head-component)))
       (when (and (listp arg-tag)
 		 (eq :meta (car arg-tag)))
-	(when (equalp '(:http "http" :equiv "content-type" :content)
-		      (subseq arg-tag 1 6))
+	(when (and (>= (length arg-tag) 6) ; spr31997
+		   (equalp '(:http "http" :equiv "content-type" :content)
+			   (subseq arg-tag 1 6)))
 	  (return-from charset-metatag-p (elt arg-tag 6)))
 	(when (equalp '(:http-equiv "content-type" :content)
 		      (subseq arg-tag 1 4))
 	  (return-from charset-metatag-p (elt arg-tag 4)))))))
-
 
 (defmacro cjk-p (code)
   `(or

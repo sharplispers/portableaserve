@@ -3,7 +3,7 @@
 ;; main.cl
 ;;
 ;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA  - All rights reserved.
-;; copyright (c) 2000-2004 Franz Inc, Oakland, CA - All rights reserved.
+;; copyright (c) 2000-2007 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.179 2007/03/22 16:44:42 layer Exp $
+;; $Id: main.cl,v 1.181 2007/09/12 20:33:13 layer Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -38,7 +38,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 50))
+(defparameter *aserve-version* '(1 2 51))
 
 #+allegro
 (eval-when (eval load)

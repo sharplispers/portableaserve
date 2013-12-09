@@ -152,6 +152,7 @@
    #:command-line-arguments
    #:command-line-argument
    #:reap-os-subprocess
+   #:make-temp-file-name
    ))
 
 

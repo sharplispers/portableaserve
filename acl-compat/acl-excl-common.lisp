@@ -105,6 +105,10 @@
 (defun filesys-write-date (stream)
   (file-write-date stream))
 
+(defun acl-compat.system:make-temp-file-name (name)
+  (cl-fad:with-open-temporary-file (s)
+    (pathname s)))
+
 (defun frob-regexp (regexp)
   "This converts from ACL regexps to Perl regexps.  The escape
   status of (, ) and | is toggled."

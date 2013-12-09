@@ -151,6 +151,7 @@ lisp-system"))
     :depends-on (:puri
                  :cl-ppcre
                  :ironclad
+                 :cl-fad
                  #+sbcl :sb-bsd-sockets
                  #+sbcl :sb-posix
                  #+(and cmu (not gray-streams)) :cmucl-graystream

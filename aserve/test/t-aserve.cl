@@ -3,7 +3,7 @@
 ;; t-aserve.cl
 ;;
 ;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA  - All rights reserved.
-;; copyright (c) 2000-2004 Franz Inc, Oakland, CA - All rights reserved.
+;; copyright (c) 2000-2007 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: t-aserve.cl,v 1.53 2005/12/08 21:19:04 layer Exp $
+;; $Id: t-aserve.cl,v 1.56 2007/04/17 22:05:04 layer Exp $
 
 ;; Description:
 ;;   test iserve
@@ -50,6 +50,13 @@
   )
 
 (in-package :net.aserve.test)
+
+(eval-when (compile eval load)
+  (defvar *aserve-examples-directory*
+      (or (probe-file "aserve/examples/")
+	  (probe-file "examples/")
+	  (error "Could not find the aserve examples directory.")))
+  )
 
 ; set to nil before loading the test to prevent the test from auto-running
 (defvar common-lisp-user::*do-aserve-test* t)
@@ -94,12 +101,12 @@
 		   (test-forms port)
 		   (test-client port)
 		   (test-cgi port)
+		   (test-http-copy-file)
 		   (if* (member :ics *features*)
 		      then (test-international port)
 			   (test-spr27296))
 		   (if* test-timeouts 
-		      then (test-timeouts port))
-		   ))
+		      then (test-timeouts port))))
 	    (format t "~%~%===== test direct ~%~%")
 	    (do-tests)
 	    
@@ -1561,19 +1568,27 @@
     (publish :path "/cgi-0"
 	     :function #'(lambda (req ent)
 			   (net.aserve:run-cgi-program 
-			    req ent "sh aserve/examples/cgitest.sh")))
+			    req ent
+			    #.(format nil "sh ~acgitest.sh"
+				      *aserve-examples-directory*))))
     (publish :path "/cgi-1"
 	     :function #'(lambda (req ent)
 			   (net.aserve:run-cgi-program 
-			    req ent "sh aserve/examples/cgitest.sh 1")))
+			    req ent
+			    #.(format nil "sh ~acgitest.sh 1"
+				      *aserve-examples-directory*))))
     (publish :path "/cgi-2"
 	     :function #'(lambda (req ent)
 			   (net.aserve:run-cgi-program 
-			    req ent "sh aserve/examples/cgitest.sh 2")))
+			    req ent
+			    #.(format nil "sh ~acgitest.sh 2"
+				      *aserve-examples-directory*))))
     (publish :path "/cgi-3"
 	     :function #'(lambda (req ent)
 			   (net.aserve:run-cgi-program 
-			    req ent "sh aserve/examples/cgitest.sh 3")))
+			    req ent
+			    #.(format nil "sh ~acgitest.sh 3"
+				      *aserve-examples-directory*))))
     
     ;; verify that the various headers work
     (test 200 (values2 
@@ -1612,7 +1627,9 @@
     (publish :path "/cgi-4"
 	     :function #'(lambda (req ent)
 			   (net.aserve:run-cgi-program 
-			    req ent "sh aserve/examples/cgitest.sh 4"
+			    req ent
+			    #.(format nil "sh ~acgitest.sh 4"
+				      *aserve-examples-directory*)
 			    :error-output
 			    #'(lambda (req ent stream)
 				(declare (ignore req ent))
@@ -1776,24 +1793,42 @@
     (shutdown :server server)))
 			   
 
+(defun test-http-copy-file ()
+  (let ((url
+	 "http://www.franz.com/support/8.0/download/entpro/dist/windows/acl80.exe")
+	(reference-file
+	 "/fi/www/sites/franz/prod/htdocs/support/8.0/download/entpro/dist/windows/acl80.exe")
+	(temp-file-name (acl-compat.sys:make-temp-file-name "temp")))
+    (when (not (probe-file reference-file))
+      (format t "test-http-copy-file: reference file does not exist.~%")
+      (return-from test-http-copy-file))
+    (unwind-protect
+	(flet ((doit (&rest args)
+		 (format t "~&~%copying reference file~@[:~{ ~s~}~]~%"
+			 args)
+		 (let ((before (get-internal-real-time)))
+		   (apply #'http-copy-file url temp-file-name args)
+		   (format t "time = ~s msecs~%"
+			   (- (get-internal-real-time) before)))
+		 (format t "comparing ~a~%" temp-file-name)
+             ;; FIXME: implement compare-files in acl-compat - but we
+             ;; won't have the reference file locally so it's not urgent
+		 (test t #+allegro (excl::compare-files reference-file temp-file-name) #-allegro nil)
+		 (delete-file temp-file-name)))
+	  (doit)
+	  (doit :protocol :http/1.0)
+	  (doit :buffer-size 2048)
+	  (doit :buffer-size 4096)
+	  (doit :buffer-size 8192)
+	  (doit
+	   :progress-function
+	   (lambda (bytes-read total-size)
+	     (format t "~&  copy progress: ~a ~a~%" bytes-read total-size)
+	     (force-output t))))
+      (ignore-errors (delete-file temp-file-name)))))
 
     
 (if* common-lisp-user::*do-aserve-test* 
    then (test-aserve *test-timeouts*)
    else (format t 
 		" (net.aserve.test::test-aserve) will run the aserve test~%"))
-
-
-
-	
-    
-   
-  
-  
-
-	
-  
-
-  
-
-

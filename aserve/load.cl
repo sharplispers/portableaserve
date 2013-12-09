@@ -1,6 +1,6 @@
 ;; load in aserve
 ;;
-;; $Id: load.cl,v 1.65 2006/03/29 21:55:59 jkf Exp $
+;; $Id: load.cl,v 1.67 2007/04/08 15:12:15 layer Exp $
 ;;
 
 ;

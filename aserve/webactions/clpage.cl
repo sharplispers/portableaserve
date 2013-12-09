@@ -3,7 +3,7 @@
 ;; clpage.cl
 ;; common lisp server pages
 ;;
-;; copyright (c) 2003-2005 Franz Inc, Oakland, CA - All rights reserved.
+;; copyright (c) 2003-2007 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 
-;; $Id: clpage.cl,v 1.9 2004/08/31 03:49:36 kevinrosenberg Exp $
+;; $Id: clpage.cl,v 1.13 2007/08/28 15:28:12 jkf Exp $
 
 
 (eval-when (compile load eval) (require :aserve))
@@ -385,7 +385,14 @@
 				chstart chcount))
 	   elseif (eq ch #\")
 	     then (if* (or (match-buffer backbuffer backindex "=ferh")
-			   (match-buffer backbuffer backindex "=noitca"))
+			   ;; check for action= within a form only since
+			   ;; backbase use b:action=
+			   ;; cac 2aug07
+ 			   (and (equalp lasttag "form")
+ 				(match-buffer backbuffer backindex "=noitca"))
+			   (and (equalp lasttag "frame")
+				(match-buffer backbuffer backindex "=crs"))
+			   )
 		     then (savestring p pos-start (- chcount chstart))
 			  ; scan for tag name
 			  (let ((savepos (file-position p)))
@@ -407,11 +414,11 @@
 					(let ((res (car result)))
 					  (if* (and (> (length (cadr res)) 0)
 						    (or (member 
-						     (aref (cadr res) 0)
-						     '(#\/ #\# #\?))
-						    (match-regexp
-						     "^[A-Za-z]+:" ;eg: http: 
-						     (cadr res)))
+							 (aref (cadr res) 0)
+							 '(#\/ #\# #\?))
+							(match-regexp
+							 "^[A-Za-z]+:" ;eg: http: 
+							 (cadr res)))
 						    )
 					     thenret ; absolute pathname, ok
 					     else (pop result)
