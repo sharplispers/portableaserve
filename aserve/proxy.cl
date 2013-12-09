@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.20 2012/04/01 23:04:58 kevinrosenberg Exp $
+;; $Id: proxy.cl,v 1.47 2006/03/24 20:47:06 jkf Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache

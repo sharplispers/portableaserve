@@ -26,7 +26,7 @@
 ;;
 
 ;;
-;; $Id: parse.cl,v 1.13 2007/02/25 12:21:52 rudi Exp $
+;; $Id: parse.cl,v 1.41 2006/06/08 00:28:48 jkf Exp $
 
 ;; Description:
 ;;   parsing and encoding code  

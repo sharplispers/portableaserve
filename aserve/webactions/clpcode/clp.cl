@@ -3,7 +3,7 @@
 ;; clp.cl
 ;; clp functions named clp_xxx
 ;;
-;; copyright (c) 2003 Franz Inc, Oakland CA  - All rights reserved.
+;; copyright (c) 2003-2005 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: clp.cl,v 1.4 2004/08/31 02:53:17 kevinrosenberg Exp $
+;; $Id: clp.cl,v 1.7 2005/12/08 21:19:04 layer Exp $
 
 
 (in-package :net.aserve)
@@ -82,7 +82,7 @@
        (setf (request-query-value name req) value))
       (:session
        (setf (websession-variable (websession-from-req req) name) value)))))
-
+  
 (defun cvt-to-integer (value)
   ;; convert value to an integer if possible
   (if* (integerp value)

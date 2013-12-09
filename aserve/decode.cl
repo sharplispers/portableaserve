@@ -25,7 +25,7 @@
 ;;
 
 ;;
-;; $Id: decode.cl,v 1.10 2005/02/20 12:20:45 rudi Exp $
+;; $Id: decode.cl,v 1.21 2005/12/08 21:19:04 layer Exp $
 
 ;; Description:
 ;;   decode/encode code

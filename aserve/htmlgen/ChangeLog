@@ -1,3 +1,20 @@
+2006-05-25    <jkf@MINI>
+
+	* htmlgen.cl - note that button element has an associated end tag
+
+2003-10-31  John Foderaro  <jkf@tiger.franz.com>
+
+	* htmlgen.cl: remove restriction on simple-string in :princ code
+
+2003-01-07  John Foderaro  <jkf@tiger.franz.com>
+
+	* fix :comment and :prin1-safe when html-print'ing
+	* make sure to close off use of <object>
+
+2002-09-06  John Foderaro  <jkf@tiger.franz.com>
+
+	* add hook to catch when unknonwn html tags are emitted
+
 2002-01-25  John Foderaro  <jkf@tiger.franz.com>
 
 	* the html macro will now macroexpand forms it sees before

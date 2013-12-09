@@ -23,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: t-aserve.cl,v 1.8 2004/02/17 12:48:44 rudi Exp $
+;; $Id: t-aserve.cl,v 1.53 2005/12/08 21:19:04 layer Exp $
 
 ;; Description:
 ;;   test iserve

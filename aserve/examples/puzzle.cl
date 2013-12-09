@@ -2,7 +2,8 @@
 ;;
 ;; puzzle.cl
 ;;
-;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA 
+;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA  - All rights reserved.
+;; copyright (c) 2000-2004 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -22,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: puzzle.cl,v 1.3 2002/12/26 19:55:44 rudi Exp $
+;; $Id: puzzle.cl,v 1.5 2005/12/08 21:19:04 layer Exp $
 
 ;; Description:
 ;;   Allegro Serve puzzle example

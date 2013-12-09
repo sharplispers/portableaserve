@@ -2,7 +2,8 @@
 ;;
 ;; examples.cl
 ;;
-;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA 
+;; copyright (c) 1986-2005 Franz Inc, Berkeley, CA  - All rights reserved.
+;; copyright (c) 2000-2004 Franz Inc, Oakland, CA - All rights reserved.
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
@@ -22,7 +23,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: examples.cl,v 1.7 2004/01/27 10:53:44 rudi Exp $
+;; $Id: examples.cl,v 1.39 2005/12/08 21:19:04 layer Exp $
 
 ;; Description:
 ;;   Allegro iServe examples
@@ -238,7 +239,7 @@
 	      :content-type "image/gif")
 
 ;; this is a demonstration of how you can return a jpeg 
-;; image that was created on the fly (rather than read from
+;; image that was created on the fly (rather thsn read from
 ;; a file via publish-file). 
 ;; We don't want to actually create the image here, so we 
 ;; cheat and read it from a file, but it shows that you can

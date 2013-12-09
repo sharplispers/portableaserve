@@ -25,7 +25,7 @@
 ;;
 
 ;;
-;; $Id: macs.cl,v 1.10 2005/02/20 12:20:45 rudi Exp $
+;; $Id: macs.cl,v 1.20 2005/12/08 21:19:04 layer Exp $
 
 ;; Description:
 ;;   useful internal macros

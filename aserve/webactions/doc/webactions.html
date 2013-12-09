@@ -5,9 +5,9 @@
 </head>
 <body>
 <h1 style="text-align: center;">Allegro Webactions<br>
-<small><small>v1.4</small></small><br>
+<small><small>v1.7</small></small><br>
 </h1>
-<h4><strong><small>copyright(c) 2003. Franz Inc</small></strong></h4>
+<h4><strong><small>copyright(c) 2003-2006. Franz Inc</small></strong></h4>
 <h1>Table of Contents</h1>
 <a href="#introduction">Introduction<br>
 </a><a href="#Loading_Webactions">Loading Webactions</a><br>
@@ -20,7 +20,8 @@
 <a href="#Webactions">Webactions</a><br>
 &nbsp; <a href="#Webaction_project">Webaction project</a><br>
 &nbsp;&nbsp; <a href="#Classes_used_in_webactions">classes used in
-Webactions</a><br>
+Webactions<br>
+</a>&nbsp;&nbsp; <a href="#storing_values">Storing Values</a><br>
 &nbsp;&nbsp; <a href="#Lisp_functions_for_webactions">Lisp functions
 for Webactions</a><br>
 &nbsp;&nbsp;<a href="#Library_of_clp_functions"> Library of clp
@@ -96,7 +97,8 @@ don't understand would confuse them and they may inadvertently modify
 the Lisp code and cause it to fail. </li>
   <li>The clp file processor, when used with the webactions framework,
 supports the notion of sessions which are automatically maintained by
-cookies (preferably) and by url rewriting otherwise. </li>
+cookies (preferably) or by url rewriting.<br>
+  </li>
 </ul>
 <h2><a name="Processing_a_clp_file"></a>Processing a clp file</h2>
 This is a sample clp file:<br>
@@ -133,7 +135,7 @@ which http client is making the request.<br>
 <br>
 A user accessing this page would see something like this in his browser:<br>
 <br>
-<pre>You are using this browser: Netscape 4.01<br>How do you like it?</pre>
+<pre>You are using this browser: Firefox 1.5<br>How do you like it?</pre>
 <br>
 <br>
 <h2><a name="clp_elements_with_bodies"></a>clp elements with bodies</h2>
@@ -148,7 +150,7 @@ sent back to the browser. &nbsp; For example<br>
 This clp file fragment checks to see if the session state has a
 variable
 named winner defined and if it does it includes the appropriate text.
-&nbsp;If winner is not defined then<br>
+&nbsp;If winner is not defined then
 it includes the loser message. &nbsp; &nbsp;The clp_ifdef and
 clp_ifndef
 functions are supplied with AllegroServe.<br>
@@ -180,7 +182,7 @@ tags and from tags that are neither clp tags nor valid html tags.
 &nbsp;
 The parser may encounter a clp tag referencing a clp function that's
 not
-yet defined (in Lisp we don't require that function be defined before
+yet defined (in Lisp we don't require that a function be defined before
 we'll recognize a call to that function). &nbsp; The problem then is
 determining whether a given tag in the file is a call to a clp function
 or
@@ -233,7 +235,7 @@ text that appears between the start and end tags in the clp file.
  style="font-weight: bold;">body. &nbsp;</span>It should do one of two
 things with <span style="font-weight: bold;">body</span>. &nbsp;It can
 just ignore the value in which case the text and calls to clp
-functions&nbsp; between the start and end tags is ignored and not sent
+functions&nbsp; between the start and end tags are ignored and not sent
 as part of the response to the web browser. &nbsp; Alternatively it can
 cause the <span style="font-weight: bold;">body</span> to be sent back
 as part of the response by calling <span style="font-weight: bold;">(emit-clp-entity
@@ -290,7 +292,8 @@ Model View Controller (or MVC). &nbsp; In a dynamic web application the
 pieces are these:<br>
 <ol>
   <li>Model - this is the &nbsp;code that implements the data objects
-being manipulated by users of the web site. &nbsp;In a online store the
+being manipulated by users of the web site. &nbsp;In an online store
+the
 model includes the notions of a shopping cart and orders and so on.
 &nbsp; &nbsp;This is the code that must be written specifically for the
 objects being modeled.</li>
@@ -353,7 +356,8 @@ are treated specially.<br>
 <span style="font-weight: bold;">clp-suffixes</span> - &nbsp;a list of
 strings naming the suffixes of files, which if found inside the
 project,
-are assume to be clp files. &nbsp; By default the value of clp-suffixes
+are assumed to be clp files. &nbsp; By default the value of
+clp-suffixes
 is a list of the string "clp". &nbsp; You may wish to add "htm" or
 "html" to this list if you want those files to be parsed as clp files
 when referenced inside this project.<br>
@@ -387,7 +391,7 @@ five hours).<br>
 seconds between checks to see if any sessions have expired and should
 be
 removed. &nbsp; Specifying this variable sets a global variable (since
-all webaction projects share the same session reaping process). &nbsp;
+all webactions projects share the same session reaping process). &nbsp;
 The default value is &nbsp;300 seconds (i.e. five minutes).<br>
 <span style="font-weight: bold;">reap-hook-function</span> - a function
 of one argument, a websession object.&nbsp; This is called when a
@@ -395,7 +399,7 @@ session is about to be destroyed due to no reference to this session
 for the session-lifetime.&nbsp;&nbsp; If this function returns a
 non-nil value then the session will <span style="font-style: italic;">not</span>
 be reaped and instead the session will be treated as if it was just
-reference and thus it wil be kept alive for another
+referenced and thus it will be kept alive for another
 session-lifetime.&nbsp;&nbsp; One common use for this function is to
 deallocate objects associated with the session that won't be recovered
 by the Lisp garbage collector when the session is garbage collected.<br>
@@ -464,6 +468,40 @@ action functions are operations on the Model. &nbsp; &nbsp;An action
 function should not generate any html, that's the responsibility of the
 View code. <br>
 <br>
+<h3>Action and View functions</h3>
+When processing a request user-written functions may be called to
+either specify the control flow through the webaction project or to
+display html.&nbsp; We refer to the former as <span
+ style="font-style: italic;">action functions</span> and to the latter
+as <span style="font-style: italic;">view functions</span>.&nbsp;&nbsp;&nbsp;&nbsp;
+We make the distinction between action and view to make the roles of
+these functions clear with in the MVC framework.&nbsp; Webactions does
+not know nor need to know the role of the user defined functions it
+calls.&nbsp;&nbsp; Webactions simply calls the function and responds in
+a certain way to the value returned by the user defined functions.<br>
+<br>
+Both action and view functions are passed the standard two
+arguments:&nbsp; a request object and&nbsp; an entity object.<br>
+At the time these functions are called it's <span
+ style="font-weight: bold;">not</span> possible to immediately emit
+html as with-http-response and with-http-body&nbsp; have not been
+done.&nbsp;&nbsp;&nbsp; <br>
+The action function will return one of three values<br>
+<ul>
+  <li>a string giving the symbolic page name to jump to.</li>
+  <li>a string naming a file name whose contents are to be sent to the
+browser</li>
+  <li>the symbol :continue meaning process the next item in the map
+clause</li>
+</ul>
+<br>
+A view function will call with-http-response and with-http-body and
+will send a response back to the web server (possibly using the html
+macro).<br>
+A view function returns <span style="font-weight: bold;">nil </span>indicating
+that a response has been sent back to the http client and no further
+processing should be done by webactions for this request.<br>
+<br>
 <h3>Maps</h3>
 The <span style="font-weight: bold;">map</span> argument
 specifies
@@ -489,9 +527,9 @@ In pseudo-bnf the form of a map entry is:<br>
 name"&nbsp; item* [ (:flag1 value1&nbsp; ... ...)
 ] )</span></font><br>
 <br>
-In our psuedo-bnf, the '*' means zero or more occurances.&nbsp; The
+In our psuedo-bnf, the '*' means zero or more occurrences.&nbsp; The
 square brackets mean
-zero or one occurance.<br>
+zero or one occurrence.<br>
 <br>
 An item can be a symbol or a string.&nbsp;&nbsp; If an item is a symbol
 it names a lisp function which is either an action function or a view
@@ -499,7 +537,7 @@ function.&nbsp; If the item is a string then it either names a file to
 send back to the browser or a symbolic page name.<br>
 <br>
 An action function may modify the Model behind the website and then it
-returns either&nbsp; a string naming a symbolic page name, as string
+returns either&nbsp; a string naming a symbolic page name, as a string
 naming a file to send back to the browser,&nbsp; or the keyword symbol<span
  style="font-weight: bold;"> :continue</span> meaning go on to the next
 item in the map entry.<br>
@@ -566,17 +604,17 @@ dynamically create a page describing the failed login attempt.<br>
 You can't distinguish an action function from a dynamic page generation
 function based on what's in the map argument. &nbsp; If you're wise
 you'll use a naming convention such as used above to make the
-distinction clear. &nbsp; &nbsp;The way that webactions determines
+distinction clear. &nbsp; &nbsp;The way that Webactions determines
 which
 is which when running the function is that an action function will
 return a string and a dynamic html generation function will return nil.<br>
 <br>
 In a clp file relative urls that follow "href=" or "action=" are
-considered to be the logical names of pages. &nbsp;Thus you can write<br>
+considered to be the symbolic names of pages. &nbsp;Thus you can write<br>
 <pre>&lt;a href="home"&gt; blah blah &lt;/a&gt;</pre>
 and that href will be transformed into the appropriate url such that
 the link will be directed to the page associated with the page with the
-logical name "home".<br>
+symbolic name "home".<br>
 It's still possible to reference pages outside the project using
 absolute paths in url, such as<br>
 <br>
@@ -596,7 +634,7 @@ once that's successful it lets you vote for your favorite food. &nbsp;
 The sign in process ensures that at most one vote is recorded for each
 user.<br>
 <br>
-<pre>(webaction-project "sample" :project-prefix "/mysamp/" :destination "/usr/proj/sample/" :index "main"<br>      :map '(("main" "main.clp")<br>             ("signin" action-sign-in)<br>             ("choice" &nbsp; choice.clp")<br>             ("vote" &nbsp; &nbsp; &nbsp;action-vote)<br>             ("thanks" &nbsp;"thanks.clp")))</pre>
+<pre>(webaction-project "sample" :project-prefix "/mysamp/" :destination "/usr/proj/sample/" :index "main"<br>      :map '(("main" "main.clp")<br>             ("signin" action-sign-in)<br>             ("choice" &nbsp; "choice.clp")<br>             ("vote" &nbsp; &nbsp; &nbsp;action-vote)<br>             ("thanks" &nbsp;"thanks.clp")))</pre>
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <br>
 The first page of the site has the logical name "main" and that causes
 the file "main.clp" to be returned to the browser. &nbsp;Here is
@@ -631,7 +669,7 @@ The clp function mysamp_showerrors is this:<br>
 <pre>(def-clp-function mysamp_showerrors (req ent args body)<br>  (declare (ignore ent args body))<br>  (let ((error (request-variable-value req "error")))<br>    (if* error<br>       then (html :br<br>		  ((:font :color "red")<br>		   (:princ-safe error))<br>		  :br :br))))<br><br>  <br></pre>
 This function looks on the request object for a variable named "error"
 and if found prints that value of that variable in red. &nbsp; This is
-used to communicate to the users problems found by the code that checks
+used to communicate to the user problems found by the code that checks
 the name and password for validity. &nbsp; We'll next see how that
 "error" variable is set.<br>
 &nbsp; <br>
@@ -670,7 +708,7 @@ This is choice.clp:<br>
  style="font-weight: bold;">action="vote"</span> method="POST"&gt;<br>favorite food: &lt;input type="text" name="food"&gt;&lt;br&gt;<br>&lt;/form&gt;<br>&lt;/body&gt;<br>&lt;/html&gt;<br></pre>
 Here we ask the user for their favorite food. &nbsp;We personalize the
 page by displaying the user's name on the page using clp_value. &nbsp;
-When the user types in the food and presses enter the logical page
+When the user types in the food and presses enter the symbolic page
 "vote" is invoked. &nbsp;From the map we see that that causes the
 function action-vote to be invoked.<br>
 <br>
@@ -703,7 +741,7 @@ any other page of the site? &nbsp; The answer is using <span
  style="font-style: italic;">extended maps<span
  style="font-weight: bold;">.&nbsp;&nbsp;&nbsp; </span></span>Let's
 look at the map from the project mentioned above:<br>
-<pre>            (("main" "main.clp")<br>             ("signin" action-sign-in)<br>             ("choice" &nbsp; choice.clp")<br>             ("vote" &nbsp; &nbsp; action-vote)<br>             ("thanks" &nbsp;"thanks.clp")))</pre>
+<pre>            (("main" "main.clp")<br>             ("signin" action-sign-in)<br>             ("choice" &nbsp; "choice.clp")<br>             ("vote" &nbsp; &nbsp; action-vote)<br>             ("thanks" &nbsp;"thanks.clp")))</pre>
 In this map we would like the symbolic pages "choice", "vote" and
 "thanks" to&nbsp; be reachable <span style="font-style: italic;">only</span>
 if the current session has a logged in
@@ -771,7 +809,7 @@ entry:<br>
 Prefix map entries are the last ones considered when Webactions looks
 for a map entry to handle a symbolic page name.&nbsp; Webactions first
 looks for a specific symbolic page name entry.&nbsp;&nbsp;&nbsp; Then
-Webactions see if the symbolic page name names an actual file in the
+Webactions sees if the symbolic page name names an actual file in the
 project directory.&nbsp; And finally if those first two searches fail
 to find a map entry, Webactions looks for a prefix entry.<br>
 <br>
@@ -785,7 +823,7 @@ To continue our example above if there were also a map entry<br>
 <span style="font-family: monospace;">("name" action-do-name)</span><br
  style="font-family: monospace;">
 <br>
-then this this url<br>
+then this url<br>
 <br>
 <span style="font-family: monospace;">http://localhost/foo/name</span><br>
 <br>
@@ -801,14 +839,14 @@ would return this file rather than invoke the "name" as a prefix map
 entry.<br>
 <br>
 We'll show two important uses for prefix map entries.&nbsp; The first
-is that you can catch references to non-existent symbolic pages names
+is that you can catch references to non-existent symbolic page names
 and return a nicer error message than the standard one AllegroServe
 returns.&nbsp;&nbsp; The map entry<br>
 <br>
 <span style="font-family: monospace;">("" handle-undefined-page
 (:prefix t))<br>
 <br>
-</span>will catch all symbolic pages references that don't have a
+</span>will catch all symbolic page references that don't have a
 handler.&nbsp; You'll want to list this entry before any other prefix
 entry in the map since you want this entry to be checked last.<br>
 <br>
@@ -846,7 +884,7 @@ This is counterintuitive and user-unfriendly behavior on IE's part but
 still you must handle it in some way.<br>
 <br>
 One way to handle this is that whenever a POST is done the webserver
-processes the posted data and then return a Redirect response to the
+processes the posted data and then returns a Redirect response to the
 browser which then does a GET of the page that's the target of the
 redirect.&nbsp;&nbsp; Thus the user ends up looking at a page that was
 fetched with a GET, and thus IE will have no problem returning to this
@@ -856,8 +894,8 @@ You can specify this behavior in a map entry in this way<br>
 <br>
 ("getdata" action-do-getdata "showresult.clp" (:redirect t))<br>
 <br>
-The redirect flag say that rather than simply return the contents of
-showresult.clp to the browser, instead Webactions will return a
+The redirect flag says that rather than simply return the contents of
+showresult.clp to the browser, Webactions will return a
 Redirect response to the browser which will then fetch "showresult.clp".<br>
 The consequence of this redirect is that clp functions invoked by
 showresult.clp will not have access to the query values from the first
@@ -913,7 +951,7 @@ holds a pointer to a webaction object.<br>
 <span style="font-weight: bold;">webaction</span> - An instance of this
 class contains the information on a webaction project. &nbsp;It
 contains
-the information passed as arguments to webaction-project as well as a a
+the information passed as arguments to webaction-project as well as a
 websession-master instance if sessions are to be maintained.<br>
 <br>
 <span style="font-weight: bold;">websession-master</span> - &nbsp;An
@@ -931,6 +969,71 @@ class denotes a single session for a site denoted by a webaction.
 The websession contains a "last used" time and will be automatically
 removed after a certain amount of time without being used.<br>
 <br>
+<br>
+<h2><a name="storing_values"></a>Storing Values</h2>
+A webaction project consists of cooperating independent objects:&nbsp;
+action functions, clp functions and clp files.&nbsp; These objects
+often have a need to pass data from one to another.&nbsp;&nbsp;&nbsp;
+Webactions offers three places to store data but of course application
+specific code can also use other data repositories&nbsp; (such as
+databases).<br>
+<br>
+<table style="text-align: left; width: 955px; height: 153px;" border="1"
+ cellpadding="5" cellspacing="2">
+  <tbody>
+    <tr>
+      <th style="vertical-align: top; text-align: center; width: 33%;"><span
+ style="font-weight: bold;">Session</span><br>
+      </th>
+      <th style="vertical-align: top; text-align: center; width: 33%;">Request
+Variable<br>
+      </th>
+      <th style="vertical-align: top; text-align: center;">Request Query<br>
+      </th>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><span
+ style="font-family: monospace;">(websession-variable session "name")</span><br>
+      </td>
+      <td style="vertical-align: top;"><span
+ style="font-family: monospace;">(request-variable-value req "name")</span><br>
+      </td>
+      <td style="vertical-align: top;"><span
+ style="font-family: monospace;">(request-query-value "name" req)</span><br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><span
+ style="font-family: monospace;">&lt;clp_value name="name" session/&gt;</span><br>
+      </td>
+      <td style="vertical-align: top;"><span
+ style="font-family: monospace;">&lt;clp_value name="name" request/&gt;</span><br>
+      </td>
+      <td style="vertical-align: top;"><span
+ style="font-family: monospace;">&lt;clp_value name="name" query/&gt;</span><br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">Lasts for the lifetime of
+a&nbsp; session. <br>
+You can obtain the session object using<br>
+      <span style="font-family: monospace;">(websession-from-req req)</span><br>
+      </td>
+      <td style="vertical-align: top;">Lasts for the lifetime of a
+request<br>
+      </td>
+      <td style="vertical-align: top;">Lasts for the lifetime of a
+request.<br>
+Initialized from the query string of the url of the request and from
+form data.<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<br>
+The values can be set using <span style="font-weight: bold;">setf</span>
+of the corresponding accessor.<br>
 <br>
 <h2><a name="Lisp_functions_for_webactions"></a>Lisp functions for
 webactions</h2>
@@ -1049,7 +1152,7 @@ request then the value is retrieved from the request variables.
 the location is session then the values are retrieved from the session
 variables. &nbsp; &nbsp;If <span style="font-weight: bold;">safe</span>
 is given then the value will be printed in such a way to escape any
-characters that would be interpreted as html &nbsp;(e.g as <span
+characters that would be interpreted as html &nbsp;(e.g. as <span
  style="font-family: monospace;">(html (:princ-safe xxx))</span> would
 print the value).<br>
 Example:<br>
@@ -1094,11 +1197,26 @@ stream. &nbsp; &nbsp;The value yyy should be an integer value.<br>
  style="font-weight: bold; font-family: courier new,courier,monospace;">&lt;/clp_ifeq&gt;<br>
 <br>
 </span>If the value of the variable xxx found at the given location is
-equal to the value yyy then the body will be emitted to the html
+not eql to the value yyy then the body will be emitted to the html
 stream.
 &nbsp; &nbsp;The value yyy should be an integer value.<br>
 <br>
 <span
+ style="font-weight: bold; font-family: courier new,courier,monospace;"><span
+ style="font-weight: bold; font-family: courier new,courier,monospace;">
+&lt;clp_ifneq name="xxx" value="yyy" [query | request | session]&gt;</span><span
+ style="font-family: courier new,courier,monospace;">body</span><span
+ style="font-weight: bold; font-family: courier new,courier,monospace;">&lt;/clp_ifneq&gt;<br>
+<br>
+</span></span>If the value of the variable xxx found at the given
+location is
+eql to the value yyy then the body will be emitted to the html
+stream.
+&nbsp; &nbsp;The value yyy should be an integer value<span
+ style="font-weight: bold;">.</span><span
+ style="font-weight: bold; font-family: courier new,courier,monospace;"><br>
+<br>
+</span><span
  style="font-weight: bold; font-family: courier new,courier,monospace;"><br>
 &lt;clp_ifdef name="xxx" [query | request | session]&gt;</span><span
  style="font-family: courier new,courier,monospace;">body</span><span
@@ -1134,6 +1252,19 @@ stream.
 string.<br>
 <br>
 <span
+ style="font-weight: bold; font-family: courier new,courier,monospace;">
+&lt;clp_ifnequal name="xxx" value="yyy" [query | request | session]&gt;</span><span
+ style="font-family: courier new,courier,monospace;">body</span><span
+ style="font-weight: bold; font-family: courier new,courier,monospace;">&lt;/clp_ifnequal&gt;<br>
+<br>
+</span>If the value of the variable xxx found at the given location is
+not equal to the value yyy then the body will be emitted to the html
+stream.
+&nbsp; &nbsp;The value yyy can be any value, but is likely to be a
+string.<span
+ style="font-weight: bold; font-family: courier new,courier,monospace;"><br>
+</span><br>
+<span
  style="font-weight: bold; font-family: courier new,courier,monospace;">&lt;clp_options
 name="xxx" [query | request | session]&gt;<br>
 &nbsp; &nbsp; &nbsp; </span><span
@@ -1167,6 +1298,7 @@ Example:<br>
 <span style="font-style: italic;">args</span>&gt;</span><span
  style="font-family: courier new,courier,monospace;">body</span><span
  style="font-weight: bold; font-family: courier new,courier,monospace;">&lt;/clp_select&gt;</span><br>
+<br>
 This&nbsp; function simply emits a select form: &lt;<span
  style="font-weight: bold;">select</span> <span
  style="font-style: italic;">args</span>&gt;body&lt;/<span
@@ -1225,7 +1357,7 @@ in the location specified <span style="font-weight: bold;">(query,</span>
 that value in red in the html being returned as part of the
 request.&nbsp; &nbsp;If <span style="font-weight: bold;">clear</span>
 is
-given then set the valueof variable <span style="font-weight: bold;">xxx</span>&nbsp;
+given then set the value of variable <span style="font-weight: bold;">xxx</span>&nbsp;
 to nil. &nbsp; This is commonly used to display error messages on a
 page, such as when a form wasn't filled out correctly and you're
 redisplaying the page and asking the user to try again. &nbsp; The
