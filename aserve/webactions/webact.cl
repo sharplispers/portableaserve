@@ -27,25 +27,23 @@
 ;; $Id: webact.cl,v 1.17 2007/04/17 22:05:04 layer Exp $
 
 
-
-(defpackage :net.aserve
-  (:export 
-   #:initialize-websession-master
-   #:locate-action-path
-   #:webaction
-   #:webaction-entity
-   #:webaction-from-ent
-   #:webaction-project
-   #:websession
-   #:websession-data
-   #:websession-key
-   #:websession-from-req
-   #:websession-master
-   #:websession-variable
-   ))
-
-
 (in-package :net.aserve)
+
+(export
+ '(
+   initialize-websession-master
+   locate-action-path
+   webaction
+   webaction-entity
+   webaction-from-ent
+   webaction-project
+   websession
+   websession-data
+   websession-key
+   websession-from-req
+   websession-master
+   websession-variable
+   ))
 
 (defclass webaction-entity (computed-entity access-file-mixin)
   ((webaction ;; holds webaction object

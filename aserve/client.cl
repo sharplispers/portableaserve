@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: client.cl,v 1.56 2007/04/17 22:05:04 layer Exp $
+;; $Id: client.cl,v 1.58 2007/12/26 19:02:27 jkf Exp $
 
 ;; Description:
 ;;   http client code.
@@ -438,32 +438,32 @@
 	progress-at)
     (unwind-protect
 	(progn
-	  (when progress-function
-	    (multiple-value-bind (res code hdrs)
-		(do-http-request url
-		  :method :head
-		  :proxy proxy
-		  :proxy-basic-authorization proxy-basic-authorization
-		  :headers headers
-		  :protocol protocol
-		  :basic-authorization basic-authorization)
-	      (declare (ignore res))
-	      (when (not (eql 200 code))
-		(error "~a: code ~a" url code))
-	      (handler-case
-		  (setq size
-		    (parse-integer
-		     (or (setq temp
-			   (cdr (assoc :content-length hdrs :test #'eq)))
-			 (error "Cannot determine content length for ~a."
-				url))))
-		(error ()
-		  (error "Cannot parse content-length: ~a." temp)))
+	  (if* progress-function
+	     then (multiple-value-bind (res code hdrs)
+		      (do-http-request url
+			:method :head
+			:proxy proxy
+			:proxy-basic-authorization proxy-basic-authorization
+			:headers headers
+			:protocol protocol
+			:basic-authorization basic-authorization)
+		    (declare (ignore res))
+		    (if* (not (eql 200 code))
+		       then (error "~a: code ~a" url code))
+		    (handler-case
+			(setq size
+			  (parse-integer
+			   (or (setq temp
+				 (cdr (assoc :content-length hdrs :test #'eq)))
+			       (error "Cannot determine content length for ~a."
+				      url))))
+		      (error ()
+			(error "Cannot parse content-length: ~a." temp)))
 	      
-	      (do ((n 9 (1- n))
-		   (size size))
-		  ((= n 0))
-		(push (truncate (* size (/ n 10))) progress-at))))
+		    (do ((n 9 (1- n))
+			 (size size))
+			((= n 0))
+		      (push (truncate (* size (/ n 10))) progress-at))))
 	  
 	  (setq tmp-pathname (funcall tmp-name-function pathname))
 	  (setq s (open tmp-pathname :direction :output
@@ -473,37 +473,38 @@
 	  (loop
 	    (read-client-response-headers creq)
 	    ;; if it's a continue, then start the read again
-	    (when (not (eql 100 (client-request-response-code creq)))
-	      (return)))
+	    (if* (not (eql 100 (client-request-response-code creq)))
+	       then (return)))
 	  
-	  (when (and (member (client-request-response-code creq)
-			     redirect-codes :test #'eq)
-		     redirect
-		     (if* (integerp redirect)
-			then (> redirect 0)
-			else t))	; unrestricted depth
-	    (setq new-location
-	      (cdr (assoc :location (client-request-headers creq)
-			  :test #'eq))))
+	  (if* (and (member (client-request-response-code creq)
+			    redirect-codes :test #'eq)
+		    redirect
+		    (if* (integerp redirect)
+		       then (> redirect 0)
+		       else t))	; unrestricted depth
+	     then (setq new-location
+		    (cdr (assoc :location (client-request-headers creq)
+				:test #'eq))))
 		
 	  (loop
 	    (if* (and timeout (numberp timeout))
 	       then (let ((res (acl-compat.mp:with-timeout (timeout :timed-out)
 				 (setq end
 				   (client-request-read-sequence buf creq)))))
-		      (when (eq :timed-out res)
-			(error "~a is not responding."
-			       (puri:uri-host uri))))
+		      (if* (eq :timed-out res)
+			 then (error "~a is not responding."
+				     (puri:uri-host uri))))
 	       else (setq end (client-request-read-sequence buf creq)))
-	    (when (zerop end)
-	      (when progress-function (funcall progress-function -1 size))
-	      (return)) ;; EOF
-	    (when progress-at
-	      (incf bytes-read buffer-size)
-	      (when (> bytes-read (car progress-at))
-		(setq progress-at (cdr progress-at))
-		(ignore-errors (funcall progress-function bytes-read
-					size))))
+	    (if* (zerop end)
+	       then (if* progress-function 
+		       then (funcall progress-function -1 size))
+		    (return)) ;; EOF
+	    (if* progress-at
+	       then (incf bytes-read buffer-size)
+		    (if* (> bytes-read (car progress-at))
+		       then (setq progress-at (cdr progress-at))
+			    (ignore-errors (funcall progress-function bytes-read
+						    size))))
 	    (write-sequence buf s :end end))
 	    
 	  (setq code (client-request-response-code creq))
@@ -534,17 +535,25 @@
 	  (setq s nil)
 	  (rename-file-raw tmp-pathname pathname))
       
-      (when s
-	;; An error occurred.
-	(close s)
-	(ignore-errors (delete-file tmp-pathname))
-	(ignore-errors (delete-file pathname)))
+      (if* s
+	 then ;; An error occurred.
+	      (close s)
+	      (ignore-errors (delete-file tmp-pathname))
+	      (ignore-errors (delete-file pathname)))
       (client-request-close creq))
     t))
 
 
 
-
+(defmacro with-socket-connect-timeout ((&key timeout host port)
+				       &body body)
+  ;;
+  ;; to wrap around a call to make-socket
+  ;;
+  `(acl-compat.mp:with-timeout ((or ,timeout 99999999)
+		     (error "Connecting to host ~a port ~a timed out after ~s seconds"
+			    ,host ,port ,timeout))
+     ,@body))
 
 
 
@@ -622,21 +631,28 @@
 		 then (error "proxy arg should have form \"foo.com\" ~
 or \"foo.com:8000\", not ~s" proxy))
 	      
-	      (setq sock (acl-compat.socket:make-socket :remote-host phost
-					     :remote-port pport
-					     :format :bivalent
-					     :type net.aserve::*socket-stream-type*
-					     :nodelay t
-					     )))
+	      (setq sock 
+		(with-socket-connect-timeout (:timeout timeout
+						       :host phost 
+						       :port pport)
+		  (acl-compat.socket:make-socket :remote-host phost
+				      :remote-port pport
+				      :format :bivalent
+				      :type net.aserve::*socket-stream-type*
+				      :nodelay t
+				      ))))
        else (setq sock 
-	      (acl-compat.socket:make-socket :remote-host host
-				  :remote-port port
-				  :format :bivalent
-				  :type 
-				  net.aserve::*socket-stream-type*
-				  :nodelay t
+	      (with-socket-connect-timeout (:timeout timeout
+						     :host host
+						     :port port)
+		(acl-compat.socket:make-socket :remote-host host
+				    :remote-port port
+				    :format :bivalent
+				    :type 
+				    net.aserve::*socket-stream-type*
+				    :nodelay t
 					     
-				  ))
+				    )))
 	    (if* ssl
 	       then #+(and allegro (version>= 8 0))
 		    (setq sock
@@ -668,9 +684,9 @@ or \"foo.com:8000\", not ~s" proxy))
     #+io-timeout
     (if* (integerp timeout)
        then (socket:socket-control 
-		 sock 
-		 :read-timeout timeout
-		 :write-timeout timeout))
+	     sock 
+	     :read-timeout timeout
+	     :write-timeout timeout))
 	    
     
     (if* query
