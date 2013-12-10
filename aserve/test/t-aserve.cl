@@ -53,8 +53,8 @@
 
 (eval-when (compile eval load)
   (defvar *aserve-examples-directory*
-      (or (probe-file "aserve/examples/")
-	  (probe-file "examples/")
+      (or (cl-fad:directory-exists-p "aserve/examples/")
+	  (cl-fad:directory-exists-p "examples/")
 	  (error "Could not find the aserve examples directory.")))
   )
 
@@ -152,7 +152,7 @@
     (setq *wserver* wserver)
     (unpublish :all t) ; flush anything published
     (setq *x-ssl* ssl)
-    (socket::local-port (net.aserve::wserver-socket wserver))
+    (acl-compat.socket:local-port (net.aserve::wserver-socket wserver))
     ))
 
 (defun stop-aserve-running ()
@@ -170,7 +170,7 @@
   
   (push *x-proxy* *save-x-proxy*)
   (setq *x-proxy* (format nil "localhost:~d" 
-			  (socket:local-port
+			  (acl-compat.socket:local-port
 			   (wserver-socket *proxy-wserver*))))
   )
 
@@ -646,7 +646,7 @@
 	     :content-type "text/html"
 	     :function
 	     #'(lambda (req ent)
-		 (let ((net-address (ash (socket:remote-host
+		 (let ((net-address (ash (acl-compat.socket:remote-host
 					  (request-socket req))
 					 -24)))
 		   (if* (equal net-address 127)
@@ -1180,17 +1180,17 @@
 		 
     
       (setq proxy-host (format nil "localhost:~d"
-			       (socket:local-port
+			       (acl-compat.socket:local-port
 				(net.aserve::wserver-socket proxy-wserver))))
     
       (setq origin-server
-	(format nil "http://localhost:~d" (socket:local-port
+	(format nil "http://localhost:~d" (acl-compat.socket:local-port
 					   (net.aserve::wserver-socket *wserver*))))
 
       (format t "server on port ~d, proxy server on port ~d~%"
-	      (socket:local-port
+	      (acl-compat.socket:local-port
 	       (net.aserve::wserver-socket *wserver*))
-	      (socket:local-port
+	      (acl-compat.socket:local-port
 	       (net.aserve::wserver-socket proxy-wserver)))
 
       (with-open-file (p "aservetest.xx" :direction :output
@@ -1677,7 +1677,7 @@
     
     ;; try making a connection and not sending any headers.
     ;; we should timeout
-    (let ((sock (socket:make-socket :remote-host "localhost"
+    (let ((sock (acl-compat.socket:make-socket :remote-host "localhost"
 				    :remote-port port)))
       (unwind-protect
        (progn
@@ -1785,7 +1785,7 @@
 			   (with-http-response (req ent)
 			     (with-http-body (req ent)))))
     (do-http-request (format nil "http://localhost:~d/spr27296"
-			     (socket:local-port
+			     (acl-compat.socket:local-port
 			      (net.aserve::wserver-socket server)))
       :method :post
       :content string
