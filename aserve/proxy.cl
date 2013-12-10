@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.48 2007/04/17 22:05:04 layer Exp $
+;; $Id: proxy.cl,v 1.49 2008/01/28 17:52:21 jkf Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -444,22 +444,30 @@ cached connection = ~s~%" cond cached-connection))
 	    ;(logmess "outbuf now")
 	    ;(dump-header-block outbuf *initial-terminal-io*)
 	    
-	    ; send host header if it isn't already there
-	    (if* (null (header-buffer-values (request-header-block req) :host))
-	       then ; no host given
-		    (insert-header outbuf :host
-				   (if* port
-				      then (format nil "~a:~d"
-						   host port)
-				      else host)))
+	    ; send host header 
+	    (let ((host (or (request-header-host req)
+			    (header-buffer-header-value
+			     (request-header-block req) :host)
+			    (if* port
+			       then (format nil "~a:~d"
+					    host port)
+			       else host))))
+	      (insert-header outbuf :host host))
+			     
+	    
+	    ; if the proxier decides to check authorization before
+	    ; doing a proxy then the authorization header will appear
+	    ; in the request-headers list and we want to prevent the
+	    ; authorization header from being sent twice in this case:
+	    ; [spr33532]
 	    (dolist (header (request-headers req))
-	      
-	      (insert-non-standard-header outbuf (car header) (cdr header)))
+	      (if* (not (eq (car header) :authorization))
+		 then (insert-non-standard-header outbuf (car header) (cdr header))))
 	    
 	    (setq outend (add-trailing-crlf outbuf 1))
 
 	    (if-debug-action :xmit
-			     (format *debug-stream* "proxy covnerted headers toward server~%")
+			     (format *debug-stream* "proxy converted headers toward server~%")
 			     (dotimes (i outend)
 			       (write-char (code-char (aref outbuf i)) *debug-stream*))
 			     (format *debug-stream* "---- end---~%")
