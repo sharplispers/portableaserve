@@ -46,7 +46,8 @@ indicate failure."))
     :depends-on (htmlgen acl-compat)
     :perform (load-op :after (op aserve)
                       (pushnew :aserve cl:*features*))
-    :perform (test-op (op c) (load-system :aserve-test :force t)))
+    #+asdf3 :perform #+asdf3 (test-op (op c) (load-system :aserve-test :force t))
+  )
 
 #+allegro
 (defsystem aserve
