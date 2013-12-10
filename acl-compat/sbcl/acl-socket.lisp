@@ -262,7 +262,7 @@ streams and handled by their close methods."
 ;; Now, throw chunking in the mix
 
 (defclass chunked-stream (de.dataheaven.chunked-stream-mixin::chunked-stream-mixin
-                          gray-stream::buffered-bivalent-stream)
+                          lw-buffering:buffered-bivalent-stream)
   ((plist :initarg :plist :accessor stream-plist)))
 
 

@@ -83,7 +83,7 @@ not yet read into the buffer, or nil if input chunking is disabled")
   "This method initializes input chunking. The real-input-limit is nil
 in the beginnings because it got not saved yet. Chunk-input-avail is
 obviously 0 because no chunk-data got read so far."
-  (gray-stream:with-stream-input-buffer (input-buffer input-index input-limit)
+  (lw-buffering:with-stream-input-buffer (input-buffer input-index input-limit)
       stream
     (with-slots (real-input-limit chunk-input-avail) stream
       (setf
@@ -107,7 +107,7 @@ obviously 0 because no chunk-data got read so far."
       (slot-value ,stream 'stream::buffer-state)
     ,@body))
 
-(defmethod gray-stream:stream-fill-buffer ((stream chunked-stream-mixin))
+(defmethod lw-buffering:stream-fill-buffer ((stream chunked-stream-mixin))
   "Refill buffer from stream."
   ;; STREAM-FILL-BUFFER gets called when the input-buffer contains no
   ;; more data (the index is bigger than the limit). We call out to
@@ -115,7 +115,7 @@ obviously 0 because no chunk-data got read so far."
   ;; method. This method is responsible to update the buffer state in
   ;; coordination with the chunk-header.
   (with-slots (chunk-input-avail real-input-limit) stream
-    (#-lispworks gray-stream:with-stream-input-buffer
+    (#-lispworks lw-buffering:with-stream-input-buffer
      #+lispworks %with-stream-input-buffer
      (input-buffer input-index input-limit) stream
        (labels
@@ -224,18 +224,18 @@ obviously 0 because no chunk-data got read so far."
    room left in the buffer to attach a CRLF."
   (unless (output-chunking-p stream)
     (force-output stream)
-    (gray-stream:with-stream-output-buffer (buffer index limit) stream
+    (lw-buffering:with-stream-output-buffer (buffer index limit) stream
       (setf index +chunk-header-buffer-offset+)
       (setf (buffer-ref buffer (- +chunk-header-buffer-offset+ 2)) #\Return
             (buffer-ref buffer (1- +chunk-header-buffer-offset+)) #\Linefeed)
       (decf limit 2)
       (setf (output-chunking-p stream) t))))
 
-(defmethod gray-stream:stream-flush-buffer ((stream chunked-stream-mixin))
+(defmethod lw-buffering:stream-flush-buffer ((stream chunked-stream-mixin))
   "When there is pending content in the output-buffer then compute the chunk-header and flush
    the buffer"
   (if (output-chunking-p stream)
-      (gray-stream:with-stream-output-buffer (output-buffer output-index output-limit) stream
+      (lw-buffering:with-stream-output-buffer (output-buffer output-index output-limit) stream
         (when (> output-index +chunk-header-buffer-offset+)
           (let* ((chunk-header (format nil "~X" (- output-index +chunk-header-buffer-offset+)))
                  (start (- +chunk-header-buffer-offset+ 2 (length chunk-header))))
@@ -244,7 +244,7 @@ obviously 0 because no chunk-data got read so far."
                   do (setf (buffer-ref output-buffer i) c))
             (setf (buffer-ref output-buffer output-index) #\Return
                   (buffer-ref output-buffer (1+ output-index)) #\Linefeed)
-            (gray-stream:stream-write-buffer stream output-buffer start (+ output-index 2))
+            (lw-buffering:stream-write-buffer stream output-buffer start (+ output-index 2))
             (setf output-index +chunk-header-buffer-offset+))))
     (call-next-method)))
 
@@ -262,7 +262,7 @@ obviously 0 because no chunk-data got read so far."
    a chunk-size of zero to notify the peer that chunking ends."
   (when (output-chunking-p stream)
     (force-output stream)
-    (gray-stream:with-stream-output-buffer (buffer index limit) stream
+    (lw-buffering:with-stream-output-buffer (buffer index limit) stream
       (setf index 0)
       (incf limit 2))
     (setf (output-chunking-p stream) nil

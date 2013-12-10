@@ -8,34 +8,6 @@
   (:use #:cl #:asdf))
 (in-package #:acl-compat-system)
 
-;;;; gray stream support for cmucl: Debian/common-lisp-controller has
-;;;; a `cmucl-graystream' system; if this is not found, we assume a
-;;;; cmucl downloaded from cons.org, where Gray stream support resides
-;;;; in the subsystems/ directory.
-
-
-#+cmu
-(progn
-
-(defclass precompiled-file (static-file)
-  ())
-
-(defmethod perform ((operation load-op) (c precompiled-file))
-  (load (component-pathname c)))
-
-(defmethod operation-done-p ((operation load-op) (c precompiled-file))
-  nil)
-
-#-gray-streams
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (asdf:find-system :cmucl-graystream nil)
-    (asdf:defsystem cmucl-graystream
-        :pathname (make-pathname
-                   :name nil :type nil :version nil
-                   :defaults (truename "library:subsystems/gray-streams-library.x86f"))
-      :components ((:precompiled-file "gray-streams-library.x86f")))))
-)
-
 ;;;; ignore warnings
 ;;;;
 ;;;; FIXME: should better fix warnings instead of ignoring them
@@ -154,8 +126,8 @@ lisp-system"))
                  :cl-fad
                  #+sbcl :sb-bsd-sockets
                  #+sbcl :sb-posix
-                 #+(and cmu (not gray-streams)) :cmucl-graystream
                  #+(and (or cmu lispworks) ssl-available) :cl-ssl
+                 :trivial-gray-streams
                  )
     :perform (load-op :after (op acl-compat)
                       (pushnew :acl-compat cl:*features*)))

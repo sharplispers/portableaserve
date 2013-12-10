@@ -80,18 +80,18 @@ streams and handled by their close methods."
   (local-port (socket server-socket)))
 
 (defmethod ccl:stream-write-vector
-    ((stream gray-stream::buffered-bivalent-stream) vector start end)
+    ((stream lw-buffering:buffered-bivalent-stream) vector start end)
   (declare (fixnum start end))
-  (let ((fn (gray-stream::%writer-function-for-sequence vector)))
+  (let ((fn (lw-buffering::%writer-function-for-sequence vector)))
     (do* ((i start (1+ i)))
          ((= i end))
       (declare (fixnum i))
       (funcall fn stream (ccl:uvref vector i)))))
 
 (defmethod ccl:stream-read-vector
-    ((stream gray-stream::buffered-bivalent-stream) vector start end)
+    ((stream lw-buffering:buffered-bivalent-stream) vector start end)
   (declare (fixnum start end))
-  (let ((fn (gray-stream::%reader-function-for-sequence vector)))
+  (let ((fn (lw-buffering::%reader-function-for-sequence vector)))
     (do* ((i start (1+ i)))
          ((= i end) end)
       (declare (fixnum i))
@@ -101,23 +101,23 @@ streams and handled by their close methods."
             (setf (ccl:uvref vector i) b))))))
 
 (defclass chunked-stream (de.dataheaven.chunked-stream-mixin::chunked-stream-mixin
-                          gray-stream::buffered-bivalent-stream)
+                          lw-buffering:buffered-bivalent-stream)
   ((plist :initarg :plist :accessor stream-plist)))
 
 (defun make-chunked-stream (lisp-stream &key plist)
   (make-instance 'chunked-stream :lisp-stream lisp-stream :plist plist))
 
 (defmethod local-host ((chunked-stream chunked-stream))
-  (local-host (gray-stream::native-lisp-stream chunked-stream)))
+  (local-host (lw-buffering:native-lisp-stream chunked-stream)))
 
 (defmethod local-port ((chunked-stream chunked-stream))
-  (local-port (gray-stream::native-lisp-stream chunked-stream)))
+  (local-port (lw-buffering:native-lisp-stream chunked-stream)))
 
 (defmethod remote-host ((chunked-stream chunked-stream))
-  (remote-host (gray-stream::native-lisp-stream chunked-stream)))
+  (remote-host (lw-buffering:native-lisp-stream chunked-stream)))
 
 (defmethod remote-port ((chunked-stream chunked-stream))
-  (remote-port (gray-stream::native-lisp-stream chunked-stream)))
+  (remote-port (lw-buffering:native-lisp-stream chunked-stream)))
 
 
 (defun socket-control (stream &key (output-chunking nil oc-p) output-chunking-eof (input-chunking nil ic-p))

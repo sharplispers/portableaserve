@@ -150,8 +150,8 @@ streams and handled by their close methods."
 
 (defgeneric get-fd (stream))
 
-(defmethod get-fd ((stream gray-stream::native-lisp-stream-mixin))
-  (system:fd-stream-fd (gray-stream::native-lisp-stream stream)))
+(defmethod get-fd ((stream lw-buffering:native-lisp-stream-mixin))
+  (system:fd-stream-fd (lw-buffering:native-lisp-stream stream)))
 
 (defmethod get-fd ((stream system:lisp-stream))
   (system:fd-stream-fd stream))
@@ -182,7 +182,7 @@ streams and handled by their close methods."
 ;; Now, throw chunking in the mix
 
 (defclass chunked-stream (de.dataheaven.chunked-stream-mixin::chunked-stream-mixin
-                          gray-stream::buffered-bivalent-stream)
+                          lw-buffering:buffered-bivalent-stream)
   ())
 
 

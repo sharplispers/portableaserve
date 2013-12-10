@@ -17,11 +17,11 @@
 ;;; general
 (defpackage :acl-compat.excl
   (:use #:common-lisp
+        #:trivial-gray-streams
         #+cmu #:ext
-        #+clisp #:ext
-        #+sbcl #:sb-ext #+sbcl #:sb-gray
+        #+sbcl #:sb-ext
         #+(or allegro cormanlisp) :excl
-        #+(or mcl openmcl) :ccl
+        #+mcl :ccl
         )
   #+lispworks (:import-from :lispworks #:fixnump)
   #+sbcl (:import-from :sb-int #:fixnump)
@@ -155,6 +155,17 @@
    #:make-temp-file-name
    ))
 
+(defpackage lw-buffering
+  (:use :common-lisp :trivial-gray-streams)
+  (:export
+   #:buffered-bivalent-stream
+   #:native-lisp-stream-mixin
+   #:native-lisp-stream
+   #:stream-write-buffer
+   #:stream-fill-buffer
+   #:stream-flush-buffer
+   #:with-stream-input-buffer
+   #:with-stream-output-buffer))
 
 ; these are not all in the ccl package which causes an error
 #+(and mcl (not openmcl))
@@ -183,96 +194,3 @@
                     stream-write-string)
                   :ccl)
 
-#-cormanlisp
-(defpackage :gray-stream
-  (:use #:common-lisp)
-  (:import-from #+lispworks :stream #+cmu :lisp #+clisp :gray #+cormanlisp :gray-streams
-                #+(or mcl openmcl) :ccl #+allegro :excl #+sbcl :sb-gray
-                #:fundamental-binary-input-stream
-                #:fundamental-binary-output-stream
-                #:fundamental-character-input-stream
-                #:fundamental-character-output-stream
-                #:stream-element-type
-                #:stream-listen
-                #:stream-read-byte
-                #:stream-read-char
-                #:stream-peek-char
-                #:stream-write-byte
-                #:stream-write-char
-                #:stream-read-char-no-hang
-                #:stream-force-output
-                #:stream-finish-output
-                #:stream-clear-input
-                #:stream-clear-output
-                #:stream-line-column
-                #-(or clisp openmcl) #:stream-read-sequence
-                #:stream-unread-char
-                #:stream-read-line
-                #-(or clisp openmcl) #:stream-write-sequence
-                #:stream-write-string
-                #+lispworks #:stream-write-buffer
-                #+lispworks #:stream-read-buffer
-                #+lispworks #:stream-fill-buffer
-                #+lispworks #:stream-flush-buffer
-                #+lispworks #:with-stream-input-buffer
-                #+lispworks #:with-stream-output-buffer)
-  (:export 
-   #:fundamental-binary-input-stream
-   #:fundamental-binary-output-stream
-   #:fundamental-character-input-stream
-   #:fundamental-character-output-stream
-   #:stream-element-type
-   #:stream-listen
-   #:stream-read-byte
-   #:stream-read-char
-   #:stream-write-byte
-   #:stream-write-char
-   #:stream-read-char-no-hang
-   #:stream-force-output
-   #:stream-finish-output
-   #:stream-clear-input
-   #:stream-clear-output
-   #:stream-line-column
-   #-clisp #:stream-read-sequence
-   #:stream-unread-char
-   #:stream-read-line
-   #-clisp #:stream-write-sequence
-   #:stream-write-string
-   #:stream-write-buffer
-   #:stream-read-buffer
-   #:stream-fill-buffer
-   #:stream-flush-buffer
-   #:with-stream-input-buffer
-   #:with-stream-output-buffer))
-
-#+cormanlisp
-(defpackage :gray-stream
-  (:use #:common-lisp :gray-streams)
-  (:export 
-   #:fundamental-binary-input-stream
-   #:fundamental-binary-output-stream
-   #:fundamental-character-input-stream
-   #:fundamental-character-output-stream
-   #:stream-element-type
-   #:stream-listen
-   #:stream-read-byte
-   #:stream-read-char
-   #:stream-write-byte
-   #:stream-write-char
-   #:stream-read-char-no-hang
-   #:stream-force-output
-   #:stream-finish-output
-   #:stream-clear-input
-   #:stream-clear-output
-   #:stream-line-column
-   #:stream-read-sequence
-   #:stream-unread-char
-   #:stream-read-line
-   #:stream-write-sequence
-   #:stream-write-string
-   #:stream-write-buffer
-   #:stream-read-buffer
-   #:stream-fill-buffer
-   #:stream-flush-buffer
-   #:with-stream-input-buffer
-   #:with-stream-output-buffer))
