@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.189 2008/07/07 15:06:38 jkf Exp $
+;; $Id: main.cl,v 1.192 2009/01/23 06:52:20 jkf Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -38,7 +38,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 56))
+(defparameter *aserve-version* '(1 2 57))
 
 #+allegro
 (eval-when (eval load)
@@ -946,15 +946,15 @@ by keyword symbols and not by strings"
    (reply-code   ;; one of the *response-xx* objects
     :initform nil
     :accessor request-reply-code)
-
-   (request-date
-    :initform nil
+   
+   (request-date	; when the request came in 
+    :initform 0
     :accessor request-request-date)
-
+   
    (reply-date
-    :initform (get-universal-time)  ; when we're responding
+    :initform 0		  ; when we're responding
     :accessor request-reply-date)
-
+   
    (reply-headers  ;; alist of headers to send out
     :initform nil
     :accessor request-reply-headers)
@@ -979,7 +979,7 @@ by keyword symbols and not by strings"
     :initform nil
     :accessor request-reply-plist)
 
-   (reply-protocol-sring
+   (reply-protocol-string
     ;; A web server announces the highest minor level of the 
     ;; major level of the protocol that was requested by the client.
     ;; Thus for now we're always http/1.1
@@ -1675,7 +1675,10 @@ by keyword symbols and not by strings"
 
 		  (setq *worker-request* req) 
 		  
+		  (setf (request-request-date req) (get-universal-time))
 		  (handle-request req)
+		  (setf (request-reply-date req) (get-universal-time))
+		  
 		  (force-output-noblock (request-socket req))
 
 		  (setf (request-reply-date req) (get-universal-time))
@@ -2717,8 +2720,10 @@ in get-multipart-sequence"))
 	      
       (if* post
 	 then (if* (and (eq (request-method req) :post)
-			(search "application/x-www-form-urlencoded"
-                                (header-slot-value req :content-type)))
+			(search ; sometimes other stuff added we can ignore
+			 "application/x-www-form-urlencoded"
+			 (header-slot-value req :content-type))
+			)
 		 then (setf res
 			(append res
 				(form-urlencoded-to-query

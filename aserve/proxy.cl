@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: proxy.cl,v 1.49 2008/01/28 17:52:21 jkf Exp $
+;; $Id: proxy.cl,v 1.50 2009/01/23 06:52:20 jkf Exp $
 
 ;; Description:
 ;;   aserve's proxy and proxy cache
@@ -768,7 +768,7 @@ cached connection = ~s~%" cond cached-connection))
 		 then (ignore-errors
 		       (let ((rsock (request-socket req)))
 		
-			 (format rsock "HTTP/1.1 ~d ~a~a" response comment *crlf*)
+			 (format rsock "HTTP/1.1 ~d ~a~a" response (or comment nil) *crlf*)
 			 ;;
 			 ;; FLAG -- the comment should have octets-to-string wrapped around it, this is from 
 			 ;;         allegro's excl package, consider use of flexi-streams:octets-to-string. 

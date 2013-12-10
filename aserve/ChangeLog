@@ -1,5 +1,21 @@
-2008-07-07  John Foderaro  <jkf@tiger.franz.com>
+2009-01-23    <jkf@duo.verada.com>
+1.2.57
+	* proxy.cl - correctly send out the comment after the result
+	 code.  Turns out that Microsoft's ISA actually reads it. 
 
+2009-01-13  Kevin Layer  <layer@gemini.franz.com>
+
+	* main.cl (http-request): fix typo (reply-protocol-sring =>
+	  reply-protocol-string)
+
+2008-07-08  John Foderaro  <jkf@tiger.franz.com>
+1.2.56
+	* [from David Cooper] - store in the request object the time at 
+	which a request came and and when it was finshed being handled.
+	 - when parsing multipart bodies, handle multipart content type 
+	 that has additional info as well
+
+2008-07-07  John Foderaro  <jkf@tiger.franz.com>
 	* main.cl: fix bug where getting a large request body would
 	  fail due to array not being adjustable
 
