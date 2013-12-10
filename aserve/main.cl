@@ -24,7 +24,7 @@
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
-;; $Id: main.cl,v 1.184 2008/01/28 17:52:21 jkf Exp $
+;; $Id: main.cl,v 1.188 2008/05/22 18:14:59 layer Exp $
 
 ;; Description:
 ;;   aserve's main loop
@@ -38,7 +38,7 @@
 
 (in-package :net.aserve)
 
-(defparameter *aserve-version* '(1 2 54))
+(defparameter *aserve-version* '(1 2 55))
 
 #+allegro
 (eval-when (eval load)
@@ -1070,6 +1070,7 @@ by keyword symbols and not by strings"
 		   max-depth
 		   os-processes	 ; to fork and run multiple instances
 		   (external-format nil efp); to set external format
+		   backlog
 		   )
   ;; -exported-
   ;;
@@ -1186,6 +1187,7 @@ by keyword symbols and not by strings"
 					  :local-host host
 					  :reuse-address t
 					  :format :bivalent
+					  :backlog backlog
 					  
 					  :type 
 					  *socket-stream-type*
@@ -1487,7 +1489,8 @@ by keyword symbols and not by strings"
 	 #-openmcl-native-threads (workers nil)
 	 (server *wserver*)
 	 (main-socket (wserver-socket server))
-	 (ipaddrs (wserver-ipaddrs server)))
+	 (ipaddrs (wserver-ipaddrs server))
+	 (busy-sleeps 0))
     (unwind-protect
 
 	(loop
@@ -1537,7 +1540,12 @@ by keyword symbols and not by strings"
 		       then (case looped
 			      (0 nil)
 			      ((1 2 3) (logmess "all threads busy, pause")
-				       (sleep 1))
+				       (if* (>= (incf busy-sleeps) 4)
+					  then ; we've waited too many times
+					       (setq busy-sleeps 0)
+					       (logmess "too many sleeps, will create a new thread")
+					       (make-worker-thread)
+					  else (sleep 1)))
 			     
 			      (4 (logmess "forced to create new thread")
 				 (make-worker-thread))

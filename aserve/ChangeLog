@@ -1,3 +1,20 @@
+2008-05-22  Kevin Layer  <layer@gemini.franz.com>
+1.2.55
+	* publish.cl: set mime type of dmg files to
+	  application/x-apple-diskimage
+
+2008-02-16  Kevin Layer  <layer@gemini.franz.com>
+
+	* makefile: add `tags' rule
+
+2008-02-07  John Foderaro  <jkf@tiger.franz.com>
+
+	* if during the accept loop a sleep is necessary 4 times,
+	  a new thread will be created anyway. This will allow
+	  the worker threads to grow in more situations.
+
+	* add backlog argument to net.aserve:start
+
 2008-01-28  John Foderaro  <jkf@tiger.franz.com>
 1.2.54
 	* fix bug where if aserve as a proxy did get-basic-authorization
