@@ -1562,7 +1562,7 @@
   ;; that where our shell script works
   ;;
   (declare (ignorable port))
-  #+(and unix (and allegro (version>= 6 1)))
+  #+(and allegro (version>= 6 1))
   (let ((prefix-local (format nil "http://localhost:~a" port))
 	(error-buffer))
     (publish :path "/cgi-0"
