@@ -83,7 +83,8 @@ not yet read into the buffer, or nil if input chunking is disabled")
   "This method initializes input chunking. The real-input-limit is nil
 in the beginnings because it got not saved yet. Chunk-input-avail is
 obviously 0 because no chunk-data got read so far."
-  (lw-buffering:with-stream-input-buffer (input-buffer input-index input-limit)
+  (#-lispworks lw-buffering:with-stream-input-buffer
+     #+lispworks %with-stream-input-buffer (input-buffer input-index input-limit)
       stream
     (with-slots (real-input-limit chunk-input-avail) stream
       (setf
