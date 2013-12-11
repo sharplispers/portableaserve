@@ -3,7 +3,7 @@
 ;;; So far only 8bit byte and character IO works ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(in-package :lw-buffering)
+(in-package :gray-stream)
 
 (defvar *default-input-buffer-size* 8192)
 (defvar *default-output-buffer-size* 8192)
@@ -180,7 +180,7 @@
               (vector-push-extend ch res)))))))
 
 
-(defmethod stream-read-sequence ((stream buffered-bivalent-input-stream) sequence start end &key &allow-other-keys)
+(defmethod stream-read-sequence ((stream buffered-bivalent-input-stream) sequence &optional start end)
   (read-elements stream sequence start end (%reader-function-for-sequence sequence)))
 
 ;;(defmethod stream-clear-input ((stream buffered-bivalent-input-stream))
@@ -239,7 +239,7 @@
   (write-elements stream string start end #'stream-write-char))
 
 (defmethod stream-write-sequence ((stream buffered-stream-mixin) sequence
-                                  start end &key &allow-other-keys)
+                                  &optional (start 0) end)
   (write-elements stream sequence start end (%writer-function-for-sequence sequence)))
 
 (defmethod stream-element-type ((stream fundamental-bivalent-output-stream))

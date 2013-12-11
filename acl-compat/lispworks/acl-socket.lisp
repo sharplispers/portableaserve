@@ -113,11 +113,11 @@
     (otherwise #'read-byte)))
 
 ;; Bivalent socket support for READ-SEQUENCE
-(defmethod trivial-gray-streams:stream-read-sequence ((stream input-binary-socket-stream) sequence start end &key &allow-other-keys)
+(defmethod gray-stream:stream-read-sequence ((stream input-binary-socket-stream) sequence start end)
   (stream::read-elements stream sequence start end (%reader-function-for-sequence sequence)))
 
 ;; NDL 2004-06-06 -- without this, emit-clp-entity tries writing a string down a binary stream, and LW barfs
-(defmethod trivial-gray-streams:stream-write-sequence ((stream output-binary-socket-stream) (sequence string) start end &key &allow-other-keys)
+(defmethod gray-stream:stream-write-sequence ((stream output-binary-socket-stream) (sequence string) start end)
   (write-string sequence stream :start start :end end))
 
 ;; ACL Gray-Streams Enhancment Generic Functions 

@@ -126,8 +126,8 @@ streams and handled by their close methods."
 
 (defgeneric get-clisp-stream (stream))
 
-(defmethod get-clisp-stream ((stream lw-buffering:native-lisp-stream-mixin))
-  (lw-buffering:native-lisp-stream stream))
+(defmethod get-clisp-stream ((stream gray-stream::native-lisp-stream-mixin))
+  (gray-stream::native-lisp-stream stream))
 
 (defmethod get-clisp-stream ((stream t))
   (the stream stream))
@@ -149,7 +149,7 @@ streams and handled by their close methods."
 ;; Now, throw chunking in the mix
 
 (defclass chunked-stream (de.dataheaven.chunked-stream-mixin::chunked-stream-mixin
-                          lw-buffering:buffered-bivalent-stream)
+                          gray-stream::buffered-bivalent-stream)
   ((plist :initarg :plist :accessor stream-plist)))
 
 
