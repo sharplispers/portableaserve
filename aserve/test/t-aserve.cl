@@ -53,10 +53,17 @@
 
 (eval-when (compile eval load)
   (defvar *aserve-examples-directory*
-      (or (probe-file "aserve/examples/")
-	  (probe-file "examples/")
+      (or (cl-fad:directory-exists-p "aserve/examples/")
+	  (cl-fad:directory-exists-p "examples/")
 	  (error "Could not find the aserve examples directory.")))
   )
+
+(defun long-site-name* ()
+  "Handle case where LONG-SITE-NAME returns NIL.
+The return value should be different from \"localhost\" since some tests
+depend on a server instance returning different content depending on
+hostname."
+  (or (long-site-name) "127.0.0.1"))
 
 ; set to nil before loading the test to prevent the test from auto-running
 (defvar common-lisp-user::*do-aserve-test* t)
@@ -152,7 +159,7 @@
     (setq *wserver* wserver)
     (unpublish :all t) ; flush anything published
     (setq *x-ssl* ssl)
-    (socket::local-port (net.aserve::wserver-socket wserver))
+    (acl-compat.socket:local-port (net.aserve::wserver-socket wserver))
     ))
 
 (defun stop-aserve-running ()
@@ -170,7 +177,7 @@
   
   (push *x-proxy* *save-x-proxy*)
   (setq *x-proxy* (format nil "localhost:~d" 
-			  (socket:local-port
+			  (acl-compat.socket:local-port
 			   (wserver-socket *proxy-wserver*))))
   )
 
@@ -233,13 +240,8 @@
 	(dummy-2-name "xx2aservetest.txt")
 	(prefix-local (format nil "http://localhost:~a" port))
 	(prefix-dns
-         ;; KLUDGE: Don't assume that long-site-name returns a valid
-         ;; hostname -- punt instead.
-         #-allegro
-         (format nil "http://localhost:~a" port)
-         #+allegro
          (format nil "http://~a:~a" 
-			      (long-site-name)
+			      (long-site-name*)
 			      port))
 	(reps 0)
 	(got-reps nil))
@@ -406,7 +408,7 @@
 		  :content-type "text/plain")
     
     (publish-file :path "/checkit" 
-		  :host (long-site-name)
+		  :host (long-site-name*)
 		  :file dummy-2-name
 		  :content-type "text/plain")
     
@@ -434,7 +436,7 @@
     
     ; remove the dns one
     (publish-file :path "/checkit" 
-		  :host (long-site-name)
+		  :host (long-site-name*)
 		  :remove t)
     
     ; verify it's gone too
@@ -593,7 +595,7 @@
 (defun test-authorization (port)
   (let ((prefix-local (format nil "http://localhost:~a" port))
 	(prefix-dns   (format nil "http://~a:~a" 
-			      (long-site-name) port)))
+			      (long-site-name*) port)))
     
     ;; manual authorization testing
     ;; basic authorization
@@ -646,7 +648,7 @@
 	     :content-type "text/html"
 	     :function
 	     #'(lambda (req ent)
-		 (let ((net-address (ash (socket:remote-host
+		 (let ((net-address (ash (acl-compat.socket:remote-host
 					  (request-socket req))
 					 -24)))
 		   (if* (equal net-address 127)
@@ -756,7 +758,7 @@
       ;; accept from dns name only 
       
       (setf (location-authorizer-patterns loca) 
-	`((:accept ,(long-site-name))
+	`((:accept ,(long-site-name*))
 	  :deny))
       
       (test 404
@@ -770,7 +772,7 @@
       
       ;; deny dns and accept all others
       (setf (location-authorizer-patterns loca) 
-	`((:deny ,(long-site-name))
+	`((:deny ,(long-site-name*))
 	  :accept))
       
       (test 200
@@ -1180,17 +1182,17 @@
 		 
     
       (setq proxy-host (format nil "localhost:~d"
-			       (socket:local-port
+			       (acl-compat.socket:local-port
 				(net.aserve::wserver-socket proxy-wserver))))
     
       (setq origin-server
-	(format nil "http://localhost:~d" (socket:local-port
+	(format nil "http://localhost:~d" (acl-compat.socket:local-port
 					   (net.aserve::wserver-socket *wserver*))))
 
       (format t "server on port ~d, proxy server on port ~d~%"
-	      (socket:local-port
+	      (acl-compat.socket:local-port
 	       (net.aserve::wserver-socket *wserver*))
-	      (socket:local-port
+	      (acl-compat.socket:local-port
 	       (net.aserve::wserver-socket proxy-wserver)))
 
       (with-open-file (p "aservetest.xx" :direction :output
@@ -1275,7 +1277,7 @@
 (defun test-publish-directory (port)
   (let ((prefix-local (format nil "http://localhost:~a" port))
 	(prefix-dns   (format nil "http://~a:~a" 
-			      (long-site-name)
+			      (long-site-name*)
 			      port))
 	(test-dir)
 	(step 0)
@@ -1506,7 +1508,7 @@
 (defun test-publish-prefix (port)
   (let ((prefix-local (format nil "http://localhost:~a" port))
 	(prefix-dns   (format nil "http://~a:~a" 
-			      (long-site-name)
+			      (long-site-name*)
 			      port))
 	(got-here))
     (publish-prefix :prefix "/pptest"
@@ -1677,7 +1679,7 @@
     
     ;; try making a connection and not sending any headers.
     ;; we should timeout
-    (let ((sock (socket:make-socket :remote-host "localhost"
+    (let ((sock (acl-compat.socket:make-socket :remote-host "localhost"
 				    :remote-port port)))
       (unwind-protect
        (progn
@@ -1785,7 +1787,7 @@
 			   (with-http-response (req ent)
 			     (with-http-body (req ent)))))
     (do-http-request (format nil "http://localhost:~d/spr27296"
-			     (socket:local-port
+			     (acl-compat.socket:local-port
 			      (net.aserve::wserver-socket server)))
       :method :post
       :content string
