@@ -23,8 +23,8 @@
   initial-bindings                      ; special variable bindings
   property-list)
 
-(defparameter *current-process* 
-  #-sb-thread 
+(defparameter *current-process*
+  #-sb-thread
   (%make-process)
   #+sb-thread
   ;; We don't fill in the process id, so the process compiling this
@@ -35,7 +35,7 @@
 (defparameter *all-processes-lock*
   (sb-thread:make-mutex :name "all processes lock"))
 
-(defparameter *all-processes* 
+(defparameter *all-processes*
   (list *current-process*))
 
 #-sb-thread
@@ -97,7 +97,7 @@
         (progn
           (setf old-state (process-whostate *current-process*)
                 (process-whostate *current-process*) reason)
-          (loop 
+          (loop
            (let ((it (apply predicate arguments)))
              (when it (return it)))
            (process-allow-schedule)))
@@ -141,7 +141,7 @@
 
 (defun/sb-thread process-kill (process)
   (when (process-id process)
-    (sb-thread:destroy-thread (process-id process))
+    (sb-thread:terminate-thread (process-id process))
     (setf (process-id process) nil))
   (sb-thread:with-mutex (*all-processes-lock*)
     (setf *all-processes* (delete process *all-processes*))))
@@ -241,7 +241,7 @@
         (progn
           (setf old-state (process-whostate *current-process*)
                 (process-whostate *current-process*) reason)
-          (loop 
+          (loop
            (let ((it (funcall predicate)))
              (when (or (> (get-universal-time) end-time) it)
                (return it)))
