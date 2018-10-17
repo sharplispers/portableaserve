@@ -24,7 +24,7 @@ indicate failure."))
     (call-next-method)))
 
 #-allegro
-(defsystem aserve
+(defsystem paserve
     :name "AllegroServe (portable)"
     :author "John K. Foderaro"
     :version "1.2.50"
@@ -44,13 +44,13 @@ indicate failure."))
                  (:file "cgi" :depends-on ("main"))
                  (:file "playback" :depends-on ("main" "client")))
     :depends-on (htmlgen acl-compat)
-    :perform (load-op :after (op aserve)
+    :perform (load-op :after (op paserve)
                       (pushnew :aserve cl:*features*))
     #+asdf3 :perform #+asdf3 (test-op (op c) (load-system :aserve-test :force t))
   )
 
 #+allegro
-(defsystem aserve
+(defsystem paserve
     :name "AllegroServe (portable)"
     :author "John K. Foderaro"
     :version "1.3.19"
