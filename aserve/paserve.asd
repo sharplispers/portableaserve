@@ -1,4 +1,39 @@
 ;;;; -*- mode: lisp -*-
+
+(in-package :cl-user)
+
+(defun print-legacy-warning ()
+  (if (or (member :ccl *features*)
+	  (member :sbcl *features*))
+      (warn "
+
+NOTE:
+=====
+
+A more up-to-date AllegroServe, with its ASDF system named `aserve,'
+is now available in Quicklisp for CCL and SBCL.
+
+Please consider using that version.
+
+
+")
+
+      (format t "
+
+NOTE:
+=====
+
+A more up-to-date AllegroServe, with ASDF system named `aserve,' is
+now available in Quicklisp for CCL and SBCL, using the `zacl'
+compatibility layer (instead of this old acl-compat). Please consider
+contributing, or requesting, a port of zacl for ~a.
+
+"
+	      (lisp-implementation-type))))
+
+
+
+
 ;;;;
 ;;;; This as an ASDF system for ASERVE meant to replace
 ;;;; aserve-cmu.system, but could replace all other systems, too.
@@ -44,6 +79,8 @@ indicate failure."))
                  (:file "cgi" :depends-on ("main"))
                  (:file "playback" :depends-on ("main" "client")))
     :depends-on (htmlgen acl-compat)
+    :perform (load-op :before (op paserve)
+		      (print-legacy-warning))
     :perform (load-op :after (op paserve)
                       (pushnew :aserve cl:*features*))
     #+asdf3 :perform #+asdf3 (test-op (op c) (load-system :aserve-test :force t))
