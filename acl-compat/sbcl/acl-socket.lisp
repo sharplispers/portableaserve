@@ -175,7 +175,9 @@ streams and handled by their close methods."
 	(b (logand #xff (ash ipaddr -16)))
 	(c (logand #xff (ash ipaddr -8)))
 	(d (logand #xff ipaddr)))
-    (make-array 4 :initial-contents (list a b c d))))
+    (make-array 4
+                :element-type '(unsigned-byte 8)
+                :initial-contents (list a b c d))))
 
 (declaim (ftype (function (vector)
                           (values (unsigned-byte 32)))
