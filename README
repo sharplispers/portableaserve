@@ -1,22 +1,5 @@
 README --
 
-NOTE: As of this writing, an up-to-date (very minor) fork of current
-original AllegroServe has been made to work on SBCL and CCL, using the
-new "zacl" portability layer. This new Allegroserve is taking over the
-original "aserve" system name, and this (now-legacy) Portable
-Allegroserve has had its system name changed to "paserve."
-
-For SBCL and CCL, you are encourage to switch to the new "aserve," and
-report any bugs or contributions to its repository as registered at the
-[Quicklisp projects project](https://github.com/quicklisp/quicklisp-projects).
-
-For Allegro CL, of course you can use the built-in AllegroServe.
-
-For CLs other than SBCL, CCL, and Allegro CL, feel free to continue
-using this Portable AllegroServe, but also consider contributing a
-port of Zacl to your desired target platform, so you can be running an
-up-to-date AllegroServe.
-
 This is a short description of what you will find
 in the subdirectories of this archive
 
