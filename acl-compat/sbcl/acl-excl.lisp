@@ -30,3 +30,11 @@
 (defun cl-internal-real-time ()
   (round (/ (get-internal-real-time) internal-time-units-per-second)))
 
+;! Need to figure out what to do here
+(defun fasl-read (filename)
+  (declare (ignore filename))
+  (error "fasl-read not implemented for SBCL.") )
+
+(defun fasl-write (data stream opt)
+  (declare (ignore data stream opt))
+  (error "fasl-write not implemented for SBCL.") )
