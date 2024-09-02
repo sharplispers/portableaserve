@@ -154,9 +154,18 @@
   (declare (ignore name))
   nil)
 
+;;; The MUTEX-OWNER will automatically be set to the
+;;; current thread, so LOCK-VALUE is ignored.  WHOSTATE
+;;; is supposed to be the state string that can be seen when
+;;; looking at a thread that is waiting on LOCK, but SB-THREAD
+;;; does not support it, so it is also ignored.
 (defun/sb-thread process-lock (lock &optional lock-value whostate timeout)
-  (declare (ignore whostate timeout))
-  (sb-thread:get-mutex lock lock-value))
+  (declare (ignore whostate lock-value))
+  ;; the following was the original version,
+  ;; in which `lock-value` is the new owner.
+  ;; (sb-thread:get-mutex lock lock-value)
+  (sb-thread:grab-mutex lock :timeout timeout)
+  )
 
 (defun/sb-thread process-unlock (lock &optional lock-value)
   (declare (ignore lock-value))
@@ -270,7 +279,11 @@
 
 ;;; TODO: integrate with McCLIM / system-wide queue for such things
 #+sb-thread
-(defvar *atomic-spinlock* (sb-thread::make-spinlock))
+(defvar *atomic-spinlock*
+  (sb-thread:make-mutex)
+  ;; MAKE-SPINLOCK is deprecated. [2024/09/01:rpg]
+  ;; (sb-thread::make-spinlock)
+  )
 
 #-sb-thread
 (defmacro atomic-incf (place)
