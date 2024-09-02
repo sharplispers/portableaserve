@@ -7,7 +7,7 @@
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
-;; the GNU Lesser General Public License as published by 
+;; the GNU Lesser General Public License as published by
 ;; the Free Software Foundation, as clarified by the AllegroServe
 ;; prequel found in license-allegroserve.txt.
 ;;
@@ -16,11 +16,11 @@
 ;; merchantability or fitness for a particular purpose.  See the GNU
 ;; Lesser General Public License for more details.
 ;;
-;; Version 2.1 of the GNU Lesser General Public License is in the file 
+;; Version 2.1 of the GNU Lesser General Public License is in the file
 ;; license-lgpl.txt that was distributed with this file.
 ;; If it is not present, you can access it from
 ;; http://www.gnu.org/copyleft/lesser.txt (until superseded by a newer
-;; version) or write to the Free Software Foundation, Inc., 59 Temple Place, 
+;; version) or write to the Free Software Foundation, Inc., 59 Temple Place,
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
@@ -40,10 +40,10 @@
 (defvar *save-commands* nil) ; if true then a stream to which to write commands
 
 (defmethod logmess (message)
-  ;; send log message to the default vhost's error stream 
+  ;; send log message to the default vhost's error stream
   (logmess-stream message (vhost-error-stream
-			   (wserver-default-vhost
-			    *wserver*))))
+                           (wserver-default-vhost
+                            *wserver*))))
 
 
 
@@ -54,140 +54,138 @@
   (multiple-value-bind (csec cmin chour cday cmonth cyear)
       (decode-universal-time (get-universal-time))
     (let* ((*print-pretty* nil)
-	   (str (format
-		 nil
-		 "~a: ~2,'0d/~2,'0d/~2,'0d - ~2,'0d:~2,'0d:~2,'0d - ~a~%"
-		 (acl-compat.mp:process-name acl-compat.mp:*current-process*)
-		 cmonth cday (mod cyear 100)
-		 chour cmin csec
-		 message))
-	   (lock #+allegro (getf (excl::stream-property-list stream) :lock)
+           (str (format
+                 nil
+                 "~a: ~2,'0d/~2,'0d/~2,'0d - ~2,'0d:~2,'0d:~2,'0d - ~a~%"
+                 (acl-compat.mp:process-name acl-compat.mp:*current-process*)
+                 cmonth cday (mod cyear 100)
+                 chour cmin csec
+                 message))
+           (lock #+allegro (getf (excl::stream-property-list stream) :lock)
                  #-allegro nil))
       (if* lock
-	 then (acl-compat.mp:with-process-lock (lock)
-		(if* (open-stream-p stream)
-		   then (write-sequence str stream)
-			(finish-output stream)))
-	 else (write-sequence str stream)
-	      (finish-output stream)))))
+         then (acl-compat.mp:with-process-lock (lock)
+                (if* (open-stream-p stream)
+                   then (write-sequence str stream)
+                        (finish-output stream)))
+         else (write-sequence str stream)
+              (finish-output stream)))))
 
 (defmethod brief-logmess (message)
   ;; omit process name and month, day, year
   (multiple-value-bind (csec cmin chour)
       (decode-universal-time (get-universal-time))
     (let* ((*print-pretty* nil)
-	   (stream (vhost-error-stream
-		    (wserver-default-vhost
-		     *wserver*)))
-	   (str (format nil
-			"~2,'0d:~2,'0d:~2,'0d - ~a~%"
-			chour cmin csec
-			message))
-	   (lock #+allegro (getf (excl::stream-property-list stream) :lock)
+           (stream (vhost-error-stream
+                    (wserver-default-vhost
+                     *wserver*)))
+           (str (format nil
+                        "~2,'0d:~2,'0d:~2,'0d - ~a~%"
+                        chour cmin csec
+                        message))
+           (lock #+allegro (getf (excl::stream-property-list stream) :lock)
                  #-allegro nil))
       (if* lock
-	 then (acl-compat.mp:with-process-lock (lock)
-		(setq stream (vhost-error-stream
-			      (wserver-default-vhost
-			       *wserver*)))
-		(write-sequence str stream)
-		(finish-output stream))
-	 else (write-sequence str stream)
-	      (finish-output stream)))))
+         then (acl-compat.mp:with-process-lock (lock)
+                (setq stream (vhost-error-stream
+                              (wserver-default-vhost
+                               *wserver*)))
+                (write-sequence str stream)
+                (finish-output stream))
+         else (write-sequence str stream)
+              (finish-output stream)))))
 
 
 
 
 
 (defun log-timed-out-request-read (socket)
-  (logmess (format nil "No request read from address ~a" 
-		   (acl-compat.socket:ipaddr-to-dotted (acl-compat.socket:remote-host socket)))))
+  (logmess (format nil "No request read from address ~a"
+                   (acl-compat.socket:ipaddr-to-dotted (acl-compat.socket:remote-host socket)))))
 
-
+;;; FIXME: replace with compiled scanner
+(defparameter +uri-re+
+  "^[^ ]+\\s+([^ ]+)")
 
 (defmethod log-request ((req http-request))
   ;; after the request has been processed, write out log line
   (if* *enable-logging*
      then (let* ((ipaddr (acl-compat.socket:remote-host (request-socket req)))
-		 (time   (request-reply-date req))
-		 (code   (let ((obj (request-reply-code req)))
-			   (if* obj
-			      then (response-number obj)
-			      else 999)))
-		 (length  (or (request-reply-content-length req)
-			      #+(and allegro (version>= 6))
-			      (excl::socket-bytes-written 
-			       (request-socket req))))
-	
-		 (stream (vhost-log-stream (request-vhost req)))
-		
-		 (lock #+allegro (and (streamp stream)
-			    (getf (excl::stream-property-list stream) 
-				  :lock))
+                 (time   (request-reply-date req))
+                 (code   (let ((obj (request-reply-code req)))
+                           (if* obj
+                              then (response-number obj)
+                              else 999)))
+                 (length  (or (request-reply-content-length req)
+                              #+(and allegro (version>= 6))
+                              (excl::socket-bytes-written
+                               (request-socket req))))
+
+                 (stream (vhost-log-stream (request-vhost req)))
+
+                 (lock #+allegro (and (streamp stream)
+                            (getf (excl::stream-property-list stream)
+                                  :lock))
                        #-allegro nil))
 
-	    (macrolet ((do-log ()
-			 '(progn (format stream
-				  "~a - - [~a] ~s ~s ~s~%"
-				  (acl-compat.socket:ipaddr-to-dotted ipaddr)
-				  (maybe-universal-time-to-date time)
-				  (request-raw-request req)
-				  code
-				  (or length -1))
-			   (force-output stream))))
-			 
-	      (if* lock
-		 then (acl-compat.mp:with-process-lock (lock)
-			; in case stream switched out while we weren't busy
-			; get the stream again
-			(setq stream (vhost-log-stream (request-vhost req)))
-			(do-log))
-		 else (do-log)))))
-  
+            (macrolet ((do-log ()
+                         '(progn (format stream
+                                  "~a - - [~a] ~s ~s ~s~%"
+                                  (acl-compat.socket:ipaddr-to-dotted ipaddr)
+                                  (maybe-universal-time-to-date time)
+                                  (request-raw-request req)
+                                  code
+                                  (or length -1))
+                           (force-output stream))))
+
+              (if* lock
+                 then (acl-compat.mp:with-process-lock (lock)
+                        ; in case stream switched out while we weren't busy
+                        ; get the stream again
+                        (setq stream (vhost-log-stream (request-vhost req)))
+                        (do-log))
+                 else (do-log)))))
+
   (if* *save-commands*
      then (multiple-value-bind (ok whole uri-string)
-	      (match-re "^[^ ]+\\s+([^ ]+)" (request-raw-request req))
-	    (declare (ignore ok whole))
-	    (format *save-commands*
-		    "((:method . ~s) (:uri . ~s) (:proto . ~s) ~% (:code . ~s)~@[~% (:body . ~s)~]~@[~% (:auth .  ~s)~]~@[~% (:ctype . ~s)~])~%" 
-		    (request-method req)
-		    uri-string
-		    (request-protocol req)
-		    (let ((obj (request-reply-code req)))
-		      (if* obj
-			 then (response-number obj)
-			 else 999))
-		    (let ((bod (request-request-body req)))
-		      (and (not (equal "" bod)) bod))
-		    (multiple-value-list (get-basic-authorization req))
-		    (header-slot-value req :content-type)
-		    ))
-	  (force-output *save-commands*))
-		  
-	  
+              (cl-ppcre:scan-to-strings +uri-re+ (request-raw-request req))
+            (declare (ignore ok whole))
+            (format *save-commands*
+                    "((:method . ~s) (:uri . ~s) (:proto . ~s) ~% (:code . ~s)~@[~% (:body . ~s)~]~@[~% (:auth .  ~s)~]~@[~% (:ctype . ~s)~])~%"
+                    (request-method req)
+                    uri-string
+                    (request-protocol req)
+                    (let ((obj (request-reply-code req)))
+                      (if* obj
+                         then (response-number obj)
+                         else 999))
+                    (let ((bod (request-request-body req)))
+                      (and (not (equal "" bod)) bod))
+                    (multiple-value-list (get-basic-authorization req))
+                    (header-slot-value req :content-type)
+                    ))
+          (force-output *save-commands*))
+
+
   )
 
-	    	
-    
-    
+
+
+
 (defun log-proxy (uri level action extra)
   ;; log information from the proxy module
   ;;
-  (brief-logmess 
+  (brief-logmess
    (format nil "~a ~d ~a ~a~@[ ~s~]"
-	   (or (getf (acl-compat.mp:process-property-list acl-compat.mp:*current-process*)
-		     'short-name)
-	       (acl-compat.mp:process-name acl-compat.mp:*current-process*))
-	   level
-	   action
-	   (if* (stringp uri) 
-	      then uri 
-	      else (puri:render-uri uri nil))
-	   extra))
+           (or (getf (acl-compat.mp:process-property-list acl-compat.mp:*current-process*)
+                     'short-name)
+               (acl-compat.mp:process-name acl-compat.mp:*current-process*))
+           level
+           action
+           (if* (stringp uri)
+              then uri
+              else (puri:render-uri uri nil))
+           extra))
   (force-output (vhost-error-stream
-		 (wserver-default-vhost
-		  *wserver*))))
-
-    
-  
-
+                 (wserver-default-vhost
+                  *wserver*))))
