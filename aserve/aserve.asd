@@ -27,7 +27,8 @@ indicate failure."))
 (defsystem aserve
     :name "AllegroServe (portable)"
     :author "John K. Foderaro"
-    :version "1.2.50"
+    :version "1.2.51"
+    :maintainer "sharplispers"
     :licence "LLGPL"
     :default-component-class cl-source-file.cl
     :components ((:file "packages")
@@ -46,7 +47,7 @@ indicate failure."))
     :depends-on (htmlgen acl-compat)
     :perform (load-op :after (op aserve)
                       (pushnew :aserve cl:*features*))
-    #+asdf3 :perform #+asdf3 (test-op (op c) (load-system :aserve-test :force t))
+    #+asdf3 :perform #+asdf3 (test-op (op c) (load-system :aserve/test :force t))
   )
 
 #+allegro
@@ -65,17 +66,17 @@ indicate failure."))
       `(
         #+ignore                        ; Don't need this with asdf
         ("**;*.lisp.*" ;,(logical-pathname "**;*.cl.*")
-	 ,(merge-pathnames 
-	   (make-pathname :host (pathname-host *load-truename*)
-                         :directory '(:relative "aserve" 
+         ,(merge-pathnames
+           (make-pathname :host (pathname-host *load-truename*)
+                         :directory '(:relative "aserve"
                                                  :wild-inferiors)
                          :name :wild
                          :type "cl"
                          :version :wild)
-	   *load-truename*
+           *load-truename*
          ))
-        ("**;*.*.*" 
-         ,(merge-pathnames 
+        ("**;*.*.*"
+         ,(merge-pathnames
            (make-pathname :host (pathname-host *load-truename*)
                           :directory '(:relative :wild-inferiors)
                           :name    :wild
@@ -85,10 +86,10 @@ indicate failure."))
                           )
            *load-truename*))))
 
-(defsystem aserve-test
+(defsystem aserve/test
     :name "Tests for AllegroServe (portable)"
     :author "John K. Foderaro"
-    :version "1.2.50"
+    :version "1.2.51"
     :licence "LLGPL"
     :default-component-class cl-source-file.cl
     :components ((:module "test"
@@ -104,5 +105,3 @@ indicate failure."))
          #'(lambda (proc) (string= (mp:process-name proc) "Top Level Loop"))
          (mp:all-processes))
   (mp::startup-idle-and-top-level-loops)))
-
-
