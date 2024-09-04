@@ -33,14 +33,13 @@
 ;;-
 
 #+allegro
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :tester))
 
 ;;; Get Kevin Rosenberg's port of Franz tester at
 ;;; http://files.b9.com/ptester/
 #-allegro
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:oos 'asdf:load-op :ptester)
   (rename-package (find-package :ptester) :ptester '(:util.test)))
 
 (defpackage :net.aserve.test
@@ -51,10 +50,9 @@
 
 (in-package :net.aserve.test)
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (defvar *aserve-examples-directory*
-      (or (cl-fad:directory-exists-p "aserve/examples/")
-	  (cl-fad:directory-exists-p "examples/")
+      (or (cl-fad:directory-exists-p (asdf:system-relative-pathname "aserve" "examples/"))
 	  (error "Could not find the aserve examples directory.")))
   )
 
@@ -536,7 +534,8 @@ hostname."
 	    (test "testval"
 		    (cdr (assoc "testhead" headers :test #'equal))
 		    :test #'equal)
-	    (test (format nil "text/plain" port)
+            (test (format nil "text/plain" ;; port
+                          )
 		  (cdr (assoc :content-type headers :test #'eq))
 		  :test #'equal)
 	    (if* (and (eq protocol :http/1.1)

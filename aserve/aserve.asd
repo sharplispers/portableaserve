@@ -91,6 +91,10 @@ indicate failure."))
     :version "1.2.51"
     :licence "LLGPL"
     :default-component-class cl-source-file.cl
+  :perform (test-op (op c)
+              (declare (ignorable op c))
+              (call-next-method)
+              (uiop:symbol-call :net.aserve.test '#:test-aserve t))
     :components ((:module "test"
                           :components ((:file "t-aserve"))))
     :depends-on (ptester aserve))
