@@ -44,11 +44,10 @@ indicate failure."))
                  (:file "proxy" :depends-on ("main" "headers"))
                  (:file "cgi" :depends-on ("main"))
                  (:file "playback" :depends-on ("main" "client")))
-    :depends-on (htmlgen acl-compat)
+  :in-order-to ((test-op (test-op "aserve/test")))
+  :depends-on (htmlgen acl-compat)
     :perform (load-op :after (op aserve)
-                      (pushnew :aserve cl:*features*))
-    #+asdf3 :perform #+asdf3 (test-op (op c) (load-system :aserve/test :force t))
-  )
+                      (pushnew :aserve cl:*features*)))
 
 #+allegro
 (defsystem aserve
@@ -94,7 +93,7 @@ indicate failure."))
     :default-component-class cl-source-file.cl
     :components ((:module "test"
                           :components ((:file "t-aserve"))))
-    :depends-on (ptester))
+    :depends-on (ptester aserve))
 
 #+cmu
 (defun cl-user::init-aserve-cmu ()
