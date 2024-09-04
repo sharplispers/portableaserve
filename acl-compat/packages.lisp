@@ -28,8 +28,9 @@
   #+sbcl (:import-from :sb-ext #:without-package-locks)
   #+sbcl (:import-from :sb-ext #:string-to-octets)
   #+cmu (:import-from :ext #:without-package-locks)
+  #+sbcl (:import-from :sb-unix #:unix-kill)
   #+allegro (:shadowing-import-from :excl #:filesys-size
-	    #:filesys-write-date #:intern* #:filesys-type #:atomically #:fast)
+                                    #:filesys-write-date #:intern* #:filesys-type #:atomically #:fast)
   #+(or mcl openmcl) (:shadowing-import-from :ccl #:fixnump)
   (:export
    #:if*
@@ -48,15 +49,21 @@
    #:fast
    #:without-package-locks
    #:fixnump
-   #+(or lispworks mcl openmcl) #:socket-error
+   #+(or lispworks mcl openmcl sbcl) #:socket-error
    #+(or allegro lispworks mcl openmcl) #:run-shell-command
-   #+(or allegro mcl openmcl) #:fasl-read
-   #+(or allegro mcl openmcl) #:fasl-write
+   #+(or allegro mcl openmcl sbcl) #:fasl-read
+   #+(or allegro mcl openmcl sbcl) #:fasl-write
    #+(or allegro cmu scl mcl lispworks openmcl sbcl) #:string-to-octets
+   #+(or allegro sbcl) #:octets-to-string
    #+(or allegro cmu scl mcl lispworks openmcl sbcl) #:write-vector
+   #+(or allegro cmu scl mcl lispworks openmcl sbcl) #:read-vector
    #:md5-init
    #:md5-update
    #:md5-final
+   #:rename-file-raw
+   #:unix-kill
+   #:unix-signal
+   #+(or allegro sbcl ccl) #:schedule-finalization
    ))
 
 
@@ -66,14 +73,14 @@
   (:nicknames :acl-mp #-cormanlisp :acl-compat-mp)
   #+allegro (:shadowing-import-from :mp #:process-interrupt #:lock)
   #+allegro (:shadowing-import-from :excl #:without-interrupts)
-  (:export 
+  (:export
    #:*current-process*         ;*
    #:process-kill              ;*
    #:process-preset            ;*
    #:process-name              ;*
 
    #:process-wait-function
-   #:process-run-reasons 
+   #:process-run-reasons
    #:process-arrest-reasons
    #:process-whostate
    #:without-interrupts
@@ -147,7 +154,7 @@
 
 (defpackage acl-compat.system
   (:nicknames :acl-compat.sys)
-  (:use :common-lisp) 
+  (:use :common-lisp)
   (:export
    #:command-line-arguments
    #:command-line-argument
@@ -216,7 +223,7 @@
                 #+lispworks #:stream-flush-buffer
                 #+lispworks #:with-stream-input-buffer
                 #+lispworks #:with-stream-output-buffer)
-  (:export 
+  (:export
    #:fundamental-binary-input-stream
    #:fundamental-binary-output-stream
    #:fundamental-character-input-stream
@@ -248,7 +255,7 @@
 #+cormanlisp
 (defpackage :gray-stream
   (:use #:common-lisp :gray-streams)
-  (:export 
+  (:export
    #:fundamental-binary-input-stream
    #:fundamental-binary-output-stream
    #:fundamental-character-input-stream
