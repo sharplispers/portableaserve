@@ -213,3 +213,10 @@ program-controlled interception of a break."
       (:integer (ironclad:octets-to-integer result))
       (:hex (ironclad:byte-array-to-hex-string result)))))
 
+(defun rename-file-raw (filespec new-name &key follow-symlinks)
+  (let ((expanded (merge-pathnames (parse-namestring new-name))))
+    (multiple-value-bind (defaulted-new-name old-truename new-truename)
+        (rename-file filespec expanded)
+      (if follow-symlinks
+          new-name
+          new-truename))))
