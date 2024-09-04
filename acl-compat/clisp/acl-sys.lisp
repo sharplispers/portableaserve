@@ -14,9 +14,3 @@
 (ext:without-package-lock ()
   (defun sys:command-line-argument (n)
     (nth n ext:*args*)))
-
-(ext:without-package-lock ()
-  (defun sys:reap-os-subprocess (&key (wait nil))
-    (declare (ignore wait))
-    nil))
-

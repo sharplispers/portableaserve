@@ -5,7 +5,3 @@
 
 (defun command-line-argument (n)
   (nth n sb-ext:*posix-argv*))
-
-(defun reap-os-subprocess (&key (wait nil))
-  (declare (ignore wait))
-  nil)

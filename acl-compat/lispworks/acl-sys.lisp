@@ -7,14 +7,7 @@
   
   (defun command-line-argument (n)
     (nth n system:*line-arguments-list*))
-  
-  (defun reap-os-subprocess (&key (wait nil))
-    (declare (ignore wait))
-    nil)
-
-  (export 'command-line-arguments)
-  (export 'command-line-argument)
-  (export 'reap-os-subprocess))
+)
 
 ;; Franz uses the MSWINDOWS feature conditional in some of their code;
 ;; thus, under Windows, ACL-COMPAT should probably push MSWINDOWS
