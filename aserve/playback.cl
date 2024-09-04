@@ -127,10 +127,11 @@
               (go out))
 
       (multiple-value-bind (ok whole user-id)
-          (match-re "name=\"user-id\" value=\"(.*?)\""
-                    resp
-                    :case-fold t
-                    :multiple-lines t)
+          (cl-ppcre:scan-to-strings
+           (cl-ppcre:create-scanner "name=\"user-id\" value=\"(.*?)\""
+                                   :case-insensitive-mode t
+                                   :multi-line-mode t)
+           resp)
 
         (declare (ignore whole))
 
@@ -145,18 +146,11 @@
     ))
 
 
-
-
-
-
-
-
-
-
-
 (defun remove-regexp (regexp string)
   (multiple-value-bind (ok whole before after)
-      (match-re (format nil "^(.*)~a(.*)$" regexp) string)
+      (cl-ppcre:scan-to-strings
+       (format nil "^(.*)~a(.*)$" regexp)
+       string)
     (declare (ignore whole))
     (if* ok
        then (concatenate 'string before after)
