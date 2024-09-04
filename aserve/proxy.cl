@@ -36,10 +36,7 @@
 (in-package :net.aserve)
 
 ; denotes a request from the browser
-#-sbcl
-(defconstant *browser-level* 100)
-#+sbcl
-(locally (declare (sb-ext:muffle-conditions style-warning))
+(let (#+sbcl (sb-ext:*muffled-warnings* 'style-warning))
   (defconstant *browser-level* 100))
 
 (defparameter *extra-lifetime-factor* 1.1)

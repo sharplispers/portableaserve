@@ -80,33 +80,19 @@
     )
 
 
-#-sbcl
-(defconstant *header-block-size* 4096) ; bytes in a header block
-#+sbcl
 ;;; SBCL doesn't like earmuffs used to name a constant.
-(locally (declare (sb-ext:muffle-conditions style-warning))
-  (defconstant *header-block-size* 4096)) ; bytes in a header block
-#-sbcl
-(defconstant *header-block-used-size-index*
-  ;; where the size of lower part of the buffer is kept
-  (- *header-block-size* 2))
-(locally (declare (sb-ext:muffle-conditions style-warning))
-  (defconstant *header-block-used-size-index*
-    ;; where the size of lower part of the buffer is kept
-    (- *header-block-size* 2)))
-#-sbcl
-(defconstant *header-block-data-start-index*
-    ;; where the start of the lowest data block is stored
-    (- *header-block-size* 4))
-#+sbcl
-(locally (declare (sb-ext:muffle-conditions style-warning))
-  (defconstant *header-block-data-start-index*
-    ;; where the start of the lowest data block is stored
-    (- *header-block-size* 4)))
+(let (#+sbcl (sb-ext:*muffled-warnings* 'style-warning))
+         (defconstant *header-block-size* 4096) ; bytes in a header block
+         (defconstant *header-block-used-size-index*
+           ;; where the size of lower part of the buffer is kept
+           (- *header-block-size* 2))
+         (defconstant *header-block-data-start-index*
+           ;; where the start of the lowest data block is stored
+           (- *header-block-size* 4)))
 
-  (defmacro header-block-header-index (index)
-    ;; where in the buffer the 2byte entry for header 'index' is located
-    `(- *header-block-size* 6  (ash ,index 1)))
+(defmacro header-block-header-index (index)
+  ;; where in the buffer the 2byte entry for header 'index' is located
+  `(- *header-block-size* 6  (ash ,index 1)))
 
 (eval-when (:compile-toplevel :execute)
   ;; the headers from the http spec
@@ -185,16 +171,13 @@
 ;; we take advantage of this being a constant in the code below and
 ;; in the proxy caches.  If this number should change all proxy caches
 ;; should be removed.
-#-sbcl
-(defconstant *headers-count* #.(length *http-headers*))
-#+sbcl
-(locally (declare (sb-ext:muffle-conditions style-warning))
+(let (#+sbcl (sb-ext:*muffled-warnings* 'style-warning))
   (defconstant *headers-count* #.(length *http-headers*)))
 
 
-  (defmacro header-block-data-start ()
-    ;; return index right above the first data index object stored
-    `(- *header-block-size* 4 (* *headers-count* 2)))
+(defmacro header-block-data-start ()
+  ;; return index right above the first data index object stored
+  `(- *header-block-size* 4 (* *headers-count* 2)))
 
 
 
