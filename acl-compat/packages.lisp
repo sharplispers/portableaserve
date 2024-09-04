@@ -50,7 +50,7 @@
    #:without-package-locks
    #:fixnump
    #+(or lispworks mcl openmcl sbcl) #:socket-error
-   #+(or allegro lispworks mcl openmcl) #:run-shell-command
+   #+(or allegro lispworks mcl openmcl sbcl) #:run-shell-command
    #+(or allegro mcl openmcl sbcl) #:fasl-read
    #+(or allegro mcl openmcl sbcl) #:fasl-write
    #+(or allegro cmu scl mcl lispworks openmcl sbcl) #:string-to-octets
