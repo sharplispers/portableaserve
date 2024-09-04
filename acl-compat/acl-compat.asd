@@ -138,6 +138,7 @@ lisp-system"))
       "acl-socket-openmcl" :depends-on ("packages" "chunked-stream-mixin"))
      ;; Diverse macros, utility functions
      #-allegro (:file "acl-excl-common" :depends-on ("packages"))
+     #-allegro (:file "acl-sys-common" :depends-on ("packages"))
      (:unportable-cl-source-file "acl-excl" :depends-on
                                  #-allegro ("acl-excl-common")
                                  #+allegro ("packages"))
