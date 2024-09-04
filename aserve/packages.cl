@@ -1,7 +1,9 @@
+;; -*- mode: common-lisp; package: net.aserve -*-
+
 #+(and allegro (version= 8 1))
 (sys:defpatch "aserve" 3
   "v1: version 1.2.56, large request body & multipart content type & more;
-v2: version 1.2.58, fix problem introduced in 1.2.56 where the response date 
+v2: version 1.2.58, fix problem introduced in 1.2.56 where the response date
   is always the zero universal time & correctly send out the comment after
   the result code;
 v3: version 1.2.60: uriencode-string: use uppercase hex chars for EC2."
@@ -24,7 +26,6 @@ v5: version 1.2.50, Enhanced SSL client/server support."
   :type :system
   :post-loadable t)
 
-;; -*- mode: common-lisp; package: net.aserve -*-
 ;;
 ;; packages.cl
 ;;
@@ -33,7 +34,7 @@ v5: version 1.2.50, Enhanced SSL client/server support."
 ;;
 ;; This code is free software; you can redistribute it and/or
 ;; modify it under the terms of the version 2.1 of
-;; the GNU Lesser General Public License as published by 
+;; the GNU Lesser General Public License as published by
 ;; the Free Software Foundation, as clarified by the AllegroServe
 ;; prequel found in license-allegroserve.txt.
 ;;
@@ -42,11 +43,11 @@ v5: version 1.2.50, Enhanced SSL client/server support."
 ;; merchantability or fitness for a particular purpose.  See the GNU
 ;; Lesser General Public License for more details.
 ;;
-;; Version 2.1 of the GNU Lesser General Public License is in the file 
+;; Version 2.1 of the GNU Lesser General Public License is in the file
 ;; license-lgpl.txt that was distributed with this file.
 ;; If it is not present, you can access it from
 ;; http://www.gnu.org/copyleft/lesser.txt (until superseded by a newer
-;; version) or write to the Free Software Foundation, Inc., 59 Temple Place, 
+;; version) or write to the Free Software Foundation, Inc., 59 Temple Place,
 ;; Suite 330, Boston, MA  02111-1307  USA
 ;;
 ;;
@@ -70,6 +71,10 @@ v5: version 1.2.50, Enhanced SSL client/server support."
 
 (defpackage :net.aserve
   (:use :common-lisp :acl-compat.excl :net.html.generator :puri)
+  #+sbcl
+  (:import-from #:sb-ext #:octets-to-string)
+  (:import-from #:acl-compat.mp
+                #:wait-for-input-available)
   (:export
    #:authorize
    #:authorizer
@@ -78,15 +83,15 @@ v5: version 1.2.50, Enhanced SSL client/server support."
    #:compute-strategy
    #:computed-entity
    ;; don't export, these should be private
-   ; #:debug-off		
-   ; #:debug-on			
+                                        ; #:debug-off
+                                        ; #:debug-on
    #:denied-request
    #:enable-proxy
    #:ensure-stream-lock
    #:entity-plist
    #:failed-request
    #:form-urlencoded-to-query
-   #:function-authorizer ; class
+   #:function-authorizer                ; class
    #:function-authorizer-function
    #:get-basic-authorization
    #:get-cookie-values
@@ -95,15 +100,15 @@ v5: version 1.2.50, Enhanced SSL client/server support."
    #:get-multipart-sequence
    #:get-request-body
    #:handle-request
-   #:handle-uri		; add-on component..
+   #:handle-uri                         ; add-on component..
    #:header-slot-value
-   #:http-request  	; class
-   #:locator		; class
-   #:location-authorizer  ; class
+   #:http-request                       ; class
+   #:locator                            ; class
+   #:location-authorizer                ; class
    #:location-authorizer-patterns
    #:map-entities
    #:parse-multipart-header
-   #:password-authorizer  ; class
+   #:password-authorizer                ; class
    #:process-entity
    #:publish
    #:publish-file
@@ -111,7 +116,7 @@ v5: version 1.2.50, Enhanced SSL client/server support."
    #:publish-multi
    #:publish-prefix
    #:query-to-form-urlencoded
-   #:reply-header-slot-value 
+   #:reply-header-slot-value
    #:run-cgi-program
    #:set-basic-authorization
    #:standard-locator
@@ -134,7 +139,7 @@ v5: version 1.2.50, Enhanced SSL client/server support."
    #:request-uri
    #:request-variable-value
    #:request-wserver
-   
+
    #:request-reply-code
    #:request-reply-date
    #:request-reply-content-length
@@ -143,7 +148,7 @@ v5: version 1.2.50, Enhanced SSL client/server support."
    #:request-reply-protocol-string
    #:request-reply-strategy
    #:request-reply-stream
-   
+
    #:set-cookie-header
    #:shutdown
    #:split-into-words
@@ -155,7 +160,7 @@ v5: version 1.2.50, Enhanced SSL client/server support."
    #:url-argument-alist
    #:with-http-response
    #:with-http-body
-   
+
    #:wserver
    #:wserver-default-vhost
    #:wserver-enable-chunking
@@ -203,9 +208,9 @@ v5: version 1.2.50, Enhanced SSL client/server support."
    #:publish-clp
    #:request-variable-value
    )
-  
+
   #+lispworks
-  (:export 
+  (:export
    #:initialize-websession-master
    #:locate-action-path
    #:webaction
@@ -221,9 +226,9 @@ v5: version 1.2.50, Enhanced SSL client/server support."
    ))
 
 
-(defpackage :net.aserve.client 
+(defpackage :net.aserve.client
   (:use :net.aserve :acl-compat.excl :common-lisp)
-  (:export 
+  (:export
    #:client-request  ; class
    #:client-request-close
    #:client-request-cookies

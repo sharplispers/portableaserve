@@ -43,10 +43,10 @@
                            arrest-reasons (priority 0) quantum resume-hook
                            suspend-hook initial-bindings run-immediately)
    (declare (ignore reset-action arrest-reasons priority quantum resume-hook
-		    suspend-hook run-immediately))
+                    suspend-hook run-immediately))
    (%make-process :name "the only process"
-		  :run-reasons run-reasons
-		  :initial-bindings initial-bindings))
+                  :run-reasons run-reasons
+                  :initial-bindings initial-bindings))
 
 #+sb-thread
 (defun make-process  (&key (name "Anonymous") reset-action run-reasons
@@ -71,11 +71,11 @@
   `(defun ,name ,args
      #-sb-thread
      (declare (ignore ,@(remove-if
-			 (lambda (x)
-			   (member x '(&optional &rest &key &allow-other-keys
+                         (lambda (x)
+                           (member x '(&optional &rest &key &allow-other-keys
                                        &aux)))
-			 (mapcar (lambda (x) (if (consp x) (car x) x))
-				 args))))
+                         (mapcar (lambda (x) (if (consp x) (car x) x))
+                                 args))))
      #-sb-thread
      (error
       "~A: Calling a multiprocessing function on a single-threaded sbcl build"
@@ -179,18 +179,18 @@
 
 #+sb-thread
 (defmacro with-process-lock ((place &key timeout whostate norecursive)
-			     &body body)
+                             &body body)
   (declare (ignore norecursive timeout))
   (let ((old-whostate (gensym "OLD-WHOSTATE")))
     `(sb-thread:with-recursive-lock (,place)
       (let (,old-whostate)
-	(unwind-protect
-	     (progn
-	       (when ,whostate
-		 (setf ,old-whostate (process-whostate *current-process*))
-		 (setf (process-whostate *current-process*) ,whostate))
-	       ,@body)
-	  (setf (process-whostate *current-process*) ,old-whostate))))))
+        (unwind-protect
+             (progn
+               (when ,whostate
+                 (setf ,old-whostate (process-whostate *current-process*))
+                 (setf (process-whostate *current-process*) ,whostate))
+               ,@body)
+          (setf (process-whostate *current-process*) ,old-whostate))))))
 
 
 #-sb-thread
@@ -216,7 +216,7 @@
                         (bindings (process-initial-bindings process))
                         (function (process-function process))
                         (arguments (process-arguments process)))
-		    (declare (type function function))
+                    (declare (type function function))
                     (if bindings
                         (progv
                             (mapcar #'car bindings)
@@ -305,3 +305,16 @@
 
 (defun process-active-p (process)
   (sb-thread:thread-alive-p (process-id process)))
+
+(defun wait-for-input-available (streams
+                                 &key (wait-function #'sb-gray:stream-listen)
+                                   whostate timeout)
+  (let ((collected-fds nil))
+    (flet ((collect-fds ()
+             (setf collected-fds
+                   (remove-if-not wait-function streams))))
+
+      (if timeout
+          (process-wait-with-timeout (or whostate "Waiting for input") timeout #'collect-fds)
+          (process-wait (or whostate "Waiting for input") #'collect-fds)))
+    collected-fds))
