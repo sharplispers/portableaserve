@@ -128,14 +128,14 @@ hostname."
 	       then ; we have ssl capability, run tests through ssl
 		    (stop-proxy-running)
 		    (stop-proxy-running)
-		    (stop-aserve-running)
-		    (format t "~%~%===== test through ssl ~%~%")
-		    (setq port (start-aserve-running 
-				(merge-pathnames 
-				 "server.pem" *aserve-load-truename*)))
-		    (do-tests)
-	       else (format t "~%>> it isn't so ssl tests skipped~%~%")))
-	; cleanup forms:
+                    (stop-aserve-running)
+                    (format t "~%~%===== test through ssl ~%~%")
+                    (setq port (start-aserve-running
+                                     (asdf:system-relative-pathname "aserve"
+                                          "test/server.pem")))
+                    (do-tests)
+               else (format t "~%>> it isn't so ssl tests skipped~%~%")))
+        ; cleanup forms:
 	(stop-aserve-running)
 	(stop-proxy-running)
 	(stop-proxy-running)
@@ -229,16 +229,20 @@ hostname."
 	      (write-sequence result p)))
     
     result))
-  
+
 
 (defun test-publish-file (port)
-  (let (dummy-1-contents 
-	(dummy-1-name "xxaservetest.txt")
-	dummy-2-contents
-	(dummy-2-name "xx2aservetest.txt")
-	(prefix-local (format nil "http://localhost:~a" port))
-	(prefix-dns
-         (format nil "http://~a:~a" 
+  (format t "~ttest-publish-file~%")
+  (let (dummy-1-contents
+        (dummy-1-name (namestring (asdf:system-relative-pathname "aserve"
+                                   "test/xxaservetest.txt")))
+        dummy-2-contents
+        (dummy-2-name (namestring (asdf:system-relative-pathname
+                                   "aserve"
+                                   "xx2aservetest.txt")))
+        (prefix-local (format nil "http://localhost:~a" port))
+        (prefix-dns
+          (format nil "http://~a:~a"
 			      (long-site-name*)
 			      port))
 	(reps 0)
@@ -511,13 +515,13 @@ hostname."
 		    ("/dum2" ,dummy-2-content)
 		    ("/dum3" ,dummy-3-content)
 		    ("/dum4" ,dummy-4-content)
-		    ("/dum5" ,dummy-5-content)
-		    ("/dum6" ,dummy-6-content)))
+                    ("/dum5" ,dummy-5-content)
+                    ("/dum6" ,dummy-6-content)))
 
-      (let ((this (cadr pair)))
-	;; to make a separate binding for each function
-	(publish :path (car pair) 
-		 :content-type "text/plain"
+      (let ((this (second pair)))
+        ;; to make a separate binding for each function
+        (publish :path (car pair)
+                 :content-type "text/plain"
 		 :headers '((:testhead . "testval"))
 		 :function
 		 #'(lambda (req ent)
@@ -1275,26 +1279,15 @@ hostname."
 
 (defun test-publish-directory (port)
   (let ((prefix-local (format nil "http://localhost:~a" port))
-	(prefix-dns   (format nil "http://~a:~a" 
-			      (long-site-name*)
-			      port))
-	(test-dir)
-	(step 0)
-	(got-reps nil))
-    
-    (multiple-value-bind (ok whole dir)
-        ;; A slight, unfortunate incompatibility between cl-ppcre and
-        ;; ACL regexps ...
-	(match-regexp #+allegro "\\(.*[/\\]\\).*" #-allegro "\\(.*[/\\\\]\\).*" (namestring *aserve-load-truename*))
-      (declare (ignore whole))
-      (if* (not ok) 
-	 then (error "can't find the server.pem directory"))
-      
-      (setq test-dir dir))
-      
-	
-    (publish-directory :prefix "/test-pd/"
-		       :destination test-dir
+          (prefix-dns   (format nil "http://~a:~a"
+                                (long-site-name*)
+                                port))
+          (test-dir (namestring (asdf:system-relative-pathname "aserve" "test/")))
+          (step 0)
+          (got-reps nil))
+
+      (publish-directory :prefix "/test-pd/"
+                         :destination test-dir
 		       :hook #'(lambda (req ent extra)
 				       (declare (ignore req ent extra))
 				       (setq got-reps (or got-reps 0))
@@ -1371,7 +1364,7 @@ hostname."
 
     ;; now try using the access control
     (publish-directory :prefix "/acc-test/"
-		       :destination (concatenate 'string test-dir "testdir/")
+                         :destination (namestring (asdf:system-relative-pathname "aserve" "test/testdir/"))
 		       :access-file "access.cl")
     
     
@@ -1476,14 +1469,16 @@ hostname."
 
 ;; publish-multi tests
 (defun test-publish-multi (port)
-  (let ((prefix-local (format nil "http://localhost:~a" port)))
-    (with-open-file (p "aservemulti.xx" 
+    (format t "~ttest-publish-multi~%")
+  (let ((prefix-local (format nil "http://localhost:~a" port))
+        (aserve-multi-path (asdf:system-relative-pathname "aserve" "test/aservemulti.xx")))
+    (with-open-file (p aserve-multi-path
 		     :direction :output
 		     :if-exists :supersede)
       (write-sequence "bar" p))
     (publish-multi :path "/multi-test"
 		   :items (list '(:string "foo")
-				"aservemulti.xx"  ; file
+                                aserve-multi-path ; file
 				#'(lambda (req ent time value)
 				    (declare (ignore req ent time value))
 				    "baz")
@@ -1497,7 +1492,7 @@ hostname."
 	  (values (x-do-http-request  (format nil "~a/multi-test" prefix-local)))
 	  :test #'equal)
     
-    (ignore-errors (delete-file "aservemulti.xx"))
+    (ignore-errors (delete-file aserve-multi-path))
     ))
 		   
 
@@ -1702,19 +1697,21 @@ hostname."
        (test-error
 	;; now we should get a connection reset by peer
 	(progn (format sock "brap: brop~c~c" #\return #\newline)
-	       (force-output sock)
-	       (format sock "brap: brop~c~c" #\return #\newline)
-	       (force-output sock))
-	:condition-type 'errno-stream-error
-	))
-       (ignore-errors (close sock :abort t))))))
-       
+                     (force-output sock)
+                     (format sock "brap: brop~c~c" #\return #\newline)
+                     (force-output sock))
+              :include-subtypes t
+              :condition-type #+allegro 'errno-stream-error
+                              #+sbcl 'sb-int:broken-pipe
+                              #- (or allegro sbcl) 'stream-error))
+        (ignore-errors (close sock :abort t))))))
+
 
 (defun test-international (port)
   (declare (ignorable port))
   #+(and allegro ics (version>= 6 1))
   (let ((prefix-local (format nil "http://localhost:~a" port))
-	(Privyet! (coerce '(#\cyrillic_capital_letter_pe
+        (Privyet! (coerce '(#\cyrillic_capital_letter_pe
 			    #\cyrillic_small_letter_er
 			    #\cyrillic_small_letter_i
 			    #\cyrillic_small_letter_ve
@@ -1792,12 +1789,18 @@ hostname."
       :content string
       :external-format (crlf-base-ef :utf8))
     (shutdown :server server)))
-			   
 
+
+;;; FIXME: this needs to be updated so that we have plausible URL to download and
+;;; reference file, but I don't have the time now. [2024/09/05:rpg]
 (defun test-http-copy-file ()
+  (values))
+#+ignore
+(defun test-http-copy-file ()
+  (format t "~ttest-http-copy-file~%")
   (let ((url
-	 "http://www.franz.com/support/8.0/download/entpro/dist/windows/acl80.exe")
-	(reference-file
+          "http://www.franz.com/support/8.0/download/entpro/dist/windows/acl80.exe")
+        (reference-file
 	 "/fi/www/sites/franz/prod/htdocs/support/8.0/download/entpro/dist/windows/acl80.exe")
 	(temp-file-name (acl-compat.sys:make-temp-file-name "temp")))
     (when (not (probe-file reference-file))
