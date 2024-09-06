@@ -5,39 +5,11 @@
 
 (in-package :acl-compat.socket)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (shadowing-import
-   '(;ccl:make-socket                    ; use our own version
-     ccl:accept-connection
-     ccl:dotted-to-ipaddr 
-     ccl:ipaddr-to-hostname
-     ccl:lookup-hostname
-     ccl:remote-host 
-     ccl:remote-port 
-     ccl:local-host 
-     ccl:local-port))
-)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export
-   '(accept-connection
-     ipaddr-to-dotted 
-     dotted-to-ipaddr 
-     ipaddr-to-hostname
-     lookup-hostname
-     remote-host 
-     remote-port 
-     local-host 
-     local-port
-     socket-control))
-  )
-
-
 (defclass server-socket ()
   ((socket :initarg :socket :reader socket
            :initform (error "No value supplied for socket"))
    (port :initarg :port
-	 :reader port
+         :reader port
          :initform (error "No value supplied for port"))))
 
 
