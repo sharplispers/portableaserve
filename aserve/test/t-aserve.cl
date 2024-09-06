@@ -61,7 +61,10 @@
 The return value should be different from \"localhost\" since some tests
 depend on a server instance returning different content depending on
 hostname."
-  (or (long-site-name) "127.0.0.1"))
+  (or (or (long-site-name)
+          #+openmcl
+          (error "Portable AllegroServe tests will not work if CCL:*LONG-SITE-NAME* is set to NIL."))
+      "127.0.0.1"))
 
 ; set to nil before loading the test to prevent the test from auto-running
 (defvar common-lisp-user::*do-aserve-test* t)
