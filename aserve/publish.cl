@@ -2526,21 +2526,4 @@
 
 (if* (not (boundp '*wserver*))
    then ; create initial wserver object
-	(setq *wserver* (make-instance 'wserver)))
-
-
-
-
-  
-
-	  
-      
-
-
-
-		    
-		     
-		     
-		    
-		  
-    
+        (setq *wserver* (make-instance 'wserver)))
