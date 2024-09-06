@@ -9,7 +9,7 @@
 (:files :deny  "\\.ign$")	   ; ignore all files ending in .ign
 
 ; allow from localhost only and don't inherit this rule
-(:ip :patterns ((:accept "127.1") 
+(:ip :patterns ((:accept "127.0.0.1") 
 		:deny)
      :inherit nil)
 
