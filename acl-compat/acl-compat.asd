@@ -96,7 +96,7 @@ lisp-system"))
 (defsystem acl-compat
     :name "acl-compat"
     :author "The acl-compat team"
-    :version "0.1.1"
+    :version "0.2.0"
     :description
     "A reimplementation of parts of the ACL API, mainly to get
     AllegroServe running on various machines, but might be useful
@@ -130,7 +130,7 @@ lisp-system"))
                                            #-(or allegro (and mcl (not openmcl))) "chunked-stream-mixin"))
      #+(and mcl (not openmcl))
      (:unportable-cl-source-file "acl-socket-mcl" :depends-on ("packages"))
-     #+(and mcl (not openmcl) (not carbon-compat)) 
+     #+(and mcl (not openmcl) (not carbon-compat))
      (:unportable-cl-source-file
       "mcl-stream-fix" :depends-on ("acl-socket-mcl"))
      #+openmcl

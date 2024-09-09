@@ -27,7 +27,7 @@ indicate failure."))
 (defsystem aserve
     :name "AllegroServe (portable)"
     :author "John K. Foderaro"
-    :version "1.2.51"
+    :version "1.3.0"
     :maintainer "sharplispers"
     :licence "LLGPL"
     :default-component-class cl-source-file.cl
@@ -45,7 +45,7 @@ indicate failure."))
                  (:file "cgi" :depends-on ("main"))
                  (:file "playback" :depends-on ("main" "client")))
   :in-order-to ((test-op (test-op "aserve/test")))
-  :depends-on (htmlgen acl-compat)
+  :depends-on (htmlgen (:version "acl-compat" "0.2"))
     :perform (load-op :after (op aserve)
                       (pushnew :aserve cl:*features*)))
 
@@ -88,7 +88,7 @@ indicate failure."))
 (defsystem aserve/test
     :name "Tests for AllegroServe (portable)"
     :author "John K. Foderaro"
-    :version "1.2.51"
+    :version "1.3.0"
     :licence "LLGPL"
     :default-component-class cl-source-file.cl
   :perform (test-op (op c)

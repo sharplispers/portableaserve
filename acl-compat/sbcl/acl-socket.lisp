@@ -10,12 +10,12 @@
   ((socket :initarg :socket :reader socket
            :initform (error "No value supplied for socket"))
    (element-type :type (member signed-byte unsigned-byte base-char)
-		 :initarg :element-type
-		 :reader element-type
+                 :initarg :element-type
+                 :reader element-type
                  :initform (error "No value supplied for element-type"))
    (port :type fixnum
-	 :initarg :port
-	 :reader port
+         :initarg :port
+         :reader port
          :initform (error "No value supplied for port"))
    (stream-type :type (member :text :binary :bivalent)
                 :initarg :stream-type
@@ -36,7 +36,7 @@
 
 (defgeneric accept-connection (socket &key wait))
 (defmethod accept-connection ((server-socket server-socket)
-			      &key (wait t))
+                              &key (wait t))
   "Return a bidirectional stream connected to socket."
   (if (sb-sys:wait-until-fd-usable (socket-file-descriptor (socket server-socket))
                                    :input (if (numberp wait) wait nil))
@@ -57,11 +57,11 @@
       (socket-receive (socket socket) buffer size)
     (declare (ignore port))
     (let ((buf
-	   (if (not extract) 
-	       rbuf
-	     (subseq rbuf 0 len)))) ;; FIXME: am I right?
+           (if (not extract)
+               rbuf
+             (subseq rbuf 0 len)))) ;; FIXME: am I right?
       (when buffer
-	  (replace buffer buf :end2 len))
+          (replace buffer buf :end2 len))
       (values
        (if buffer buffer buf)
        len
@@ -69,20 +69,20 @@
 
 (defmethod send-to ((socket datagram-socket) buffer size &key remote-host remote-port)
   (let* ((rhost (typecase remote-host
-		  (string (lookup-hostname remote-host))
-		  (otherwise remote-host)))
-	 (s (socket socket))
-	 (stream (progn
-		   (socket-connect s rhost remote-port)
-		   (socket-make-stream s :input t :output t :buffering :none))))
+                  (string (lookup-hostname remote-host))
+                  (otherwise remote-host)))
+         (s (socket socket))
+         (stream (progn
+                   (socket-connect s rhost remote-port)
+                   (socket-make-stream s :input t :output t :buffering :none))))
     (write-sequence buffer stream)
     size))
-    
-     
 
-(defun make-socket (&key 
-		    (type :stream)
-		    (remote-host "localhost")
+
+
+(defun make-socket (&key
+                    (type :stream)
+                    (remote-host "localhost")
                     local-port
                     remote-port
                     (connect :active)
@@ -100,20 +100,20 @@ http://franz.com/support/documentation/6.1/doc/pages/operators/socket/make-socke
 to read about the missing parts."
   (check-type remote-host string)
   (let ((element-type (ecase format
-			(:text 'base-char)
-			(:binary 'signed-byte)
+                        (:text 'base-char)
+                        (:binary 'signed-byte)
                         (:bivalent 'unsigned-byte)))
-        (socket 
-	 (if (eq type :datagram)
-	     (progn
-	       (setf connect :passive-udp)
-	       (make-instance 'inet-socket :type :datagram :protocol :udp))
-	   (make-instance 'inet-socket :type :stream :protocol :tcp))))
+        (socket
+         (if (eq type :datagram)
+             (progn
+               (setf connect :passive-udp)
+               (make-instance 'inet-socket :type :datagram :protocol :udp))
+           (make-instance 'inet-socket :type :stream :protocol :tcp))))
     (ecase connect
       (:passive-udp
        (setf (sockopt-reuse-address socket) reuse-address)
        (if local-port
-	   (socket-bind socket #(0 0 0 0) local-port))
+           (socket-bind socket #(0 0 0 0) local-port))
        (make-instance 'datagram-socket
                       :port (nth-value 1 (socket-name socket))
                       :socket socket
@@ -122,7 +122,7 @@ to read about the missing parts."
       (:passive
        (setf (sockopt-reuse-address socket) reuse-address)
        (if local-port
-	   (socket-bind socket #(0 0 0 0) local-port))
+           (socket-bind socket #(0 0 0 0) local-port))
        (socket-listen socket 10)        ;Arbitrarily chosen backlog value
        (make-instance 'server-socket
                       :port (nth-value 1 (socket-name socket))
@@ -155,26 +155,26 @@ streams and handled by their close methods."
 #+ignore
 (declaim (ftype (function ((unsigned-byte 32) &key (:values t))
                           (or (values fixnum fixnum fixnum fixnum)
-			      (values simple-string)))
-		ipaddr-to-dotted))
+                              (values simple-string)))
+                ipaddr-to-dotted))
 (defun ipaddr-to-dotted (ipaddr &key values)
   "Convert from 32-bit integer to dotted string."
   (declare (type (unsigned-byte 32) ipaddr))
   (let ((a (logand #xff (ash ipaddr -24)))
-	(b (logand #xff (ash ipaddr -16)))
-	(c (logand #xff (ash ipaddr -8)))
-	(d (logand #xff ipaddr)))
+        (b (logand #xff (ash ipaddr -16)))
+        (c (logand #xff (ash ipaddr -8)))
+        (d (logand #xff ipaddr)))
     (if values
-	(values a b c d)
+        (values a b c d)
       (format nil "~d.~d.~d.~d" a b c d))))
 
 (defun ipaddr-to-vector (ipaddr)
   "Convert from 32-bit integer to a vector of octets."
   (declare (type (unsigned-byte 32) ipaddr))
   (let ((a (logand #xff (ash ipaddr -24)))
-	(b (logand #xff (ash ipaddr -16)))
-	(c (logand #xff (ash ipaddr -8)))
-	(d (logand #xff ipaddr)))
+        (b (logand #xff (ash ipaddr -16)))
+        (c (logand #xff (ash ipaddr -8)))
+        (d (logand #xff ipaddr)))
     (make-array 4
                 :element-type '(unsigned-byte 8)
                 :initial-contents (list a b c d))))
@@ -199,19 +199,27 @@ streams and handled by their close methods."
     (get-token (concatenate 'string string " ") 0 nil)))
 
 (declaim (ftype (function (string &key (:errorp t))
-                          (or null (unsigned-byte 32)))
-		dotted-to-ipaddr))
+                          (values (or null (unsigned-byte 32))
+                                  (or condition fixnum)
+                                  ))
+                dotted-to-ipaddr))
 (defun dotted-to-ipaddr (dotted &key (errorp t))
-  "Convert from dotted string to 32-bit integer."
+  "Convert from dotted string to 32-bit integer.  For partial dotted
+notations (as in authorization patterns), return the bit width of the
+dotted notation."
   (declare (string dotted))
   (if errorp
       (let ((ll (string-tokens (substitute #\Space #\. dotted))))
-	(+ (ash (first ll) 24) (ash (second ll) 16)
-	   (ash (third ll) 8) (fourth ll)))
+        (values
+         (+ (ash (first ll) 24) (ash (or (second ll) 0) 16)
+            (ash (or (third ll) 0) 8) (or (fourth ll) 0))
+         (* (length ll) 8)))
     (ignore-errors
-	(let ((ll (string-tokens (substitute #\Space #\. dotted))))
-	  (+ (ash (first ll) 24) (ash (second ll) 16)
-	     (ash (third ll) 8) (fourth ll))))))
+        (let ((ll (string-tokens (substitute #\Space #\. dotted))))
+          (values
+           (+ (ash (first ll) 24) (ash (or (second ll) 0) 16)
+              (ash (or (third ll) 0) 8) (or (fourth ll) 0))
+           (* (length ll) 8))))))
 
 (defun ipaddr-to-hostname (ipaddr &key ignore-cache)
   (when ignore-cache

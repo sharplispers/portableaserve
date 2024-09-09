@@ -128,6 +128,16 @@
         #+(or lispworks cmu) #:de.dataheaven.chunked-stream-mixin
         #+cormanlisp #:socket
         )
+  #+openmcl
+  (:shadowing-import-from :ccl
+                          #:accept-connection
+     #:dotted-to-ipaddr
+     #:ipaddr-to-hostname
+     #:lookup-hostname
+     #:remote-host
+     #:remote-port
+     #:local-host
+     #:local-port)
   #+cl-ssl (:import-from :ssl #:MAKE-SSL-CLIENT-STREAM #:MAKE-SSL-SERVER-STREAM)
   #+lispworks (:shadow socket-stream stream-error)
   (:export

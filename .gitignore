@@ -15,3 +15,5 @@
 *.faslm8
 {arch}
 .arch-ids
+# temporary test file
+aserve/test/xx2aservetest.txt

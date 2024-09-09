@@ -136,63 +136,68 @@
 
 
 (defmethod authorize ((auth location-authorizer)
-		      (req http-request)
-		      (ent entity))
+                      (req http-request)
+                      (ent entity))
   (let ((request-ipaddress (acl-compat.socket:remote-host (request-socket req))))
     (dolist (pattern (location-authorizer-patterns auth))
       (if* (atom pattern)
-	 then (case pattern
-		(:accept (return-from authorize t))
-		(:deny   (return-from authorize nil))
-		(t (warn "bogus authorization pattern: ~s" pattern)
-		   (return-from authorize nil)))
-	 else (let ((decision (car pattern))
-		    (ipaddress (cadr pattern))
-		    (bits (if* (cddr pattern)
-			     then (caddr pattern)
-			     else 32)))
-		(if* (not (member decision '(:accept :deny)))
-		   then (warn "bogus authorization pattern: ~s" pattern)
-			(return-from authorize nil))
-		
-		(if* (stringp ipaddress)
-		   then ; check for dotted ip address first
-			(let ((newaddr (acl-compat.socket:dotted-to-ipaddr ipaddress
-								:errorp nil)))
-			  (if* (null newaddr)
-			     then ; success!
-				  (ignore-errors
-				   (setq newaddr (acl-compat.socket:lookup-hostname ipaddress))))
-			  
-			  (if* newaddr
-			     then (setf (cadr pattern) 
-				    (setq ipaddress newaddr))
-			     else ; can't compute the address
-				  ; so we'll not accept and we will deny
-				  ; just to be safe
-				  (warn "can't resolve host name ~s" ipaddress)
-				  (return-from authorize nil))))
-		
-		
-		(if* (not (and (integerp bits) (<= 1 bits 32)))
-		   then (warn "bogus authorization pattern: ~s" pattern)
-			(return-from authorize nil))
-		
-		; now we're finally ready to test things
-		(let ((mask (if* (eql bits 32) 
-			       then -1
-			       else (ash -1 (- 32 bits)))))
-		  (if* (eql (logand request-ipaddress mask)
-			    (logand ipaddress mask))
-		     then ; matched, 
-			  (case decision
-			    (:accept (return-from authorize t))
-			    (:deny   (return-from authorize nil))))))))
-    
-    t ; the default is to accept
-    ))
+         then (case pattern
+                (:accept (return-from authorize t))
+                (:deny   (return-from authorize nil))
+                (t (warn "bogus authorization pattern: ~s" pattern)
+                 (return-from authorize nil)))
+         else (let ((decision (first pattern))
+                    (ipaddress (second pattern))
+                    (bits (if* (cddr pattern)
+                             then (third pattern)
+                             else 32)))
+                (if* (not (member decision '(:accept :deny)))
+                   then (warn "bogus authorization pattern: ~s" pattern)
+                        (return-from authorize nil))
+
+                (when (stringp ipaddress)
+                  ;; check for dotted ip address first
+                  (multiple-value-bind (newaddr width)
+                      (acl-compat.socket:dotted-to-ipaddr ipaddress
+                                                          :errorp nil)
+                    (unless newaddr
+                      ;; ipaddress is hostname
+                      (ignore-errors
+                       (setf newaddr (acl-compat.socket:lookup-hostname ipaddress)
+                             bits 32)))
+
+                    (if* newaddr
+                       then (setf (cdr pattern)
+                                  `(,(setq ipaddress newaddr)
+                                     ,(setq bits width)))
+                       else ; can't compute the address
+                            ;; so we'll not accept and we will deny
+                            ;; just to be safe
+                            (warn "can't resolve host name ~s" ipaddress)
+                            (return-from authorize nil))))
 
 		
+		(if* (not (and (integerp bits) (<= 1 bits 32)))
+                   then (warn "bogus authorization pattern: ~s" pattern)
+                        (return-from authorize nil))
+
+                (format t "~&Authorization pattern is: ~s.  Bits are: ~s~%" pattern bits)
+
+                ;; now we're finally ready to test things
+                (let ((mask (if* (eql bits 32)
+                               then -1
+                               else (ash -1 (- 32 bits)))))
+                  (if* (eql (logand request-ipaddress mask)
+                            (logand ipaddress mask))
+                     then               ; matched,
+                                        (case decision
+                                          (:accept (return-from authorize t))
+                                          (:deny   (return-from authorize nil))))))))
+
+    t                                   ; the default is to accept
+    ))
+
+
 ;; - function authorization
 
 (defclass function-authorizer (authorizer)
@@ -206,18 +211,3 @@
   (let ((fun (function-authorizer-function auth)))
     (if* fun
        then (funcall fun req ent auth))))
-
-
-
-
-			  
-			  
-			  
-			  
-				  
-		
-		
-			
-			
-		
-			 
