@@ -10,6 +10,12 @@ To be honest, getting Portable AllegroServe to full functionality probably requi
 
 I don't know of any formal documentation for Portable AllegroServe, but as the name suggests, it attempts to provide the functionality provided by AllegroServe, whose documentation may be found [here](https://github.com/franzinc/aserve).
 
+## Status
+
+As far as I can tell based on tests, etc., the `acl-compat` compatibility library is in pretty good condition.  I cannot say the same of `aserve` itself, though.  Many tests still fail, SSL support is missing, and I suspect that proxy caching is also broken.  Interested persons can take a look at the tests that I have marked as `:known-failure`.
+
+For the moment, the primary value of this library is that it gives access to a number of useful extensions offered by Allegro Common Lisp, to programmers using other lisp implementations.
+
 ## So far ignored
 
 I haven't even looked into the Debian package files, the user contributions, etc.
