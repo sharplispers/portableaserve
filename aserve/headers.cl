@@ -81,14 +81,15 @@
 
 
 ;;; SBCL doesn't like earmuffs used to name a constant.
-(let (#+sbcl (sb-ext:*muffled-warnings* 'style-warning))
-         (defconstant *header-block-size* 4096) ; bytes in a header block
-         (defconstant *header-block-used-size-index*
-           ;; where the size of lower part of the buffer is kept
-           (- *header-block-size* 2))
-         (defconstant *header-block-data-start-index*
-           ;; where the start of the lowest data block is stored
-           (- *header-block-size* 4)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (let (#+sbcl (sb-ext:*muffled-warnings* 'style-warning))
+    (defconstant *header-block-size* 4096) ; bytes in a header block
+    (defconstant *header-block-used-size-index*
+      ;; where the size of lower part of the buffer is kept
+      (- *header-block-size* 2))
+    (defconstant *header-block-data-start-index*
+      ;; where the start of the lowest data block is stored
+      (- *header-block-size* 4))))
 
 (defmacro header-block-header-index (index)
   ;; where in the buffer the 2byte entry for header 'index' is located
@@ -171,8 +172,9 @@
 ;; we take advantage of this being a constant in the code below and
 ;; in the proxy caches.  If this number should change all proxy caches
 ;; should be removed.
-(let (#+sbcl (sb-ext:*muffled-warnings* 'style-warning))
-  (defconstant *headers-count* #.(length *http-headers*)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+ (let (#+sbcl (sb-ext:*muffled-warnings* 'style-warning))
+   (defconstant *headers-count* #.(length *http-headers*))))
 
 
 (defmacro header-block-data-start ()
