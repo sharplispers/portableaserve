@@ -35,9 +35,10 @@
 
 (in-package :net.aserve)
 
-; denotes a request from the browser
-(let (#+sbcl (sb-ext:*muffled-warnings* 'style-warning))
-  (defconstant *browser-level* 100))
+;;; denotes a request from the browser
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (let (#+sbcl (sb-ext:*muffled-warnings* 'style-warning))
+    (defconstant *browser-level* 100)))
 
 (defparameter *extra-lifetime-factor* 1.1)
 
