@@ -151,3 +151,8 @@ See the functions process-plist, (setf process-plist).")
           (process-wait-with-timeout (or whostate "Waiting for input") timeout #'collect-fds)
           (process-wait (or whostate "Waiting for input") #'collect-fds)))
     collected-fds))
+
+(defun process-wait-with-timeout (whostate seconds function &rest args)
+  ;; correct the seconds value to ticks for CCL:PROCESS-WAIT-WITH-TIMEOUT
+  (let ((ticks (round (* seconds ccl:*ticks-per-second*))))
+    (apply #'ccl:process-wait-with-timeout whostate ticks function args)))
