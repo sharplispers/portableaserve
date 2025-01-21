@@ -40,7 +40,7 @@
   (print-unreadable-object (socket stream :type t :identity nil)
     (format stream "datagram socket listening on port ~d" (port socket))))
 
-(defun socket-make-stream (socket &key stream-type &rest args)
+(defun socket-make-stream (socket &rest args &key stream-type &allow-other-keys)
   (let ((stream (apply #'sb-bsd-sockets:socket-make-stream socket args)))
     (make-instance (ecase stream-type
                      (:text 'socket-text-io-stream)
@@ -55,20 +55,18 @@
   (if (sb-sys:wait-until-fd-usable (socket-file-descriptor (socket server-socket))
                                    :input (if (numberp wait) wait nil))
       (let* ((socket (socket-accept (socket server-socket)))
-             (raw-stream (socket-make-stream socket
+             (stream (socket-make-stream socket
                                          :input t :output t
                                          :stream-type (stream-type server-socket)
                                          ;; :buffering :none
                                          :element-type
                                          (element-type server-socket)))
-             ;; bivalent streams here might well not work.
-             (stream (if (eq (stream-type server-socket) :bivalent)
-                         (make-bivalent-stream raw-stream
-                                               :plist `(:socket ,socket))
-                         raw-stream))
-             (socket-stream (make-instance (if (eq (stream-type server-socket) :bivalent)
-                                               'socket-bivalent-io-stream
-                                               'socket-io-stream)
+             (socket-stream (make-instance (ecase  (stream-type server-socket)
+                                             (:bivalent
+                                              'socket-bivalent-io-stream)
+                                             (:text
+                                              'socket-text-io-stream)
+                                             (:binary 'socket-binary-io-stream))
                                            :stream stream
                                            :socket socket)))
         socket-stream)
@@ -155,17 +153,14 @@ to read about the missing parts."
                       :stream-type format))
       (:active
        (socket-connect socket (lookup-hostname remote-host) remote-port)
-       (let* ((raw-stream (sb-bsd-sockets:socket-make-stream
+       (let ((stream (sb-bsd-sockets:socket-make-stream
                       socket :input t
                              :output t
-                             :element-type element-type))
-              (stream
-                (if (eq :bivalent format)
-                    ;; HACK: remember socket, so we can do peer lookup
-                    (make-bivalent-stream raw-stream
-                                          :plist `(:socket ,socket))
-                    raw-stream)))
-         (make-instance 'socket-io-stream
+                             :element-type element-type)))
+         (make-instance (ecase format
+                          (:bivalent 'socket-bivalent-io-stream)
+                          (:text 'socket-text-io-stream)
+                          (:binary 'socket-binary-io-stream))
                         :stream stream :socket socket))))))
 
 (defmethod close ((server server-socket) &key abort)
@@ -262,12 +257,11 @@ dotted notation."
   ((plist :initarg :plist :accessor stream-plist)))
 
 
-(defun make-bivalent-stream (lisp-stream &key plist)
-  (make-instance 'chunked-stream :lisp-stream lisp-stream :plist plist))
-
+;; (defun make-bivalent-stream (lisp-stream &key plist)
+;;   (make-instance 'chunked-stream :lisp-stream lisp-stream :plist plist))
 
 (defgeneric socket-control (stream &key output-chunking output-chunking-eof input-chunking)
-  (:method ((stream de.dataheaven.chunked-stream-mixin::chunked-stream-mixin)
+  #+nil(:method ((stream de.dataheaven.chunked-stream-mixin::chunked-stream-mixin)
             &key (output-chunking nil oc-p) output-chunking-eof (input-chunking nil ic-p))
     (when oc-p
       (when output-chunking
@@ -291,7 +285,7 @@ dotted notation."
     (declare (ignore output-chunking output-chunking-eof input-chunking)
              (ignorable stream))
     (error "Output-chunking not available on stream ~s" stream)))
-
+#|
 (defmethod remote-host ((socket-stream chunked-stream))
   (let ((socket (getf (stream-plist socket-stream) :socket)))
     (vector-to-ipaddr (socket-peername socket))))
@@ -312,6 +306,7 @@ dotted notation."
     (if socket (nth-value 1 (socket-name socket))
         (progn (warn "Socket not in plist of ~S -- could not get local port" socket-stream)
                0))))
+|#
 
 
 
