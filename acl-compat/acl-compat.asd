@@ -99,7 +99,7 @@ lisp-system"))
 (defsystem acl-compat
     :name "acl-compat"
     :author "The acl-compat team"
-    :version "0.2.0"
+    :version "0.3.0"
     :description
     "A reimplementation of parts of the ACL API, mainly to get
     AllegroServe running on various machines, but might be useful
