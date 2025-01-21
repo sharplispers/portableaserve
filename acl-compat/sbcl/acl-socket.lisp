@@ -40,8 +40,19 @@
   (print-unreadable-object (socket stream :type t :identity nil)
     (format stream "datagram socket listening on port ~d" (port socket))))
 
+
+(defun filter-args (plist keys)
+  "Filter out PLIST entries that do not appear in keys, and return the resulting filtered list."
+  (loop :for (x y) :on plist :by #'cddr
+        :when (member x keys :test #'eq)
+          :append (list x y)))
+
 (defun socket-make-stream (socket &rest args &key stream-type &allow-other-keys)
-  (let ((stream (apply #'sb-bsd-sockets:socket-make-stream socket args)))
+  (let ((stream (apply #'sb-bsd-sockets:socket-make-stream socket
+                       (filter-args args '(:input :output :element-type
+                                           :buffering :external-format
+                                           :timeout
+                                           :auto-close :serve-events)))))
     (make-instance (ecase stream-type
                      (:text 'socket-text-io-stream)
                      (:binary 'socket-binary-io-stream)
@@ -120,9 +131,9 @@ http://franz.com/support/documentation/6.1/doc/pages/operators/socket/make-socke
 to read about the missing parts."
   (check-type remote-host string)
   (let ((element-type (ecase format
-                        (:text 'base-char)
+                        (:text 'character)
                         (:binary 'signed-byte)
-                        (:bivalent 'unsigned-byte)))
+                        (:bivalent :default)))
         (socket
          (if (eq type :datagram)
              (progn
@@ -157,6 +168,11 @@ to read about the missing parts."
                       socket :input t
                              :output t
                              :element-type element-type)))
+         ;; this stream should be bidirectional.
+         (assert (and (input-stream-p stream) (output-stream-p stream)))
+         (format t "~&ACL-SOCKET: Created stream for socket ~s.  Element type = ~a~%"
+               socket
+               (stream-element-type stream))
          (make-instance (ecase format
                           (:bivalent 'socket-bivalent-io-stream)
                           (:text 'socket-text-io-stream)
