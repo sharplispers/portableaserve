@@ -122,10 +122,16 @@ lisp-system"))
      (:legacy-cl-source-file "chunked-stream-mixin"
                              :depends-on ("packages" "acl-excl"
                                                      #-lispworks "lw-buffering"))
-     ;; Multiprocessing
+     ;; Multi
+
+
+
+
+processing
+     (:file "mp-decls" (:depends-on "packages"))
      #+(or mcl openmcl) (:unportable-cl-source-file "mcl-timers")
      (:unportable-cl-source-file "acl-mp"
-                                 :depends-on ("packages" #+(or mcl openmcl) "mcl-timers"))
+                                 :depends-on ("packages" "mp-decls" #+(or mcl openmcl) "mcl-timers"))
      ;; Sockets, networking; TODO: de-frob this a bit
      #+sbcl
      (:unportable-cl-source-file
