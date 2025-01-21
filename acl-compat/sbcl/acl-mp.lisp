@@ -139,7 +139,8 @@
         (process-arguments process) arguments)
   (when (process-id process) (restart-process process)))
 
-(defun/sb-thread process-kill (process)
+(defun/sb-thread process-kill (process &key wait)
+  (declare (ignore wait))
   (when (process-id process)
     (sb-thread:terminate-thread (process-id process))
     (setf (process-id process) nil))
