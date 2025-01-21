@@ -243,19 +243,21 @@
 (defun all-processes ()
   (copy-list *all-processes*))
 
-(defun/sb-thread process-wait-with-timeout (reason timeout predicate)
-  (declare (type function predicate))
-  (let ((old-state (process-whostate *current-process*))
-        (end-time (+ (get-universal-time) timeout)))
+(defun/sb-thread process-wait-with-timeout (reason timeout predicate &rest args)
+  (declare (ignore reason))
+  (let ((old-state (process-whostate *current-process*)))
     (unwind-protect
-        (progn
-          (setf old-state (process-whostate *current-process*)
-                (process-whostate *current-process*) reason)
-          (loop
-           (let ((it (funcall predicate)))
-             (when (or (> (get-universal-time) end-time) it)
-               (return it)))
-           (sleep .01)))
+         ;; FIXME: replace this with simpler HANDLER-CASE
+         (handler-case
+             (sb-sys:with-deadline (:seconds timeout)
+               (setf old-state (process-whostate *current-process*)
+                     (process-whostate *current-process*) reason)
+               (loop
+                 (let ((it (apply predicate args)))
+                   (when it
+                     (return it)))
+                 (sleep .01)))
+           (sb-sys:deadline-timeout ()  nil))
       (setf (process-whostate *current-process*) old-state))))
 
 (defun/sb-thread disable-process (process)
