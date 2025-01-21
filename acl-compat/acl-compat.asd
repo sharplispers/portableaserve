@@ -124,9 +124,13 @@ lisp-system"))
      (:unportable-cl-source-file "acl-mp"
                                  :depends-on ("packages" #+(or mcl openmcl) "mcl-timers"))
      ;; Sockets, networking; TODO: de-frob this a bit
+     #+sbcl
+     (:unportable-cl-source-file
+      "socket-streams" :depends-on ("packages"))
      #-(or mcl openmcl)
      (:unportable-cl-source-file
       "acl-socket" :depends-on ("packages" "acl-excl"
+                                           #+sbcl "socket-streams"
                                            #-(or allegro (and mcl (not openmcl))) "chunked-stream-mixin"))
      #+(and mcl (not openmcl))
      (:unportable-cl-source-file "acl-socket-mcl" :depends-on ("packages"))

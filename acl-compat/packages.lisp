@@ -74,6 +74,7 @@
   #+allegro (:shadowing-import-from :mp #:process-interrupt #:lock)
   #+allegro (:shadowing-import-from :excl #:without-interrupts)
   (:export
+   #:*all-processes*
    #:*current-process*         ;*
    #:process-kill              ;*
    #:process-preset            ;*
@@ -118,6 +119,27 @@
   (:export #:chunked-stream-mixin
            #:output-chunking-p #:input-chunking-p))
 
+#+sbcl
+(defpackage socket-streams
+  (:use common-lisp sb-gray)
+  (:import-from #:sb-bsd-sockets #:socket #:socket-peername #:inet-socket)
+  ;; intern this here to avoid required forward reference
+  ;; into acl-compat.socket
+  (:intern #:vector-to-ipaddr)
+  (:export #:socket-stream
+           #:socket-input-stream
+           #:socket-output-stream
+           #:socket-text-io-stream
+           #:socket-binary-io-stream
+           #:socket-bivalent-io-stream
+
+           #:socket-stream-socket
+           #:socket-stream-stream
+           #:local-host
+           #:local-port
+           #:remote-host
+           #:remote-port))
+
 ;; general
 (defpackage acl-compat.socket
   (:use #:common-lisp
@@ -125,9 +147,16 @@
         #+(or lispworks cmu)#:acl-compat.excl
         #+clisp #:socket
         #+sbcl #:sb-bsd-sockets
+        #+sbcl #:socket-streams
         #+(or lispworks cmu) #:de.dataheaven.chunked-stream-mixin
         #+cormanlisp #:socket
         )
+  #+sbcl
+  (:shadow #:socket-make-stream)
+  #+sbcl
+  (:import-from #:socket-streams #:vector-to-ipaddr)
+  #+sbcl
+  (:import-from #:sb-bsd-sockets #:socket-peername)
   #+openmcl
   (:shadowing-import-from :ccl
                           #:accept-connection
