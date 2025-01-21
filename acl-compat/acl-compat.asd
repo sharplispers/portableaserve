@@ -4,6 +4,9 @@
 ;;;; acl-compat-cmu.system, but could replace all other systems, too.
 ;;;; (hint, hint)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (asdf:load-system :fiveam-asdf))
+
 (defpackage #:acl-compat-system
   (:use #:cl #:asdf))
 (in-package #:acl-compat-system)
@@ -164,3 +167,9 @@ lisp-system"))
                  )
     :perform (load-op :after (op acl-compat)
                       (pushnew :acl-compat cl:*features*)))
+
+(defsystem acl-compat/acl-socket-tester
+  :class fiveam-tester-system
+  :depends-on ("acl-compat")
+  :test-names ((acl-socket-tests . acl-socket-tests))
+  :components ((:file "test-acl-socket")))
