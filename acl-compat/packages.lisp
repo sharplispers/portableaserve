@@ -73,12 +73,21 @@
   (:nicknames :acl-mp #-cormanlisp :acl-compat-mp)
   #+allegro (:shadowing-import-from :mp #:process-interrupt #:lock)
   #+allegro (:shadowing-import-from :excl #:without-interrupts)
+  #+ccl
+  (:shadowing-import-from #:ccl
+   lock
+   process-allow-schedule
+   process-name
+   process-preset
+   #-openmcl-native-threads process-run-reasons
+   process-wait
+   without-interrupts)
   (:export
    #:*all-processes*
-   #:*current-process*         ;*
-   #:process-kill              ;*
-   #:process-preset            ;*
-   #:process-name              ;*
+   #:*current-process*                  ;*
+   #:process-kill                       ;*
+   #:process-preset                     ;*
+   #:process-name                       ;*
 
    #:process-wait-function
    #:process-run-reasons
@@ -91,19 +100,19 @@
    #:process-reset
    #:process-interrupt
 
-   #:process-run-function      ;*
-   #:process-property-list     ;*
-   #:without-scheduling        ;*
-   #:process-allow-schedule    ;*
-   #:make-process              ;*
-   #:process-add-run-reason    ;*
-   #:process-revoke-run-reason ;*
-   #:process-add-arrest-reason    ;*
-   #:process-revoke-arrest-reason ;*
-   #:process-allow-schedule    ;*
-   #:with-timeout              ;*
-   #:make-process-lock         ;*
-   #:with-process-lock         ;*
+   #:process-run-function               ;*
+   #:process-property-list              ;*
+   #:without-scheduling                 ;*
+   #:process-allow-schedule             ;*
+   #:make-process                       ;*
+   #:process-add-run-reason             ;*
+   #:process-revoke-run-reason          ;*
+   #:process-add-arrest-reason          ;*
+   #:process-revoke-arrest-reason       ;*
+   #:process-allow-schedule             ;*
+   #:with-timeout                       ;*
+   #:make-process-lock                  ;*
+   #:with-process-lock                  ;*
    #:process-lock
    #:process-unlock
 
@@ -112,6 +121,9 @@
    #:process-wait-with-timeout
    #:wait-for-input-available
    #:process-active-p
+   ;; Don't love the idea of having CCL-only exports [2025/01/18:rpg]
+   #+ccl #:lock
+   #+ccl #:without-interrupts
    ))
 
 (defpackage :de.dataheaven.chunked-stream-mixin
