@@ -6,37 +6,7 @@
 
 (in-package :acl-compat.mp)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
 
-; existing stuff from ccl we can reuse directly
-(shadowing-import 
- '(ccl:*current-process*
-   ccl::lock
-   ccl:process-allow-schedule
-   ccl:process-name
-   ccl:process-preset
-   #-openmcl-native-threads ccl:process-run-reasons
-   ccl:process-wait
-   ccl:process-wait-with-timeout
-   ccl:without-interrupts))
-)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-
-(export 
- '(*current-process*
-   lock
-   process-allow-schedule
-   process-name
-   process-preset
-   process-run-reasons
-   process-wait
-   process-wait-with-timeout
-   without-interrupts))
-)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-                 
 (defmacro without-scheduling (&body forms)
   `(ccl:without-interrupts ,@forms))
 
@@ -46,7 +16,7 @@
   (block timeout
     (let* ((process *current-process*)
            (timer (ccl:process-run-function "with-timeout-timer"
-                                            #'(lambda () 
+                                            #'(lambda ()
                                                 (sleep seconds)
                                                 (ccl:process-interrupt process
                                                                        #'(lambda ()
@@ -66,7 +36,7 @@
                     #'(lambda () (return-from timeout (funcall timeoutfn))))))
       (ccl::enqueue-timer-request timer)
       (unwind-protect (funcall bodyfn)
-	(ccl::dequeue-timer-request timer)))))
+        (ccl::dequeue-timer-request timer)))))
 
 
 (defmacro with-timeout ((seconds &body timeout-forms) &body body)
@@ -91,9 +61,9 @@
            (eq (car initial-bindings) 'quote))
     (cadr initial-bindings)
     initial-bindings))
-                             
+
 )
-	   
+
 
 #-openmcl-native-threads
 (defmacro process-revoke-run-reason (process reason)
@@ -120,7 +90,7 @@
      (unless (ccl:process-active-p ,process) ;won't die unless enabled
        (ccl:process-reset-and-enable ,process) )
      (ccl:process-kill ,process)))
-)
+
 
 (defun process-active-p (process)
   (ccl::process-active-p process))
@@ -176,8 +146,13 @@ See the functions process-plist, (setf process-plist).")
     (flet ((collect-fds ()
              (setf collected-fds
                    (remove-if-not wait-function streams))))
-      
+
       (if timeout
           (process-wait-with-timeout (or whostate "Waiting for input") timeout #'collect-fds)
           (process-wait (or whostate "Waiting for input") #'collect-fds)))
     collected-fds))
+
+(defun process-wait-with-timeout (whostate seconds function &rest args)
+  ;; correct the seconds value to ticks for CCL:PROCESS-WAIT-WITH-TIMEOUT
+  (let ((ticks (round (* seconds ccl:*ticks-per-second*))))
+    (apply #'ccl:process-wait-with-timeout whostate ticks function args)))

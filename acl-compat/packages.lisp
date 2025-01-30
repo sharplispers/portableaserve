@@ -73,11 +73,21 @@
   (:nicknames :acl-mp #-cormanlisp :acl-compat-mp)
   #+allegro (:shadowing-import-from :mp #:process-interrupt #:lock)
   #+allegro (:shadowing-import-from :excl #:without-interrupts)
+  #+ccl
+  (:shadowing-import-from #:ccl
+   lock
+   process-allow-schedule
+   process-name
+   process-preset
+   #-openmcl-native-threads process-run-reasons
+   process-wait
+   without-interrupts)
   (:export
-   #:*current-process*         ;*
-   #:process-kill              ;*
-   #:process-preset            ;*
-   #:process-name              ;*
+   #:*all-processes*
+   #:*current-process*                  ;*
+   #:process-kill                       ;*
+   #:process-preset                     ;*
+   #:process-name                       ;*
 
    #:process-wait-function
    #:process-run-reasons
@@ -90,19 +100,19 @@
    #:process-reset
    #:process-interrupt
 
-   #:process-run-function      ;*
-   #:process-property-list     ;*
-   #:without-scheduling        ;*
-   #:process-allow-schedule    ;*
-   #:make-process              ;*
-   #:process-add-run-reason    ;*
-   #:process-revoke-run-reason ;*
-   #:process-add-arrest-reason    ;*
-   #:process-revoke-arrest-reason ;*
-   #:process-allow-schedule    ;*
-   #:with-timeout              ;*
-   #:make-process-lock         ;*
-   #:with-process-lock         ;*
+   #:process-run-function               ;*
+   #:process-property-list              ;*
+   #:without-scheduling                 ;*
+   #:process-allow-schedule             ;*
+   #:make-process                       ;*
+   #:process-add-run-reason             ;*
+   #:process-revoke-run-reason          ;*
+   #:process-add-arrest-reason          ;*
+   #:process-revoke-arrest-reason       ;*
+   #:process-allow-schedule             ;*
+   #:with-timeout                       ;*
+   #:make-process-lock                  ;*
+   #:with-process-lock                  ;*
    #:process-lock
    #:process-unlock
 
@@ -111,12 +121,36 @@
    #:process-wait-with-timeout
    #:wait-for-input-available
    #:process-active-p
+   ;; Don't love the idea of having CCL-only exports [2025/01/18:rpg]
+   #+ccl #:lock
+   #+ccl #:without-interrupts
    ))
 
 (defpackage :de.dataheaven.chunked-stream-mixin
   (:use :common-lisp)
   (:export #:chunked-stream-mixin
            #:output-chunking-p #:input-chunking-p))
+
+#+sbcl
+(defpackage socket-streams
+  (:use common-lisp sb-gray)
+  (:import-from #:sb-bsd-sockets #:socket #:socket-peername #:inet-socket)
+  ;; intern this here to avoid required forward reference
+  ;; into acl-compat.socket
+  (:intern #:vector-to-ipaddr)
+  (:export #:socket-stream
+           #:socket-input-stream
+           #:socket-output-stream
+           #:socket-text-io-stream
+           #:socket-binary-io-stream
+           #:socket-bivalent-io-stream
+
+           #:socket-stream-socket
+           #:socket-stream-stream
+           #:local-host
+           #:local-port
+           #:remote-host
+           #:remote-port))
 
 ;; general
 (defpackage acl-compat.socket
@@ -125,9 +159,16 @@
         #+(or lispworks cmu)#:acl-compat.excl
         #+clisp #:socket
         #+sbcl #:sb-bsd-sockets
+        #+sbcl #:socket-streams
         #+(or lispworks cmu) #:de.dataheaven.chunked-stream-mixin
         #+cormanlisp #:socket
         )
+  #+sbcl
+  (:shadow #:socket-make-stream)
+  #+sbcl
+  (:import-from #:socket-streams #:vector-to-ipaddr)
+  #+sbcl
+  (:import-from #:sb-bsd-sockets #:socket-peername)
   #+openmcl
   (:shadowing-import-from :ccl
                           #:accept-connection

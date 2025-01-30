@@ -4,6 +4,9 @@
 ;;;; acl-compat-cmu.system, but could replace all other systems, too.
 ;;;; (hint, hint)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (asdf:load-system :fiveam-asdf))
+
 (defpackage #:acl-compat-system
   (:use #:cl #:asdf))
 (in-package #:acl-compat-system)
@@ -96,7 +99,7 @@ lisp-system"))
 (defsystem acl-compat
     :name "acl-compat"
     :author "The acl-compat team"
-    :version "0.2.0"
+    :version "0.3.0"
     :description
     "A reimplementation of parts of the ACL API, mainly to get
     AllegroServe running on various machines, but might be useful
@@ -119,14 +122,24 @@ lisp-system"))
      (:legacy-cl-source-file "chunked-stream-mixin"
                              :depends-on ("packages" "acl-excl"
                                                      #-lispworks "lw-buffering"))
-     ;; Multiprocessing
+     ;; Multi
+
+
+
+
+processing
+     (:file "mp-decls" (:depends-on "packages"))
      #+(or mcl openmcl) (:unportable-cl-source-file "mcl-timers")
      (:unportable-cl-source-file "acl-mp"
-                                 :depends-on ("packages" #+(or mcl openmcl) "mcl-timers"))
+                                 :depends-on ("packages" "mp-decls" #+(or mcl openmcl) "mcl-timers"))
      ;; Sockets, networking; TODO: de-frob this a bit
+     #+sbcl
+     (:unportable-cl-source-file
+      "socket-streams" :depends-on ("packages"))
      #-(or mcl openmcl)
      (:unportable-cl-source-file
       "acl-socket" :depends-on ("packages" "acl-excl"
+                                           #+sbcl "socket-streams"
                                            #-(or allegro (and mcl (not openmcl))) "chunked-stream-mixin"))
      #+(and mcl (not openmcl))
      (:unportable-cl-source-file "acl-socket-mcl" :depends-on ("packages"))
@@ -160,3 +173,9 @@ lisp-system"))
                  )
     :perform (load-op :after (op acl-compat)
                       (pushnew :acl-compat cl:*features*)))
+
+(defsystem acl-compat/acl-socket-tester
+  :class fiveam-tester-system
+  :depends-on ("acl-compat")
+  :test-names ((acl-socket-tests . acl-socket-tests))
+  :components ((:file "test-acl-socket")))

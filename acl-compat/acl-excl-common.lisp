@@ -105,9 +105,9 @@
 (defun filesys-write-date (stream)
   (file-write-date stream))
 
-(defun acl-compat.system:make-temp-file-name (name)
-  (cl-fad:with-open-temporary-file (s)
-    (pathname s)))
+(defun acl-compat.system:make-temp-file-name (&optional prefix (directory (uiop:temporary-directory)))
+  (namestring (uiop:tmpize-pathname (make-pathname :directory (pathname-directory directory)
+                                                   :name prefix))))
 
 (defun frob-regexp (regexp)
   "This converts from ACL regexps to Perl regexps.  The escape
@@ -203,6 +203,7 @@ program-controlled interception of a break."
   (ironclad:make-digest :md5))
 
 (defun md5-update (context data &rest args &key start end external-format)
+  (declare (ignore start end external-format))
   (apply #'ironclad:update-digest context data args))
 
 (defun md5-final (context &key (return :integer))
@@ -214,9 +215,8 @@ program-controlled interception of a break."
       (:hex (ironclad:byte-array-to-hex-string result)))))
 
 (defun rename-file-raw (filespec new-name &key follow-symlinks)
-  (let ((expanded (merge-pathnames (parse-namestring new-name))))
-    (multiple-value-bind (defaulted-new-name old-truename new-truename)
-        (rename-file filespec expanded)
-      (if follow-symlinks
-          new-name
-          new-truename))))
+  (let* ((expanded (merge-pathnames (parse-namestring new-name)))
+         (new-truename (nth-value 2 (rename-file filespec expanded))))
+    (if follow-symlinks
+        new-name
+        new-truename)))
